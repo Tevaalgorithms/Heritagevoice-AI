@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# Blocks a commit that contains a secret or a file that must never be committed.
+# Installed by scripts/install-hooks.sh. Do not bypass with --no-verify.
+set -euo pipefail
+
+FORBIDDEN='(^|/)(\.env|\.env\.[^/]*|[^/]*\.tfvars|[^/]*\.tfvars\.json|[^/]*\.tfstate(\.[^/]*)?|tfplan|[^/]*\.tfplan|crash\.log|\.terraformrc|terraform\.rc|[^/]*\.pem|[^/]*\.key|[^/]*\.p12|[^/]*\.pfx|id_rsa|id_ed25519|age-identity[^/]*|aws_credentials|credentials\.json|secrets\.toml|postgres_password)$|(^|/)\.terraform/'
+ALLOWED='(^|/)(\.env\.example|[^/]*\.tfvars\.example)$'
+
+bad="$(git diff --cached --name-only --diff-filter=ACMR | grep -E "$FORBIDDEN" | grep -Ev "$ALLOWED" || true)"
+if [ -n "$bad" ]; then
+  echo "Commit blocked. These files must never be committed:" >&2
+  echo "$bad" | sed 's/^/  /' >&2
+  echo "Unstage them (git rm --cached <file>) and make sure .gitignore covers them." >&2
+  exit 1
+fi
+
+# Terraform plan output pasted into a text file also leaks values; refuse it by content.
+plan_hits=""
+while IFS= read -r -d '' f; do
+  case "$f" in .githooks/*|scripts/*|tests/*|AGENTS.md|SECURITY.md|.gitleaks.toml) continue ;; esac
+  if git show ":$f" 2>/dev/null | grep -aqE '^Terraform will perform the following actions|"sensitive_values"|"planned_values"'; then
+    plan_hits="$plan_hits$f"$'\n'
+  fi
+done < <(git diff --cached --name-only --diff-filter=ACMR -z)
+if [ -n "$plan_hits" ]; then
+  echo "Commit blocked. These files look like Terraform plan output (it can contain secret values):" >&2
+  echo "$plan_hits" | sed 's/^/  /' >&2
+  exit 1
+fi
+
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks protect --staged --redact --no-banner --config .gitleaks.toml
+elif command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+  docker run --rm -v "$PWD":/repo -w /repo zricethezav/gitleaks:v8.24.3 protect --staged --redact --no-banner --config .gitleaks.toml
+else
+  echo "Install gitleaks (brew install gitleaks) or start Docker so commits can be scanned." >&2
+  exit 1
+fi

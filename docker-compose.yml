@@ -1,0 +1,33 @@
+# Optional local infrastructure only. App processes run with uv on the host.
+# Tags are initial development choices; pin tested patch versions/digests before release.
+services:
+  postgres:
+    image: postgres:16-alpine
+    profiles: ["infrastructure"]
+    environment:
+      POSTGRES_DB: heritagevoice
+      POSTGRES_USER: heritagevoice
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    ports: ["127.0.0.1:5432:5432"]
+    volumes: ["postgres_data:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U heritagevoice -d heritagevoice"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  neo4j:
+    image: neo4j:5-community
+    profiles: ["infrastructure"]
+    environment:
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD:?Set NEO4J_PASSWORD in .env}
+    ports: ["127.0.0.1:7474:7474", "127.0.0.1:7687:7687"]
+    volumes: ["neo4j_data:/data"]
+  qdrant:
+    image: qdrant/qdrant:v1.13.4
+    profiles: ["infrastructure"]
+    ports: ["127.0.0.1:6333:6333"]
+    volumes: ["qdrant_data:/qdrant/storage"]
+volumes:
+  postgres_data:
+  neo4j_data:
+  qdrant_data:

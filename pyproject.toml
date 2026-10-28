@@ -1,0 +1,29 @@
+[project]
+name = "heritagevoice-ai"
+version = "0.1.0"
+description = "HeritageVoice AI MVP architecture scaffold"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+  "fastapi>=0.115,<1", "uvicorn[standard]>=0.34,<1",
+  "pydantic-settings>=2.7,<3", "langgraph>=1,<2",
+  "langgraph-checkpoint-postgres>=3,<4", "psycopg[binary,pool]>=3.2,<4",
+  "langsmith>=0.3,<1", "streamlit>=1.42,<2", "httpx>=0.28,<1",
+  "rank-bm25>=0.2.2,<1", "neo4j>=5.26,<7", "qdrant-client>=1.13,<2",
+]
+
+[dependency-groups]
+dev = ["pytest>=8,<10", "ruff>=0.11,<1"]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]

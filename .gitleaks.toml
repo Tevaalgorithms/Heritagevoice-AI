@@ -1,0 +1,26 @@
+# Extends the built-in gitleaks rules. Used by the commit hook and by CI.
+title = "HeritageVoice AI gitleaks config"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "langsmith-api-key"
+description = "LangSmith API key"
+regex = '''\b(lsv2|ls)_(pt|sk)_[A-Za-z0-9]{20,}(_[A-Za-z0-9]+)?\b'''
+keywords = ["lsv2_", "ls_pt_", "ls_sk_"]
+
+[[rules]]
+id = "terraform-sensitive-assignment"
+description = "Hard-coded secret in Terraform or tfvars"
+regex = '''(?i)\b(password|secret|token|api_?key|access_key|secret_key)\b\s*=\s*"[^"$\s]{8,}"'''
+path = '''\.(tf|tfvars)(\.json)?$'''
+
+[allowlist]
+description = "Placeholders and empty examples"
+paths = [
+  '''\.env\.example$''',
+  '''\.tfvars\.example$''',
+  '''uv\.lock$''',
+  '''requirements\.txt$''',
+]
