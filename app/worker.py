@@ -1,6 +1,7 @@
 """Background worker: claims queued jobs and runs the handler registered for their kind.
 
 Run with: uv run python -m app.worker   (add --once to process the queue and exit)
+Rebuild the search indexes: uv run python -m app.worker rebuild-index
 
 The claim is committed before the handler runs, so a handler can update the job's progress from
 its own transaction without waiting on the worker's lock. A provider failure puts the job back
@@ -20,8 +21,9 @@ from app.db.engine import engine_from_settings
 from app.db.repositories import JobRepository
 from app.db.session import session_scope
 from app.errors import ProviderError
+from app.index_rebuild import rebuild_all
 from app.models.job import Job, JobStatus, Outcome
-from app.worker_setup import build_handlers
+from app.worker_setup import build_handlers, index_deps
 
 logger = logging.getLogger("heritagevoice.worker")
 POLL_SECONDS = 2.0
@@ -77,11 +79,22 @@ def drain(engine: Engine, once: bool, handlers: Mapping[str, Handler] = HANDLERS
 
 def main(argv: Sequence[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="HeritageVoice background worker")
+    parser.add_argument(
+        "command",
+        nargs="?",
+        choices=["run", "rebuild-index"],
+        default="run",
+        help="run the worker (default), or rebuild the search indexes from PostgreSQL",
+    )
     parser.add_argument("--once", action="store_true", help="process queued jobs, then exit")
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO)
     settings = Settings()
     engine = engine_from_settings(settings)
+    if args.command == "rebuild-index":
+        result = rebuild_all(index_deps(settings, engine))
+        print(f"indexed {result.indexed} recordings, removed {result.removed}")
+        return
     drain(engine, args.once, build_handlers(settings, engine))
 
 

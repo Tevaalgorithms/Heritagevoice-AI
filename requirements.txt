@@ -688,7 +688,6 @@ numpy==2.5.4 \
     #   neo4j-graphrag
     #   pandas
     #   pydeck
-    #   rank-bm25
     #   scipy
     #   streamlit
 openai==3.41.0 \
@@ -1044,10 +1043,6 @@ pyyaml==6.0.3 \
     #   langchain-core
     #   neo4j-graphrag
     #   uvicorn
-rank-bm25==0.2.2 \
-    --hash=sha256:096ccef76f8188563419aaf384a02f0ea459503fdf77901378d4fd9d87e5e51d \
-    --hash=sha256:7bd4a95571adadfc271746fa146a4bcfd89c0cf731e49c3d1ad863290adbe8ae
-    # via heritagevoice-ai
 referencing==0.37.0 \
     --hash=sha256:381329a9f99628c9069361716891d34ad94af76e461dcb0335825aecc7692231 \
     --hash=sha256:44aefc3142c5b842538163acb373e24cce6632bd54bdb01b21ad5863489f50d8

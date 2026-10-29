@@ -3,7 +3,17 @@
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -159,3 +169,23 @@ class ModelSettingRow(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_now, onupdate=_now
     )
+
+
+class EvidenceChunkRow(Base):
+    """Searchable chunks of approved content; removed at once on correction or revocation."""
+
+    __tablename__ = "evidence_chunk"
+
+    evidence_id: Mapped[str] = mapped_column(String(200), primary_key=True)
+    recording_id: Mapped[str] = mapped_column(ForeignKey("recording.id"), index=True)
+    community_id: Mapped[str] = mapped_column(String(64), index=True)
+    kind: Mapped[str] = mapped_column(String(16))
+    version: Mapped[int] = mapped_column(Integer)
+    chunk_index: Mapped[int] = mapped_column(Integer)
+    language: Mapped[str] = mapped_column(String(16))
+    text: Mapped[str] = mapped_column(Text)
+    passage_hash: Mapped[str] = mapped_column(String(64))
+    start_s: Mapped[float] = mapped_column(Float)
+    end_s: Mapped[float] = mapped_column(Float)
+    segment_ids: Mapped[list[str]] = mapped_column(JSON)
+    speaker: Mapped[str | None] = mapped_column(String(64), default=None)

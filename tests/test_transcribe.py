@@ -252,21 +252,24 @@ def engine():
     return engine
 
 
-def test_no_speech_service_means_no_ingest_handler(engine):
-    assert build_handlers(Settings(_env_file=None), engine) == {}
+INDEX_HANDLERS = {"index_recording", "unindex_recording"}
+
+
+def test_no_speech_service_means_no_ingest_handler_but_indexing_still_runs(engine):
+    assert set(build_handlers(Settings(_env_file=None), engine)) == INDEX_HANDLERS
 
 
 def test_a_bucket_enables_the_ingest_handler(engine):
     settings = Settings(_env_file=None, audio_bucket="audio-bucket", aws_region="eu-west-2")
     handlers = build_handlers(settings, engine)
-    assert set(handlers) == {"ingest_recording"}
+    assert set(handlers) == INDEX_HANDLERS | {"ingest_recording"}
 
 
 def test_the_fake_speech_service_is_refused_outside_the_local_environment(engine):
     local = Settings(_env_file=None, asr_provider="fake", environment="local")
     prod = Settings(_env_file=None, asr_provider="fake", environment="production")
-    assert set(build_handlers(local, engine)) == {"ingest_recording"}
-    assert build_handlers(prod, engine) == {}
+    assert set(build_handlers(local, engine)) == INDEX_HANDLERS | {"ingest_recording"}
+    assert set(build_handlers(prod, engine)) == INDEX_HANDLERS
 
 
 def test_the_region_comes_from_settings_not_the_machine(monkeypatch):

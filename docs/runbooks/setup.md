@@ -84,6 +84,42 @@ machine's AWS config). Its IAM role needs `transcribe:StartTranscriptionJob`,
 KMS key. Provider failures are retried up to three times, then the job fails with a safe code
 (`asr`). Consent withdrawn after upload fails the job at once with `consent`.
 
+## Search indexes (keyword and semantic)
+
+Publishing a recording queues an `index_recording` job. The worker chunks the approved transcript
+(and the approved translation, if it matches that transcript version) and writes the chunks to
+PostgreSQL, which serves keyword search with full-text search. If Pinecone is configured it also
+embeds the chunks and stores the vectors, one namespace per community. Pinecone holds no
+transcript text; every result is reloaded from PostgreSQL and re-checked (community, published,
+consent, current approved version) before it can reach a prompt.
+
+- **Corrections and revocation** delete the chunk rows in the same transaction, so keyword
+  results disappear at once; a clean-up job removes the vectors.
+- **Rebuild everything** from PostgreSQL (recovery and rollback): `uv run python -m app.worker rebuild-index`.
+- **Pinecone** is optional locally. To enable it, create a serverless index (cosine, dimension
+  equal to `HERITAGEVOICE_EMBEDDING_DIMENSION`, 1024 for `multilingual-e5-large`), then set
+  `PINECONE_API_KEY` and `PINECONE_INDEX` (SecureString parameters when deployed):
+
+  ```python
+  from pinecone import Pinecone, ServerlessSpec
+
+  Pinecone(api_key="...").create_index(
+      name="heritagevoice-demo",
+      dimension=1024,
+      metric="cosine",
+      spec=ServerlessSpec(cloud="aws", region="us-east-1"),
+  )
+  ```
+
+- **Embedding bake-off** (compare models on the Tamil, English and cross-language questions):
+  `PINECONE_API_KEY=... uv run python -m evals.embedding_bakeoff multilingual-e5-large`. Reports
+  are written to `evals/results/` (git-ignored).
+- **Database locale:** PostgreSQL must use a UTF-8 locale such as `en_US.UTF-8` (the default
+  here and on RDS). In the `C` locale Tamil words could be split; `tests/test_pg_search.py`
+  fails loudly if that happens. Run those tests with
+  `HERITAGEVOICE_TEST_DATABASE_URL=postgresql+psycopg://...@host/<name>_test` (the database name
+  must end in `_test`; the tests reset its schema).
+
 ## Choosing the language model (admin Settings page)
 
 Admins pick the model and parameters for each job (today: translation) on the **Settings** page,

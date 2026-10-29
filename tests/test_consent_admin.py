@@ -170,9 +170,15 @@ def test_a_revoked_consent_blocks_new_uploads_and_the_worker_never_runs_the_job(
     with pytest.raises(PermissionError):
         upload_with_key(engine, "consent-1", "key-00000003")
     deps = IngestDeps(lambda: session_scope(engine), FakeTranscriber(GOOD))
-    assert not process_next(engine, {"ingest_recording": ingest_handler(deps)})
+    handlers = {"ingest_recording": ingest_handler(deps)}
+    while process_next(
+        engine, handlers
+    ):  # also drains the clean-up jobs, which have no handler here
+        pass
     with Session(engine) as session:
         assert TranscriptRepository(session).latest(accepted.recording_id) is None
+        job = JobRepository(session).get(accepted.job_id)
+        assert (job.status, job.error, job.attempts) == (JobStatus.FAILED, "consent", 0)
 
 
 class RevokingTranscriber(FakeTranscriber):

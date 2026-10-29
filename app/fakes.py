@@ -1,12 +1,14 @@
 """In-memory ports for tests and the walking skeleton. No network, deterministic output."""
 
 import re
+import zlib
 
 from app.graph.state import StateUpdate, WorkflowState
 from app.graph.workflow import Agents
 from app.models.evidence import Claim, Evidence, Route
 from app.models.transcript import Segment
 from app.ports import GraphStore, VectorStore
+from app.retrieval.tokenize import tokens
 from app.security.permissions import Principal, can_read
 from app.security.roles import Role
 
@@ -29,6 +31,9 @@ class FakeVectorStore:
     def delete(self, evidence_ids: list[str]) -> None:
         for evidence_id in evidence_ids:
             self._items.pop(evidence_id, None)
+
+    def delete_recording(self, recording_id: str, community_id: str) -> None:
+        self.delete([i for i, item in self._items.items() if item.document_id == recording_id])
 
     def search(self, query: str, principal: Principal, limit: int = 20) -> list[Evidence]:
         hits = [i for i in self._items.values() if can_read(principal, i) and _matches(query, i)]
@@ -149,3 +154,65 @@ class FakeAudioStore:
 
     def delete(self, key: str) -> None:
         self.objects.pop(key, None)
+
+
+class FakeEmbedder:
+    """Deterministic bag-of-words vectors: texts that share words are close. No network."""
+
+    def __init__(self, dimension: int = 64) -> None:
+        self.dimension = dimension
+        self.passage_calls = 0
+
+    def _vector(self, text: str) -> list[float]:
+        vector = [0.0] * self.dimension
+        for word in set(tokens(text)):
+            vector[zlib.crc32(word.encode()) % self.dimension] += 1.0
+        return vector
+
+    def embed_passages(self, texts: list[str]) -> list[list[float]]:
+        self.passage_calls += 1
+        return [self._vector(t) for t in texts]
+
+    def embed_query(self, text: str) -> list[float]:
+        return self._vector(text)
+
+
+IdList = list[str]
+IdPages = list[IdList]
+
+
+class FakePineconeIndex:
+    """In-memory stand-in for a Pinecone index with the same call shapes (namespaces, list)."""
+
+    def __init__(self) -> None:
+        self.namespaces: dict[str, dict[str, list[float]]] = {}
+
+    def upsert(self, vectors: list[dict[str, object]], namespace: str) -> None:
+        space = self.namespaces.setdefault(namespace, {})
+        for vector in vectors:
+            space[str(vector["id"])] = list(vector["values"])  # type: ignore[call-overload]
+
+    def query(
+        self, vector: list[float], top_k: int, namespace: str
+    ) -> dict[str, list[dict[str, object]]]:
+        space = self.namespaces.get(namespace, {})
+        scored = [(_cosine(vector, v), i) for i, v in space.items()]
+        best = sorted(scored, key=lambda s: (-s[0], s[1]))[:top_k]
+        return {"matches": [{"id": i, "score": s} for s, i in best if s > 0]}
+
+    def list(self, prefix: str, namespace: str) -> IdPages:
+        ids = sorted(i for i in self.namespaces.get(namespace, {}) if i.startswith(prefix))
+        return [ids] if ids else []
+
+    def delete(self, ids: IdList, namespace: str) -> None:
+        for vector_id in ids:
+            self.namespaces.get(namespace, {}).pop(vector_id, None)
+
+    def count(self, namespace: str) -> int:
+        return len(self.namespaces.get(namespace, {}))
+
+
+def _cosine(a: list[float], b: list[float]) -> float:
+    dot = sum(x * y for x, y in zip(a, b, strict=True))
+    norm = (sum(x * x for x in a) ** 0.5) * (sum(y * y for y in b) ** 0.5)
+    return dot / norm if norm else 0.0
