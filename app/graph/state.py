@@ -3,6 +3,8 @@
 from typing import Any, TypedDict
 
 from app.models.evidence import Claim, Evidence, Route
+from app.models.job import JobStatus
+from app.models.transcript import Segment
 
 StateUpdate = dict[str, Any]
 """A partial state returned by a graph node."""
@@ -16,4 +18,15 @@ class WorkflowState(TypedDict, total=False):
     evidence: list[Evidence]
     claims: list[Claim]
     answer: str
+    citations: list[Evidence]
     status: str
+
+
+class PreservationState(TypedDict, total=False):
+    recording_id: str
+    language: str
+    audio: bytes
+    segments: list[Segment]
+    translations: list[Segment]
+    status: JobStatus
+    error: str
