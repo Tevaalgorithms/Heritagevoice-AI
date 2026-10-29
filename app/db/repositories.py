@@ -1,5 +1,7 @@
 """Data access. Callers get domain models, never SQLAlchemy rows."""
 
+from dataclasses import asdict, dataclass
+
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
@@ -61,6 +63,20 @@ class JobRepository:
         if row is None:
             raise KeyError(job_id)
         row.status, row.error = status, error
+
+    def fail_open_jobs(self, recording_ids: list[str], error: str) -> int:
+        """Stop queued or running jobs for these recordings; returns how many were stopped."""
+        if not recording_ids:
+            return 0
+        query = select(JobRow).where(
+            JobRow.recording_id.in_(recording_ids),
+            JobRow.status.in_([JobStatus.QUEUED, JobStatus.PROCESSING]),
+        )
+        rows = list(self._session.scalars(query))
+        for row in rows:
+            row.status, row.error = JobStatus.FAILED, error
+        self._session.flush()
+        return len(rows)
 
     def by_recording(self, recording_id: str) -> Job | None:
         query = select(JobRow).where(JobRow.recording_id == recording_id).limit(1)
@@ -144,13 +160,23 @@ class UserRepository:
         )
 
 
+@dataclass(frozen=True)
+class AuditEntry:
+    """Who did what to whom. `detail` is a short admin-written note, never recording content."""
+
+    actor_sub: str
+    action: str
+    target: str
+    trace_id: str
+    detail: str | None = None
+
+
 class AuditRepository:
     def __init__(self, session: Session) -> None:
         self._session = session
 
-    def record(self, actor_sub: str, action: str, target: str, trace_id: str) -> None:
-        row = AuditLogRow(actor_sub=actor_sub, action=action, target=target, trace_id=trace_id)
-        self._session.add(row)
+    def record(self, entry: AuditEntry) -> None:
+        self._session.add(AuditLogRow(**asdict(entry)))
         self._session.flush()
 
 
@@ -183,6 +209,15 @@ class ConsentRepository:
     def get(self, consent_id: str) -> Consent | None:
         row = self._session.get(ConsentRow, consent_id)
         return None if row is None else _to_consent(row)
+
+    def revoke(self, consent_id: str) -> bool:
+        """Mark the consent revoked; False if it does not exist. Idempotent."""
+        row = self._session.get(ConsentRow, consent_id)
+        if row is None:
+            return False
+        row.revoked = True
+        self._session.flush()
+        return True
 
 
 def _to_recording(row: RecordingRow) -> Recording:
@@ -221,6 +256,10 @@ class RecordingRepository:
         )
         row = self._session.scalars(query).first()
         return None if row is None else _to_recording(row)
+
+    def ids_by_consent(self, consent_id: str) -> list[str]:
+        query = select(RecordingRow.id).where(RecordingRow.consent_id == consent_id)
+        return list(self._session.scalars(query))
 
     def set_status(self, recording_id: str, status: RecordingStatus) -> None:
         row = self._session.get(RecordingRow, recording_id)
@@ -263,9 +302,11 @@ class TranscriptRepository:
     def approved_segments(self, recording_id: str) -> list[Segment]:
         query = (
             select(TranscriptVersionRow)
+            .join(RecordingRow, RecordingRow.id == TranscriptVersionRow.recording_id)
             .where(
                 TranscriptVersionRow.recording_id == recording_id,
                 TranscriptVersionRow.status == VersionStatus.APPROVED,
+                RecordingRow.status != RecordingStatus.REVOKED,
             )
             .order_by(TranscriptVersionRow.version.desc())
             .limit(1)

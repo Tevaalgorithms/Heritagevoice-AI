@@ -23,9 +23,10 @@ from app.errors import ProviderError
 from app.graph.preservation import build_preservation_graph
 from app.graph.state import PreservationState
 from app.models.job import Job, JobStatus, Outcome
-from app.models.records import Consent, Recording, RecordingStatus, TranslationVersion
+from app.models.records import Consent, Recording, RecordingStatus, Right, TranslationVersion
 from app.models.transcript import Segment
 from app.ports import Transcriber, Translator
+from app.security.consent import ConsentDeniedError, require_right
 from app.transcript import validate_segments
 
 SessionFactory = Callable[[], AbstractContextManager[Session]]
@@ -97,9 +98,18 @@ def _save_translation(
     )
 
 
+def _ensure_still_allowed(session: Session, recording: Recording) -> None:
+    """Consent or the recording may have been revoked while the job ran."""
+    current = RecordingRepository(session).get(recording.id)
+    if current is None or current.status == RecordingStatus.REVOKED:
+        raise ConsentDeniedError("Recording was revoked")
+    require_right(ConsentRepository(session).get(recording.consent_id), Right.AI_PROCESSING)
+
+
 def _save(recording: Recording, state: PreservationState, deps: IngestDeps) -> None:
     segments = validate_segments(state["segments"], recording.duration_s)
     with deps.sessions() as session:
+        _ensure_still_allowed(session, recording)
         transcripts = TranscriptRepository(session)
         draft = transcripts.save_draft(recording.id, segments, SYSTEM_ACTOR)
         if "translations" in state:
@@ -115,7 +125,10 @@ def ingest_recording(job: Job, deps: IngestDeps) -> Outcome:
         if error in PROVIDER_STAGES:
             raise ProviderError("provider step failed", code=str(error))
         return Outcome(status=JobStatus.FAILED, error=error)
-    _save(recording, state, deps)
+    try:
+        _save(recording, state, deps)
+    except ConsentDeniedError:
+        return Outcome(status=JobStatus.FAILED, error="consent")
     return Outcome(status=JobStatus.REVIEW)
 
 

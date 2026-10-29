@@ -17,6 +17,7 @@ class Action(StrEnum):
     DRAFT_EDIT = "draft:edit"
     REVIEW_APPROVE = "review:approve"
     RECORDING_REVOKE = "recording:revoke"
+    CONSENT_MANAGE = "consent:manage"
     USER_MANAGE = "user:manage"
     INDEX_REBUILD = "index:rebuild"
 
@@ -35,6 +36,7 @@ ROLE_PERMISSIONS: dict[Action, frozenset[Role]] = {
     Action.DRAFT_EDIT: frozenset({Role.MEMBER, Role.REVIEWER}),
     Action.REVIEW_APPROVE: frozenset({Role.REVIEWER}),
     Action.RECORDING_REVOKE: frozenset({Role.ADMIN}),
+    Action.CONSENT_MANAGE: frozenset({Role.ADMIN}),
     Action.USER_MANAGE: frozenset({Role.ADMIN}),
     Action.INDEX_REBUILD: frozenset({Role.ADMIN}),
 }

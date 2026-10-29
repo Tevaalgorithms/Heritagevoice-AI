@@ -19,6 +19,73 @@
         "title": "CommunitiesRequest",
         "type": "object"
       },
+      "ConsentRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "community_id": {
+            "pattern": "^[A-Za-z0-9_-]{1,64}$",
+            "title": "Community Id",
+            "type": "string"
+          },
+          "policy_version": {
+            "default": "v1",
+            "pattern": "^[A-Za-z0-9._-]{1,32}$",
+            "title": "Policy Version",
+            "type": "string"
+          },
+          "rights": {
+            "items": {
+              "$ref": "#/components/schemas/Right"
+            },
+            "maxItems": 6,
+            "minItems": 1,
+            "title": "Rights",
+            "type": "array"
+          }
+        },
+        "required": [
+          "community_id",
+          "rights"
+        ],
+        "title": "ConsentRequest",
+        "type": "object"
+      },
+      "ConsentResponse": {
+        "properties": {
+          "community_id": {
+            "title": "Community Id",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "policy_version": {
+            "title": "Policy Version",
+            "type": "string"
+          },
+          "revoked": {
+            "title": "Revoked",
+            "type": "boolean"
+          },
+          "rights": {
+            "items": {
+              "$ref": "#/components/schemas/Right"
+            },
+            "title": "Rights",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "community_id",
+          "rights",
+          "policy_version",
+          "revoked"
+        ],
+        "title": "ConsentResponse",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -204,6 +271,41 @@
         "title": "RecordingResponse",
         "type": "object"
       },
+      "RevokeRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "policy_version": {
+            "pattern": "^[A-Za-z0-9._-]{1,32}$",
+            "title": "Policy Version",
+            "type": "string"
+          },
+          "reason": {
+            "maxLength": 150,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "policy_version",
+          "reason"
+        ],
+        "title": "RevokeRequest",
+        "type": "object"
+      },
+      "Right": {
+        "description": "Each right is granted separately; none implies another.",
+        "enum": [
+          "playback",
+          "ai_processing",
+          "translation",
+          "indexing",
+          "summarization",
+          "attribution"
+        ],
+        "title": "Right",
+        "type": "string"
+      },
       "Role": {
         "enum": [
           "member",
@@ -385,6 +487,52 @@
         ],
         "title": "VersionView",
         "type": "object"
+      },
+      "app__api__consents__RevokeResponse": {
+        "properties": {
+          "consent_id": {
+            "title": "Consent Id",
+            "type": "string"
+          },
+          "jobs_stopped": {
+            "title": "Jobs Stopped",
+            "type": "integer"
+          },
+          "recordings_revoked": {
+            "title": "Recordings Revoked",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "consent_id",
+          "recordings_revoked",
+          "jobs_stopped"
+        ],
+        "title": "RevokeResponse",
+        "type": "object"
+      },
+      "app__api__recordings__RevokeResponse": {
+        "properties": {
+          "jobs_stopped": {
+            "title": "Jobs Stopped",
+            "type": "integer"
+          },
+          "recording_id": {
+            "title": "Recording Id",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "recording_id",
+          "status",
+          "jobs_stopped"
+        ],
+        "title": "RevokeResponse",
+        "type": "object"
       }
     },
     "securitySchemes": {
@@ -400,6 +548,148 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/admin/consents": {
+      "post": {
+        "operationId": "create_consent_admin_consents_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Consent",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/consents/{consent_id}": {
+      "get": {
+        "operationId": "get_consent_admin_consents__consent_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "consent_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "title": "Consent Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Consent",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/consents/{consent_id}/revoke": {
+      "post": {
+        "operationId": "revoke_admin_consents__consent_id__revoke_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "consent_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "title": "Consent Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app__api__consents__RevokeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Revoke",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
     "/admin/users": {
       "post": {
         "operationId": "invite_user_admin_users_post",
@@ -860,6 +1150,65 @@
           }
         ],
         "summary": "Get Recording",
+        "tags": [
+          "recordings"
+        ]
+      }
+    },
+    "/v1/recordings/{recording_id}/revoke": {
+      "post": {
+        "description": "Withdraw one recording at once: no further processing, indexing or playback.",
+        "operationId": "revoke_recording_endpoint_v1_recordings__recording_id__revoke_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recording_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "title": "Recording Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevokeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app__api__recordings__RevokeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Revoke Recording Endpoint",
         "tags": [
           "recordings"
         ]

@@ -3,7 +3,7 @@ from pydantic import ValidationError
 from sqlalchemy import select
 
 from app.db.engine import make_engine
-from app.db.repositories import AuditRepository, UserRepository
+from app.db.repositories import AuditEntry, AuditRepository, UserRepository
 from app.db.session import session_scope
 from app.db.tables import AuditLogRow, Base
 from app.models.job import JobStatus
@@ -127,6 +127,7 @@ def test_unknown_user_updates_are_errors(engine):
 
 def test_audit_log_stores_who_what_and_trace_but_no_content(engine):
     with session_scope(engine) as session:
-        AuditRepository(session).record("admin-1", "user:disable", "user:sub-1", "trace-123456")
+        entry = AuditEntry("admin-1", "user:disable", "user:sub-1", "trace-123456")
+        AuditRepository(session).record(entry)
         row = session.scalars(select(AuditLogRow)).one()
         assert (row.actor_sub, row.action, row.target) == ("admin-1", "user:disable", "user:sub-1")

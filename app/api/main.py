@@ -4,6 +4,7 @@ from fastapi import Depends, FastAPI, HTTPException, Response
 
 from app.api.admin import router as admin_router
 from app.api.auth import require_action
+from app.api.consents import router as consents_router
 from app.api.readiness import run_checks
 from app.api.recordings import router as recordings_router
 from app.api.tracing import current_trace_id, install_trace_logging, trace_id_middleware
@@ -14,7 +15,10 @@ from app.security.roles import Action
 app = FastAPI(title="HeritageVoice AI", version="0.1.0")
 app.middleware("http")(trace_id_middleware)
 install_trace_logging()
+
+
 app.include_router(admin_router)
+app.include_router(consents_router)
 app.include_router(recordings_router)
 
 
