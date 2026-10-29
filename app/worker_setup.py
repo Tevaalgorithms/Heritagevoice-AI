@@ -5,6 +5,7 @@ from collections.abc import Callable, Mapping
 
 from sqlalchemy import Engine
 
+from app.adapters.llm_translator import build_translator
 from app.adapters.transcribe import AmazonTranscribe, TranscribeConfig
 from app.config import Settings
 from app.db.session import session_scope
@@ -40,5 +41,5 @@ def build_handlers(settings: Settings, engine: Engine) -> Mapping[str, Handler]:
     if transcriber is None:
         logger.warning("No speech service configured; ingestion jobs will fail with no_handler")
         return {}
-    deps = IngestDeps(lambda: session_scope(engine), transcriber)
+    deps = IngestDeps(lambda: session_scope(engine), transcriber, build_translator(settings))
     return {INGEST_KIND: ingest_handler(deps)}

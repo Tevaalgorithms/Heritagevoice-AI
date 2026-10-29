@@ -117,19 +117,33 @@ def _save(recording: Recording, state: PreservationState, deps: IngestDeps) -> N
         RecordingRepository(session).set_status(recording.id, RecordingStatus.REVIEW)
 
 
+def _failed_outcome(state: PreservationState) -> Outcome:
+    error = state.get("error")
+    if error in PROVIDER_STAGES:
+        raise ProviderError("provider step failed", code=str(error))
+    return Outcome(status=JobStatus.FAILED, error=error)
+
+
+def _gap_code(state: PreservationState) -> str | None:
+    """`mt` on a review job means: transcript saved, translation missing."""
+    return state.get("error") if _transcript_only(state) else None
+
+
+def _transcript_only(state: PreservationState) -> bool:
+    """Translation failed after a good transcript: keep the transcript, flag the gap with `mt`."""
+    return state.get("error") == "mt" and "segments" in state
+
+
 def ingest_recording(job: Job, deps: IngestDeps) -> Outcome:
     recording, consent = _load(job, deps)
     state = _run_graph(job, recording, consent, deps)
-    error = state.get("error")
-    if state.get("status") == JobStatus.FAILED:
-        if error in PROVIDER_STAGES:
-            raise ProviderError("provider step failed", code=str(error))
-        return Outcome(status=JobStatus.FAILED, error=error)
+    if state.get("status") == JobStatus.FAILED and not _transcript_only(state):
+        return _failed_outcome(state)
     try:
         _save(recording, state, deps)
     except ConsentDeniedError:
         return Outcome(status=JobStatus.FAILED, error="consent")
-    return Outcome(status=JobStatus.REVIEW)
+    return Outcome(status=JobStatus.REVIEW, error=_gap_code(state))
 
 
 def ingest_handler(deps: IngestDeps) -> Callable[[Job], Outcome]:

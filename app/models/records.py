@@ -86,6 +86,17 @@ class Subject(StrEnum):
     ASSERTION = "assertion"
 
 
+class VersionRef(BaseModel):
+    """A transcript or translation version, as the review workflow sees it."""
+
+    model_config = ConfigDict(frozen=True)
+    kind: Subject
+    version: int = Field(ge=1)
+    status: VersionStatus
+    segments: list[Segment]
+    transcript_version: int | None = None  # set for translations: the transcript they translate
+
+
 class ReviewDecision(BaseModel):
     model_config = ConfigDict(frozen=True)
     id: str

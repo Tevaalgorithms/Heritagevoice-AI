@@ -172,7 +172,7 @@ async def upload_recording(
     return UploadResponse(recording_id=accepted.recording_id, job_id=accepted.job_id)
 
 
-def _viewable(session: Session, principal: Principal, recording_id: str | None) -> Recording:
+def viewable(session: Session, principal: Principal, recording_id: str | None) -> Recording:
     recording = RecordingRepository(session).get(recording_id or "")
     if recording is None:
         raise NOT_FOUND
@@ -222,7 +222,7 @@ def get_job(
         job = JobRepository(session).get(job_id)
         if job is None:
             raise NOT_FOUND
-        _viewable(session, principal, job.recording_id)
+        viewable(session, principal, job.recording_id)
         return _job_response(job)
 
 
@@ -233,7 +233,7 @@ def get_recording(
     factory: Annotated[SessionFactory, Depends(get_session_factory)],
 ) -> RecordingResponse:
     with factory() as session:
-        recording = _viewable(session, principal, recording_id)
+        recording = viewable(session, principal, recording_id)
         transcripts = TranscriptRepository(session)
         transcript = transcripts.latest(recording.id)
         translation = transcripts.latest_translation(recording.id)

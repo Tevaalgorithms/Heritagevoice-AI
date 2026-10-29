@@ -42,3 +42,24 @@ def progress_for(status: str, stage: str | None) -> tuple[float, str]:
 
 def failure_message(code: str | None) -> str:
     return FAILURE_MESSAGES.get(code or "", "Processing failed. Please contact an administrator.")
+
+
+def editor_rows(segments: list[SegmentView]) -> list[dict[str, str]]:
+    """Rows for the edit table; only the text column is editable in the UI."""
+    return [{"id": s.segment_id, "time": _span(s), "text": s.text} for s in segments]
+
+
+def _span(segment: SegmentView) -> str:
+    return f"{format_time(segment.start_s)}-{format_time(segment.end_s)}"
+
+
+def _new_text(row: dict[str, str], before: dict[str, str]) -> str | None:
+    text = row["text"].strip()
+    return text if text and row["id"] in before and text != before[row["id"]] else None
+
+
+def changed_edits(original: list[SegmentView], edited: list[dict[str, str]]) -> dict[str, str]:
+    """Only the segments whose text actually changed, keyed by segment ID."""
+    before = {s.segment_id: s.text for s in original}
+    pairs = ((row["id"], _new_text(row, before)) for row in edited)
+    return {sid: text for sid, text in pairs if text is not None}
