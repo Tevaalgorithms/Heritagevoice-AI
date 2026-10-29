@@ -38,3 +38,16 @@ def message_for(error: ApiError) -> str:
         return CODE_MESSAGES[code]
     matches = (text for kind, text in ERROR_MESSAGES.items() if isinstance(error, kind))
     return next(matches, "Something went wrong.")
+
+
+PROBE_MESSAGES = {
+    "no_key": "No API key is configured on the server, so the model cannot be tested.",
+    "bad_key": "The provider rejected the configured API key.",
+    "unknown_model": "The provider does not know this model name.",
+    "rate_limited": "The provider is rate limiting requests. Try again in a minute.",
+    "provider_error": "The provider returned an error. Check the model and try again.",
+}
+
+
+def probe_message(code: str | None) -> str:
+    return PROBE_MESSAGES.get(code or "", "The test failed.")

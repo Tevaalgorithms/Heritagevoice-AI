@@ -1,10 +1,14 @@
 """Runnable development API. No live-data query path is enabled in this scaffold."""
 
-from fastapi import Depends, FastAPI, HTTPException, Response
+from fastapi import Depends, FastAPI, HTTPException, Request, Response
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 
 from app.api.admin import router as admin_router
 from app.api.auth import require_action
 from app.api.consents import router as consents_router
+from app.api.me import router as me_router
+from app.api.model_settings import router as model_settings_router
 from app.api.readiness import run_checks
 from app.api.recordings import router as recordings_router
 from app.api.review import router as review_router
@@ -18,8 +22,17 @@ app.middleware("http")(trace_id_middleware)
 install_trace_logging()
 
 
+@app.exception_handler(RequestValidationError)
+def validation_error(request: Request, error: RequestValidationError) -> JSONResponse:
+    """Say what is wrong and where, but never echo submitted values (they may be secrets)."""
+    problems = [{"loc": e["loc"], "msg": e["msg"], "type": e["type"]} for e in error.errors()]
+    return JSONResponse(status_code=422, content={"detail": problems})
+
+
 app.include_router(admin_router)
 app.include_router(consents_router)
+app.include_router(model_settings_router)
+app.include_router(me_router)
 app.include_router(recordings_router)
 app.include_router(review_router)
 

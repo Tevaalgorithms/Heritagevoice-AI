@@ -110,6 +110,42 @@ class VersionResult(BaseModel):
     status: str
 
 
+class MeView(BaseModel):
+    user_id: str
+    role: str
+    communities: list[str] = []
+
+
+class ModelParamsSpec(BaseModel):
+    provider: str
+    model: str
+    temperature: float = 0.0
+    timeout_s: float = 30.0
+    max_retries: int = 2
+
+
+class ModelView(BaseModel):
+    role: str
+    provider: str
+    model: str
+    temperature: float
+    timeout_s: float
+    max_retries: int
+    source: str
+
+
+class ModelsOverview(BaseModel):
+    key_configured: bool
+    key_name: str
+    allowed: dict[str, list[str]]
+    roles: list[ModelView]
+
+
+class ProbeView(BaseModel):
+    ok: bool
+    code: str | None = None
+
+
 class ApiClient:
     def __init__(
         self,
@@ -185,6 +221,26 @@ class ApiClient:
     def publish(self, recording_id: str) -> str:
         response = self._send("POST", f"/v1/recordings/{recording_id}/publish", auth=True)
         return str(response.json()["status"])
+
+    def me(self) -> MeView:
+        return MeView.model_validate(self._send("GET", "/v1/me", auth=True).json())
+
+    def model_settings(self) -> ModelsOverview:
+        return ModelsOverview.model_validate(self._send("GET", "/admin/models", auth=True).json())
+
+    def save_model_setting(self, role: str, params: ModelParamsSpec) -> ModelView:
+        response = self._send("PUT", f"/admin/models/{role}", auth=True, json=params.model_dump())
+        return ModelView.model_validate(response.json())
+
+    def reset_model_setting(self, role: str) -> ModelView:
+        response = self._send("DELETE", f"/admin/models/{role}", auth=True)
+        return ModelView.model_validate(response.json())
+
+    def probe_model_setting(self, role: str, params: ModelParamsSpec) -> ProbeView:
+        response = self._send(
+            "POST", f"/admin/models/{role}/test", auth=True, json=params.model_dump()
+        )
+        return ProbeView.model_validate(response.json())
 
     def _send(
         self,

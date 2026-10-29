@@ -142,3 +142,20 @@ class AuditLogRow(Base):
     trace_id: Mapped[str] = mapped_column(String(64))
     detail: Mapped[str | None] = mapped_column(String(200), default=None)
     at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class ModelSettingRow(Base):
+    """Admin-chosen model parameters per role. Never holds an API key."""
+
+    __tablename__ = "model_setting"
+
+    role: Mapped[str] = mapped_column(String(32), primary_key=True)
+    provider: Mapped[str] = mapped_column(String(32))
+    model: Mapped[str] = mapped_column(String(64))
+    temperature: Mapped[float] = mapped_column(Float)
+    timeout_s: Mapped[float] = mapped_column(Float)
+    max_retries: Mapped[int] = mapped_column(Integer)
+    updated_by: Mapped[str] = mapped_column(String(64))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, onupdate=_now
+    )
