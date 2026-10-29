@@ -21,6 +21,7 @@ from app.db.tables import Base
 from app.errors import ProviderError
 from app.fakes import FakeAudioStore, FakeTranscriber
 from app.ingest import IngestDeps, ingest_handler
+from app.model_registry import ModelRegistry
 from app.models.job import JobStatus
 from app.models.transcript import Segment
 from app.ports import Translator
@@ -136,8 +137,11 @@ def test_the_prompt_is_versioned_and_keeps_transcript_text_inside_data_tags():
 
 
 def test_no_model_key_means_no_translator_and_a_key_builds_one():
-    assert build_translator(Settings(_env_file=None)) is None
-    built = build_translator(Settings(_env_file=None, llm_api_key="not-a-real-key"))
+    registry = ModelRegistry(
+        lambda: session_scope(create_engine("sqlite://")), Settings(_env_file=None)
+    )
+    assert build_translator(Settings(_env_file=None), registry) is None
+    built = build_translator(Settings(_env_file=None, llm_api_key="not-a-real-key"), registry)
     assert isinstance(built, Translator)
 
 

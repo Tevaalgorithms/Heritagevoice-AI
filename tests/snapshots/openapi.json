@@ -257,6 +257,197 @@
         "title": "JobResponse",
         "type": "object"
       },
+      "Me": {
+        "properties": {
+          "communities": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Communities",
+            "type": "array"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "role",
+          "communities"
+        ],
+        "title": "Me",
+        "type": "object"
+      },
+      "ModelParams": {
+        "additionalProperties": false,
+        "description": "What an admin can set. Validated against the allow-list and sane ranges.",
+        "properties": {
+          "max_retries": {
+            "default": 2,
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Max Retries",
+            "type": "integer"
+          },
+          "model": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Model",
+            "type": "string"
+          },
+          "provider": {
+            "$ref": "#/components/schemas/Provider"
+          },
+          "temperature": {
+            "default": 0.0,
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Temperature",
+            "type": "number"
+          },
+          "timeout_s": {
+            "default": 30.0,
+            "maximum": 300.0,
+            "minimum": 5.0,
+            "title": "Timeout S",
+            "type": "number"
+          }
+        },
+        "required": [
+          "provider",
+          "model"
+        ],
+        "title": "ModelParams",
+        "type": "object"
+      },
+      "ModelRole": {
+        "description": "A job that calls a language model. Later segments add supervisor, verifier and answer.",
+        "enum": [
+          "translation"
+        ],
+        "title": "ModelRole",
+        "type": "string"
+      },
+      "ModelView": {
+        "properties": {
+          "max_retries": {
+            "title": "Max Retries",
+            "type": "integer"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/ModelRole"
+          },
+          "source": {
+            "enum": [
+              "database",
+              "default"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "temperature": {
+            "title": "Temperature",
+            "type": "number"
+          },
+          "timeout_s": {
+            "title": "Timeout S",
+            "type": "number"
+          }
+        },
+        "required": [
+          "role",
+          "provider",
+          "model",
+          "temperature",
+          "timeout_s",
+          "max_retries",
+          "source"
+        ],
+        "title": "ModelView",
+        "type": "object"
+      },
+      "ModelsOverview": {
+        "properties": {
+          "allowed": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "title": "Allowed",
+            "type": "object"
+          },
+          "key_configured": {
+            "title": "Key Configured",
+            "type": "boolean"
+          },
+          "key_name": {
+            "title": "Key Name",
+            "type": "string"
+          },
+          "roles": {
+            "items": {
+              "$ref": "#/components/schemas/ModelView"
+            },
+            "title": "Roles",
+            "type": "array"
+          }
+        },
+        "required": [
+          "key_configured",
+          "key_name",
+          "allowed",
+          "roles"
+        ],
+        "title": "ModelsOverview",
+        "type": "object"
+      },
+      "ProbeResult": {
+        "description": "Outcome of the Test button: a short safe code, never provider text or the key.",
+        "properties": {
+          "code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ok"
+        ],
+        "title": "ProbeResult",
+        "type": "object"
+      },
+      "Provider": {
+        "enum": [
+          "anthropic"
+        ],
+        "title": "Provider",
+        "type": "string"
+      },
       "PublishResult": {
         "properties": {
           "recording_id": {
@@ -868,6 +1059,190 @@
         ]
       }
     },
+    "/admin/models": {
+      "get": {
+        "operationId": "overview_admin_models_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelsOverview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Overview",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/models/{role}": {
+      "delete": {
+        "description": "Remove the saved setting so the environment default applies again.",
+        "operationId": "reset_admin_models__role__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "role",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ModelRole"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Reset",
+        "tags": [
+          "admin"
+        ]
+      },
+      "put": {
+        "operationId": "save_admin_models__role__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "role",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ModelRole"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModelParams"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Save",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/models/{role}/test": {
+      "post": {
+        "description": "Send one tiny request with these settings (costs a few tokens); nothing is saved.",
+        "operationId": "test_admin_models__role__test_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "role",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ModelRole"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModelParams"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProbeResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Test",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
     "/admin/users": {
       "post": {
         "operationId": "invite_user_admin_users_post",
@@ -1224,6 +1599,32 @@
         "summary": "Get Job",
         "tags": [
           "recordings"
+        ]
+      }
+    },
+    "/v1/me": {
+      "get": {
+        "operationId": "me_v1_me_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Me"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Me",
+        "tags": [
+          "me"
         ]
       }
     },
