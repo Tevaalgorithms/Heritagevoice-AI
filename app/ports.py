@@ -7,6 +7,7 @@ it inside the query, not after results are returned.
 from typing import Protocol, runtime_checkable
 
 from app.models.evidence import Evidence
+from app.models.llm import ModelParams, ProbeResult
 from app.models.transcript import Segment
 from app.security.permissions import Principal
 from app.security.roles import Role
@@ -62,3 +63,10 @@ class AudioStore(Protocol):
     def get(self, key: str) -> bytes: ...
 
     def delete(self, key: str) -> None: ...
+
+
+@runtime_checkable
+class ModelTester(Protocol):
+    """Checks that a model setting works with the configured key. Never returns the key."""
+
+    def check(self, params: ModelParams) -> ProbeResult: ...

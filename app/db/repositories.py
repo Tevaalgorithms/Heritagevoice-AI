@@ -11,12 +11,14 @@ from app.db.tables import (
     CommunityMemberRow,
     ConsentRow,
     JobRow,
+    ModelSettingRow,
     RecordingRow,
     ReviewDecisionRow,
     TranscriptVersionRow,
     TranslationVersionRow,
 )
 from app.models.job import Job, JobStatus
+from app.models.llm import ModelParams, ModelRole, ModelSetting, Provider
 from app.models.records import (
     Consent,
     Recording,
@@ -505,3 +507,46 @@ class ReviewDecisionRepository:
             )
             for r in self._session.scalars(query)
         ]
+
+
+def _to_setting(row: ModelSettingRow) -> ModelSetting:
+    return ModelSetting(
+        role=ModelRole(row.role),
+        provider=Provider(row.provider),
+        model=row.model,
+        temperature=row.temperature,
+        timeout_s=row.timeout_s,
+        max_retries=row.max_retries,
+    )
+
+
+class ModelSettingRepository:
+    def __init__(self, session: Session) -> None:
+        self._session = session
+
+    def get(self, role: ModelRole) -> ModelSetting | None:
+        row = self._session.get(ModelSettingRow, role.value)
+        return None if row is None else _to_setting(row)
+
+    def list_all(self) -> list[ModelSetting]:
+        return [_to_setting(r) for r in self._session.scalars(select(ModelSettingRow))]
+
+    def upsert(self, role: ModelRole, params: ModelParams, updated_by: str) -> ModelSetting:
+        values = {**params.model_dump(mode="json"), "updated_by": updated_by}
+        row = self._session.get(ModelSettingRow, role.value)
+        if row is None:
+            row = ModelSettingRow(role=role.value, **values)
+            self._session.add(row)
+        else:
+            for name, value in values.items():
+                setattr(row, name, value)
+        self._session.flush()
+        return _to_setting(row)
+
+    def delete(self, role: ModelRole) -> bool:
+        row = self._session.get(ModelSettingRow, role.value)
+        if row is None:
+            return False
+        self._session.delete(row)
+        self._session.flush()
+        return True

@@ -11,6 +11,7 @@ from app.config import Settings
 from app.db.session import session_scope
 from app.fakes import FakeTranscriber
 from app.ingest import IngestDeps, ingest_handler
+from app.model_registry import ModelRegistry
 from app.models.job import Job, Outcome
 from app.models.transcript import Segment
 from app.ports import Transcriber
@@ -41,5 +42,8 @@ def build_handlers(settings: Settings, engine: Engine) -> Mapping[str, Handler]:
     if transcriber is None:
         logger.warning("No speech service configured; ingestion jobs will fail with no_handler")
         return {}
-    deps = IngestDeps(lambda: session_scope(engine), transcriber, build_translator(settings))
+    registry = ModelRegistry(lambda: session_scope(engine), settings)
+    deps = IngestDeps(
+        lambda: session_scope(engine), transcriber, build_translator(settings, registry)
+    )
     return {INGEST_KIND: ingest_handler(deps)}

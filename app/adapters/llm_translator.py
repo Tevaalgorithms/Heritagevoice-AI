@@ -7,15 +7,18 @@ failure (`mt`), so the worker can retry or fall back to a transcript-only draft.
 
 import json
 import logging
+from collections.abc import Callable
 from typing import Any
 
 from langchain_anthropic import ChatAnthropic
 from langchain_core.runnables import Runnable
-from pydantic import BaseModel
+from pydantic import BaseModel, SecretStr
 
 from app.agents.prompts.translation import TRANSLATION_PROMPT
 from app.config import Settings
 from app.errors import ProviderError
+from app.model_registry import ModelRegistry
+from app.models.llm import ModelRole, ModelSetting
 from app.models.transcript import Segment
 from app.ports import Translator
 
@@ -76,17 +79,49 @@ def _validated(batch: list[Segment], result: Any) -> list[Segment]:
     return [s.model_copy(update={"text": r.text}) for s, r in zip(batch, returned, strict=True)]
 
 
-def build_translator(settings: Settings) -> Translator | None:
-    """None when no model key is configured: ingestion then stops at the draft transcript."""
-    if settings.llm_api_key is None:
-        return None
+ChainFactory = Callable[[ModelSetting, SecretStr], Runnable[dict[str, str], Any]]
+
+
+def build_chain(setting: ModelSetting, api_key: SecretStr) -> Runnable[dict[str, str], Any]:
     options: dict[str, Any] = {
-        "model": settings.llm_model,
-        "api_key": settings.llm_api_key,
-        "timeout": settings.llm_timeout_s,
-        "max_retries": settings.llm_max_retries,
-        "temperature": 0,
+        "model": setting.model,
+        "api_key": api_key,
+        "timeout": setting.timeout_s,
+        "max_retries": setting.max_retries,
+        "temperature": setting.temperature,
     }
     model = ChatAnthropic(**options)
     structured = model.with_structured_output(TranslationBatch, method="json_schema")
-    return LangChainTranslator(TRANSLATION_PROMPT | structured)
+    return TRANSLATION_PROMPT | structured
+
+
+class ConfiguredTranslator:
+    """Follows the registry: each call uses the model setting in force at that moment."""
+
+    def __init__(
+        self,
+        registry: ModelRegistry,
+        api_key: SecretStr,
+        chain_factory: ChainFactory = build_chain,
+    ) -> None:
+        self._registry = registry
+        self._api_key = api_key
+        self._chain_factory = chain_factory
+        self._built: dict[ModelSetting, LangChainTranslator] = {}
+
+    def translate(self, segments: list[Segment], target_language: str) -> list[Segment]:
+        return self._translator(self._registry.get(ModelRole.TRANSLATION)).translate(
+            segments, target_language
+        )
+
+    def _translator(self, setting: ModelSetting) -> LangChainTranslator:
+        if setting not in self._built:
+            self._built[setting] = LangChainTranslator(self._chain_factory(setting, self._api_key))
+        return self._built[setting]
+
+
+def build_translator(settings: Settings, registry: ModelRegistry) -> Translator | None:
+    """None when no model key is configured: ingestion then stops at the draft transcript."""
+    if settings.llm_api_key is None:
+        return None
+    return ConfiguredTranslator(registry, settings.llm_api_key)

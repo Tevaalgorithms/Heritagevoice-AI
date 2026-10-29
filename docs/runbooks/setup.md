@@ -84,6 +84,21 @@ machine's AWS config). Its IAM role needs `transcribe:StartTranscriptionJob`,
 KMS key. Provider failures are retried up to three times, then the job fails with a safe code
 (`asr`). Consent withdrawn after upload fails the job at once with `consent`.
 
+## Choosing the language model (admin Settings page)
+
+Admins pick the model and parameters for each job (today: translation) on the **Settings** page,
+or with `GET/PUT/DELETE /admin/models/{role}`. Choices come from a fixed list in
+`app/models/llm.py` (`ALLOWED_MODELS`); to offer a new model, add it there and release. A saved
+setting applies within about a minute without a redeploy; with nothing saved, the server
+defaults (`HERITAGEVOICE_LLM_MODEL` and friends) apply. The **Test** button sends one tiny
+request (a few tokens) with the form values and saves nothing.
+
+**API keys are never entered, shown or stored through the app.** Put the key in AWS Systems
+Manager Parameter Store as a SecureString named `HERITAGEVOICE_LLM_API_KEY` under the
+environment's parameter path (see `deploy/render-config.sh`); it reaches the app as an
+environment variable. Locally, set it in `.env`. The Settings page only says whether a key is
+configured. Without a key, ingestion stops at the draft transcript (no translation).
+
 ## Sign-in and roles (Amazon Cognito)
 
 Local runs need none of this: with `HERITAGEVOICE_ENVIRONMENT=local` the dev token signs you in

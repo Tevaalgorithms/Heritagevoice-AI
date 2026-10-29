@@ -1,4 +1,5 @@
 import logging
+from uuid import uuid4
 
 from fastapi.testclient import TestClient
 
@@ -54,3 +55,11 @@ def test_ready_reports_a_failed_dependency_without_leaking_details(monkeypatch):
     assert response.status_code == 503
     assert response.json()["checks"]["postgres"] == "failed"
     assert marker not in response.text
+
+
+def test_validation_errors_never_echo_the_submitted_values():
+    submitted = uuid4().hex
+    body = {"api_key": submitted, "model": submitted}
+    response = client.put("/admin/models/translation", json=body)
+    assert response.status_code in {401, 403, 422, 503}
+    assert submitted not in response.text
