@@ -47,7 +47,7 @@ def test_graph_traversal_respects_hop_limit_and_principal(principal, evidence):
     near = evidence.model_copy(update={"graph_paths": (("e1", "e2"),)})
     far = evidence.model_copy(update={"evidence_id": "ev-9", "graph_paths": (("a", "b", "c"),)})
     store = FakeGraphStore([near, far])
-    assert [h.evidence_id for h in store.traverse("q", principal, max_hops=2)] == ["ev-1"]
+    assert [h.evidence_id for h in store.traverse("synthetic", principal, max_hops=2)] == ["ev-1"]
 
 
 def test_translator_keeps_segment_ids_and_timing():

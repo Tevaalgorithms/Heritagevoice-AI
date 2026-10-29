@@ -5,6 +5,8 @@ Authorization comes from the captured trusted principal, never from model output
 The API does not expose this graph until identity, ownership and adapters are ready.
 """
 
+from collections.abc import Callable
+from dataclasses import dataclass
 from functools import partial
 from typing import Any, Protocol
 
@@ -22,6 +24,31 @@ class Node(Protocol):
     """A graph node; the parameter name matches what LangGraph expects."""
 
     def __call__(self, state: WorkflowState) -> StateUpdate: ...
+
+
+Retriever = Callable[[WorkflowState, Principal], StateUpdate]
+
+
+@dataclass(frozen=True)
+class Agents:
+    """The model-backed steps. Tests and the skeleton inject fakes; production injects real ones."""
+
+    classify: Node
+    hybrid: Retriever
+    graph: Retriever
+    verify: Node
+    answer: Node
+
+
+def default_agents() -> Agents:
+    """Resolve the agent modules at call time so tests can monkeypatch them."""
+    return Agents(
+        classify=supervisor.classify,
+        hybrid=hybrid_rag.retrieve,
+        graph=graph_rag.retrieve,
+        verify=verifier.verify,
+        answer=answer_agent.synthesize,
+    )
 
 
 SUPERVISOR_ROUTES = {
@@ -43,12 +70,10 @@ def _authorized(result: StateUpdate, key: str, principal: Principal) -> StateUpd
     return result
 
 
-def run_hybrid(state: WorkflowState, principal: Principal) -> StateUpdate:
-    return _authorized(hybrid_rag.retrieve(state, principal), "hybrid_evidence", principal)
-
-
-def run_graph(state: WorkflowState, principal: Principal) -> StateUpdate:
-    return _authorized(graph_rag.retrieve(state, principal), "graph_evidence", principal)
+def run_retrieval(
+    state: WorkflowState, principal: Principal, retrieve: Retriever, key: str
+) -> StateUpdate:
+    return _authorized(retrieve(state, principal), key, principal)
 
 
 def run_merge(state: WorkflowState, principal: Principal) -> StateUpdate:
@@ -68,14 +93,16 @@ def route_after_hybrid(state: WorkflowState) -> str:
     return "graph" if state["route"] == Route.BOTH else "merge"
 
 
-def _nodes(principal: Principal) -> dict[str, Node]:
+def _nodes(principal: Principal, agents: Agents) -> dict[str, Node]:
+    hybrid = partial(run_retrieval, principal=principal, retrieve=agents.hybrid)
+    graph = partial(run_retrieval, principal=principal, retrieve=agents.graph)
     return {
-        "supervisor": supervisor.classify,
-        "hybrid": partial(run_hybrid, principal=principal),
-        "graph": partial(run_graph, principal=principal),
+        "supervisor": agents.classify,
+        "hybrid": partial(hybrid, key="hybrid_evidence"),
+        "graph": partial(graph, key="graph_evidence"),
         "merge": partial(run_merge, principal=principal),
-        "verify": verifier.verify,
-        "answer": answer_agent.synthesize,
+        "verify": agents.verify,
+        "answer": agents.answer,
         "stop": run_stop,
     }
 
@@ -91,10 +118,12 @@ def _wire(builder: StateGraph[WorkflowState]) -> None:
 
 
 def build_workflow(
-    principal: Principal, checkpointer: BaseCheckpointSaver[Any] | None = None
+    principal: Principal,
+    checkpointer: BaseCheckpointSaver[Any] | None = None,
+    agents: Agents | None = None,
 ) -> CompiledStateGraph[WorkflowState]:
     builder = StateGraph(WorkflowState)
-    for name, node in _nodes(principal).items():
+    for name, node in _nodes(principal, agents or default_agents()).items():
         builder.add_node(name, node)
     _wire(builder)
     return builder.compile(checkpointer=checkpointer)

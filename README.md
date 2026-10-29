@@ -135,6 +135,10 @@ docker compose --profile infrastructure down
 
 These services are not connected to the query endpoint yet. Volumes retain data across restarts; `down -v` deletes that data. Before release, pin tested image versions and verify readiness for every required service.
 
+### Walking skeleton
+
+`uv run python -m app.skeleton` runs one fixture through upload, draft, approval, indexing and a question using only in-memory fakes, then prints the cited answer. `tests/test_skeleton.py` asserts that drafts, revoked items and restricted items never reach an answer. Real adapters replace the fakes one at a time behind `app/ports.py`.
+
 ## API alignment
 
 Current application routes are `GET /health`, `GET /ready`, and `POST /query`. The planned contract is:

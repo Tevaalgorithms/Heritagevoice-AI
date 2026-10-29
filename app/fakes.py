@@ -1,12 +1,21 @@
 """In-memory ports for tests and the walking skeleton. No network, deterministic output."""
 
-from app.models.evidence import Evidence
+import re
+
+from app.graph.state import StateUpdate, WorkflowState
+from app.graph.workflow import Agents
+from app.models.evidence import Claim, Evidence, Route
 from app.models.transcript import Segment
+from app.ports import GraphStore, VectorStore
 from app.security.permissions import Principal, can_read
 
 
+def _words(text: str) -> set[str]:
+    return set(re.findall(r"\w+", text.lower()))
+
+
 def _matches(query: str, item: Evidence) -> bool:
-    return any(word in item.passage.lower() for word in query.lower().split())
+    return bool(_words(query) & _words(item.passage))
 
 
 class FakeVectorStore:
@@ -29,8 +38,18 @@ class FakeGraphStore:
     def __init__(self, items: list[Evidence] | None = None) -> None:
         self._items = items or []
 
+    def add(self, items: list[Evidence]) -> None:
+        self._items.extend(items)
+
+    def delete(self, evidence_ids: list[str]) -> None:
+        self._items = [i for i in self._items if i.evidence_id not in evidence_ids]
+
     def traverse(self, query: str, principal: Principal, max_hops: int = 2) -> list[Evidence]:
-        return [i for i in self._items if can_read(principal, i) and _within(i, max_hops)]
+        return [i for i in self._items if _visible(i, query, principal, max_hops)]
+
+
+def _visible(item: Evidence, query: str, principal: Principal, max_hops: int) -> bool:
+    return can_read(principal, item) and _matches(query, item) and _within(item, max_hops)
 
 
 def _within(item: Evidence, max_hops: int) -> bool:
@@ -48,3 +67,52 @@ class FakeTranscriber:
 class FakeTranslator:
     def translate(self, segments: list[Segment], target_language: str) -> list[Segment]:
         return [s.model_copy(update={"text": f"[{target_language}] {s.text}"}) for s in segments]
+
+
+def fake_verify(state: WorkflowState) -> StateUpdate:
+    """Every retrieved passage supports a claim made of its own text."""
+    evidence = state.get("evidence", [])
+    claims = [
+        Claim(text=e.passage, evidence_ids=[e.evidence_id], verdict="supported") for e in evidence
+    ]
+    return {"claims": claims}
+
+
+def _abstain() -> StateUpdate:
+    answer = "Not enough approved evidence."
+    return {"status": "insufficient_evidence", "answer": answer, "citations": []}
+
+
+def _cited(claim: Claim) -> str:
+    return f"{claim.text} [{claim.evidence_ids[0]}]"
+
+
+def _supported(state: WorkflowState) -> list[Claim]:
+    return [c for c in state.get("claims", []) if c.verdict == "supported"]
+
+
+def _citations(state: WorkflowState, claims: list[Claim]) -> list[Evidence]:
+    by_id = {e.evidence_id: e for e in state.get("evidence", [])}
+    return [by_id[c.evidence_ids[0]] for c in claims]
+
+
+def fake_answer(state: WorkflowState) -> StateUpdate:
+    """Quote supported claims with their citation markers; abstain when there are none."""
+    claims = _supported(state)
+    if not claims:
+        return _abstain()
+    text = " ".join(_cited(c) for c in claims)
+    return {"status": "answered", "answer": text, "citations": _citations(state, claims)}
+
+
+def fake_agents(vector: VectorStore, graph: GraphStore, route: Route = Route.BOTH) -> Agents:
+    def classify(state: WorkflowState) -> StateUpdate:
+        return {"route": route}
+
+    def hybrid(state: WorkflowState, principal: Principal) -> StateUpdate:
+        return {"hybrid_evidence": vector.search(state["question"], principal)}
+
+    def graph_branch(state: WorkflowState, principal: Principal) -> StateUpdate:
+        return {"graph_evidence": graph.traverse(state["question"], principal)}
+
+    return Agents(classify, hybrid, graph_branch, fake_verify, fake_answer)
