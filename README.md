@@ -210,6 +210,9 @@ frontend/         Streamlit interface
 ingestion/        Ingestion contract; processing implementation pending
 data/             Local sources and generated indexes; content ignored
 evals/            Evaluation guidance and future reports
+docs/architecture/ Design decisions and MVP deployment resources
+docs/planning/    Work-in-progress build plan (TODO.md)
+docs/runbooks/    Operating procedures
 tests/            Scaffold API, workflow, and invariant tests
 ```
 
