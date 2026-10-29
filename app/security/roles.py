@@ -11,6 +11,7 @@ class Role(StrEnum):
 
 class Action(StrEnum):
     RECORDING_UPLOAD = "recording:upload"
+    RECORDING_VIEW = "recording:view"
     QUERY_ASK = "query:ask"
     MEDIA_PLAY = "media:play"
     DRAFT_EDIT = "draft:edit"
@@ -28,6 +29,7 @@ class Rank(IntEnum):
 
 ROLE_PERMISSIONS: dict[Action, frozenset[Role]] = {
     Action.RECORDING_UPLOAD: frozenset({Role.MEMBER, Role.REVIEWER}),
+    Action.RECORDING_VIEW: frozenset({Role.MEMBER, Role.REVIEWER}),
     Action.QUERY_ASK: frozenset({Role.MEMBER, Role.REVIEWER, Role.ADMIN}),
     Action.MEDIA_PLAY: frozenset({Role.MEMBER, Role.REVIEWER, Role.ADMIN}),
     Action.DRAFT_EDIT: frozenset({Role.MEMBER, Role.REVIEWER}),
@@ -38,8 +40,16 @@ ROLE_PERMISSIONS: dict[Action, frozenset[Role]] = {
 }
 # Actions that touch community content and so need community membership (admin actions do not).
 COMMUNITY_SCOPED = frozenset(
-    {Action.RECORDING_UPLOAD, Action.MEDIA_PLAY, Action.DRAFT_EDIT, Action.REVIEW_APPROVE}
+    {
+        Action.RECORDING_UPLOAD,
+        Action.RECORDING_VIEW,
+        Action.MEDIA_PLAY,
+        Action.DRAFT_EDIT,
+        Action.REVIEW_APPROVE,
+    }
 )
+# Members act only on their own items; reviewers act across their communities.
+OWNED_ONLY = frozenset({Action.DRAFT_EDIT, Action.RECORDING_VIEW})
 # Asking a question is not tied to one community: the user needs at least one, and evidence is
 # filtered by membership during retrieval.
 ANY_COMMUNITY = frozenset({Action.QUERY_ASK})

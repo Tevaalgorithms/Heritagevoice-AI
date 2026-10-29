@@ -1,5 +1,7 @@
 """Environment configuration; never expose SecretStr values in responses."""
 
+from typing import Literal
+
 from pydantic import AliasChoices, Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -14,6 +16,12 @@ class Settings(BaseSettings):
     api_url: str = "http://127.0.0.1:8000"
     database_url: SecretStr | None = None
     audio_bucket: str | None = None
+    audio_kms_key_id: str | None = None
+    audio_local_dir: str | None = None
+    max_audio_mb: int = Field(default=200, gt=0)
+    max_audio_minutes: int = Field(default=120, gt=0)
+    allowed_languages: str = "ta,en"
+    asr_provider: Literal["transcribe", "fake"] = "transcribe"
     cognito_region: str | None = None
     cognito_user_pool_id: str | None = None
     cognito_app_client_id: str | None = None

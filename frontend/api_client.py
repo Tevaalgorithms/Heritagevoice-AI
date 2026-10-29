@@ -23,9 +23,10 @@ class ApiNotReadyError(ApiError):
 
 
 class ApiRequestError(ApiError):
-    def __init__(self, status_code: int) -> None:
+    def __init__(self, status_code: int, code: str | None = None) -> None:
         super().__init__(f"The API rejected the request ({status_code})")
         self.status_code = status_code
+        self.code = code
 
 
 class Health(BaseModel):
@@ -42,6 +43,50 @@ class QueryResult(BaseModel):
     status: str
     answer: str = ""
     request_id: str = ""
+
+
+class UploadSpec(BaseModel):
+    data: bytes
+    language: str
+    community_id: str
+    consent_id: str
+
+
+class UploadResult(BaseModel):
+    recording_id: str
+    job_id: str
+
+
+class JobView(BaseModel):
+    job_id: str
+    status: str
+    stage: str | None = None
+    error: str | None = None
+    recording_id: str | None = None
+
+
+class SegmentView(BaseModel):
+    segment_id: str
+    start_s: float
+    end_s: float
+    text: str
+    speaker: str | None = None
+
+
+class VersionView(BaseModel):
+    version: int
+    status: str
+    segments: list[SegmentView]
+
+
+class RecordingView(BaseModel):
+    id: str
+    community_id: str
+    language: str
+    status: str
+    duration_s: float | None = None
+    transcript: VersionView | None = None
+    translation: VersionView | None = None
 
 
 class ApiClient:
@@ -71,6 +116,30 @@ class ApiClient:
         response = self._send("POST", "/query", json={"question": question}, auth=True)
         return QueryResult.model_validate(response.json())
 
+    def upload_recording(self, spec: UploadSpec, idempotency_key: str) -> UploadResult:
+        """Send the audio under a generic file name; the original name is never uploaded."""
+        form = {
+            "language": spec.language,
+            "community_id": spec.community_id,
+            "consent_id": spec.consent_id,
+        }
+        response = self._send(
+            "POST",
+            "/v1/recordings",
+            auth=True,
+            data=form,
+            files={"file": ("recording", spec.data, "application/octet-stream")},
+            headers={"Idempotency-Key": idempotency_key},
+        )
+        return UploadResult.model_validate(response.json())
+
+    def get_job(self, job_id: str) -> JobView:
+        return JobView.model_validate(self._send("GET", f"/v1/jobs/{job_id}", auth=True).json())
+
+    def get_recording(self, recording_id: str) -> RecordingView:
+        response = self._send("GET", f"/v1/recordings/{recording_id}", auth=True)
+        return RecordingView.model_validate(response.json())
+
     def _send(
         self,
         method: str,
@@ -79,7 +148,9 @@ class ApiClient:
         accept_not_ready: bool = False,
         **kwargs: object,
     ) -> httpx.Response:
+        extra = kwargs.pop("headers", None)
         headers = {"Authorization": f"Bearer {self._token}"} if auth else {}
+        headers.update(extra or {})  # type: ignore[arg-type]
         try:
             response = self._http.request(method, path, headers=headers, **kwargs)  # type: ignore[arg-type]
         except httpx.RequestError as error:
@@ -94,4 +165,12 @@ def _checked(response: httpx.Response, accept_not_ready: bool) -> httpx.Response
         if accept_not_ready:
             return response
         raise ApiNotReadyError(response.url.path)
-    raise ApiRequestError(response.status_code)
+    raise ApiRequestError(response.status_code, _error_code(response))
+
+
+def _error_code(response: httpx.Response) -> str | None:
+    try:
+        detail = response.json().get("detail")
+    except ValueError:
+        return None
+    return detail.get("code") if isinstance(detail, dict) else None

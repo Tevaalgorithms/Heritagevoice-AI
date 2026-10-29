@@ -57,6 +57,32 @@ curl -i http://127.0.0.1:8000/ready       # 200 when PostgreSQL is reachable, ot
 - The UI is at <http://127.0.0.1:8501>; the sidebar shows the API status. Upload and Review are
   placeholders until segments 03 and 04. `/query` stays closed (503) until the agents are built.
 
+## Uploading and transcribing a recording
+
+1. For local development set `HERITAGEVOICE_AUDIO_LOCAL_DIR` to a folder inside `data/` (it is
+   git-ignored) and `HERITAGEVOICE_ASR_PROVIDER=fake`, which makes the worker produce a short
+   canned draft instead of calling a speech service. The fake is refused outside the local
+   environment.
+2. An upload needs a **consent record** for the community. There is no endpoint for creating
+   consents yet; until one exists, insert one with a script (see `tests/helpers.py::consent`).
+3. Upload in the UI (Upload page) or with curl; the same `Idempotency-Key` returns the same result:
+
+   ```sh
+   curl -X POST http://127.0.0.1:8000/v1/recordings \
+     -H "Authorization: Bearer $HERITAGEVOICE_DEV_API_TOKEN" -H "Idempotency-Key: my-key-0001" \
+     -F language=ta -F community_id=dev -F consent_id=consent-1 -F file=@recording.wav
+   ```
+
+4. Run the worker (`uv run python -m app.worker`); poll `GET /v1/jobs/{job_id}`. A finished job
+   is `review`: the draft transcript is visible at `GET /v1/recordings/{id}` but stays out of
+   search until a reviewer approves it (segment 04).
+
+Deployed, the worker uses Amazon Transcribe (Tamil `ta-IN`, English `en-US`) on the audio already
+in the private bucket. Its IAM role needs `transcribe:StartTranscriptionJob`,
+`GetTranscriptionJob` and `DeleteTranscriptionJob`, read and write on the bucket, and use of the
+KMS key. Provider failures are retried up to three times, then the job fails with a safe code
+(`asr`). Consent withdrawn after upload fails the job at once with `consent`.
+
 ## Sign-in and roles (Amazon Cognito)
 
 Local runs need none of this: with `HERITAGEVOICE_ENVIRONMENT=local` the dev token signs you in

@@ -22,6 +22,9 @@ class JobRow(Base):
     kind: Mapped[str] = mapped_column(String(64))
     status: Mapped[str] = mapped_column(String(16), index=True)
     error: Mapped[str | None] = mapped_column(String(64), default=None)
+    stage: Mapped[str | None] = mapped_column(String(32), default=None)
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    recording_id: Mapped[str | None] = mapped_column(String(64), default=None)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_now, onupdate=_now
@@ -40,6 +43,7 @@ class ConsentRow(Base):
 
 class RecordingRow(Base):
     __tablename__ = "recording"
+    __table_args__ = (UniqueConstraint("uploader_id", "idempotency_key"),)
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
     community_id: Mapped[str] = mapped_column(String(64), index=True)
@@ -47,6 +51,11 @@ class RecordingRow(Base):
     language: Mapped[str] = mapped_column(String(16))
     consent_id: Mapped[str] = mapped_column(ForeignKey("consent.id"))
     status: Mapped[str] = mapped_column(String(16), index=True)
+    audio_key: Mapped[str | None] = mapped_column(String(256), default=None)
+    content_type: Mapped[str | None] = mapped_column(String(64), default=None)
+    size_bytes: Mapped[int | None] = mapped_column(Integer, default=None)
+    duration_s: Mapped[float | None] = mapped_column(Float, default=None)
+    idempotency_key: Mapped[str | None] = mapped_column(String(64), default=None)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 

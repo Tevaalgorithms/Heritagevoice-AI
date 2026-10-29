@@ -37,7 +37,7 @@ def main() -> None:
     st.sidebar.title("HeritageVoice AI")
     show_status(client)
     pages = [
-        st.Page(upload.render, title="Upload", icon="🎙️", url_path="upload"),
+        st.Page(lambda: upload.render(client), title="Upload", icon="🎙️", url_path="upload"),
         st.Page(review.render, title="Review", icon="✅", url_path="review"),
         st.Page(lambda: ask.render(client), title="Ask", icon="💬", url_path="ask", default=True),
     ]

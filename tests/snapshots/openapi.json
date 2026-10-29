@@ -61,6 +61,60 @@
         "title": "InviteRequest",
         "type": "object"
       },
+      "JobResponse": {
+        "properties": {
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "job_id": {
+            "title": "Job Id",
+            "type": "string"
+          },
+          "recording_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recording Id"
+          },
+          "stage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stage"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "job_id",
+          "status",
+          "stage",
+          "error",
+          "recording_id"
+        ],
+        "title": "JobResponse",
+        "type": "object"
+      },
       "QueryRequest": {
         "additionalProperties": false,
         "properties": {
@@ -88,6 +142,68 @@
         "title": "QueryRequest",
         "type": "object"
       },
+      "RecordingResponse": {
+        "properties": {
+          "community_id": {
+            "title": "Community Id",
+            "type": "string"
+          },
+          "duration_s": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration S"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "transcript": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VersionView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "translation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VersionView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "community_id",
+          "language",
+          "status",
+          "duration_s",
+          "transcript",
+          "translation"
+        ],
+        "title": "RecordingResponse",
+        "type": "object"
+      },
       "Role": {
         "enum": [
           "member",
@@ -108,6 +224,100 @@
           "role"
         ],
         "title": "RoleRequest",
+        "type": "object"
+      },
+      "Segment": {
+        "additionalProperties": false,
+        "properties": {
+          "end_s": {
+            "minimum": 0.0,
+            "title": "End S",
+            "type": "number"
+          },
+          "segment_id": {
+            "minLength": 1,
+            "title": "Segment Id",
+            "type": "string"
+          },
+          "speaker": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Speaker"
+          },
+          "start_s": {
+            "minimum": 0.0,
+            "title": "Start S",
+            "type": "number"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "segment_id",
+          "start_s",
+          "end_s",
+          "text"
+        ],
+        "title": "Segment",
+        "type": "object"
+      },
+      "UploadForm": {
+        "additionalProperties": false,
+        "properties": {
+          "community_id": {
+            "pattern": "^[A-Za-z0-9_-]{1,64}$",
+            "title": "Community Id",
+            "type": "string"
+          },
+          "consent_id": {
+            "pattern": "^[A-Za-z0-9_-]{1,64}$",
+            "title": "Consent Id",
+            "type": "string"
+          },
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          },
+          "language": {
+            "pattern": "^[a-z]{2,8}$",
+            "title": "Language",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file",
+          "language",
+          "community_id",
+          "consent_id"
+        ],
+        "title": "UploadForm",
+        "type": "object"
+      },
+      "UploadResponse": {
+        "properties": {
+          "job_id": {
+            "title": "Job Id",
+            "type": "string"
+          },
+          "recording_id": {
+            "title": "Recording Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "recording_id",
+          "job_id"
+        ],
+        "title": "UploadResponse",
         "type": "object"
       },
       "ValidationError": {
@@ -148,6 +358,32 @@
           "type"
         ],
         "title": "ValidationError",
+        "type": "object"
+      },
+      "VersionView": {
+        "properties": {
+          "segments": {
+            "items": {
+              "$ref": "#/components/schemas/Segment"
+            },
+            "title": "Segments",
+            "type": "array"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "status",
+          "segments"
+        ],
+        "title": "VersionView",
         "type": "object"
       }
     },
@@ -473,6 +709,160 @@
           }
         },
         "summary": "Ready"
+      }
+    },
+    "/v1/jobs/{job_id}": {
+      "get": {
+        "operationId": "get_job_v1_jobs__job_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "title": "Job Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Job",
+        "tags": [
+          "recordings"
+        ]
+      }
+    },
+    "/v1/recordings": {
+      "post": {
+        "operationId": "upload_recording_v1_recordings_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{8,64}$",
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadForm"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Upload Recording",
+        "tags": [
+          "recordings"
+        ]
+      }
+    },
+    "/v1/recordings/{recording_id}": {
+      "get": {
+        "operationId": "get_recording_v1_recordings__recording_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recording_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "title": "Recording Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordingResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Recording",
+        "tags": [
+          "recordings"
+        ]
       }
     }
   }

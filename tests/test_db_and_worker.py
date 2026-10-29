@@ -11,8 +11,8 @@ from app.db.repositories import JobRepository
 from app.db.session import session_scope
 from app.db.tables import Base
 from app.errors import ProviderError
-from app.models.job import JobStatus
-from app.worker import drain, process_next
+from app.models.job import JobStatus, Outcome
+from app.worker import MAX_ATTEMPTS, drain, process_next
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -55,32 +55,62 @@ def _create_then_fail(engine):
 
 def test_worker_runs_the_registered_handler(engine):
     with session_scope(engine) as session:
-        repo = JobRepository(session)
-        repo.create("j1", "transcribe")
-        assert process_next(repo, {"transcribe": lambda job: JobStatus.REVIEW})
-        assert repo.get("j1").status == JobStatus.REVIEW
-        assert not process_next(repo, {})
+        JobRepository(session).create("j1", "transcribe")
+    handlers = {"transcribe": lambda job: Outcome(status=JobStatus.REVIEW)}
+    assert process_next(engine, handlers)
+    assert not process_next(engine, handlers)
+    assert job_state(engine, "j1") == (JobStatus.REVIEW, None, 1)
+
+
+def job_state(engine, job_id):
+    with session_scope(engine) as session:
+        job = JobRepository(session).get(job_id)
+    return job.status, job.error, job.attempts
 
 
 def test_worker_fails_jobs_without_a_handler(engine):
     with session_scope(engine) as session:
-        repo = JobRepository(session)
-        repo.create("j1", "mystery")
-        process_next(repo, {})
-        job = repo.get("j1")
-    assert (job.status, job.error) == (JobStatus.FAILED, "no_handler")
+        JobRepository(session).create("j1", "mystery")
+    process_next(engine, {})
+    assert job_state(engine, "j1") == (JobStatus.FAILED, "no_handler", 1)
 
 
-def test_worker_turns_provider_errors_into_a_safe_code(engine):
+def test_provider_errors_are_retried_a_bounded_number_of_times(engine):
     def broken(job):
-        raise ProviderError("secret detail")
+        raise ProviderError("secret detail", code="asr")
 
     with session_scope(engine) as session:
-        repo = JobRepository(session)
-        repo.create("j1", "k")
-        process_next(repo, {"k": broken})
-        job = repo.get("j1")
-    assert (job.status, job.error) == (JobStatus.FAILED, "provider")
+        JobRepository(session).create("j1", "k")
+    states = []
+    for _ in range(MAX_ATTEMPTS):
+        process_next(engine, {"k": broken})
+        states.append(job_state(engine, "j1"))
+    assert [s[0] for s in states] == [JobStatus.QUEUED] * (MAX_ATTEMPTS - 1) + [JobStatus.FAILED]
+    assert states[-1] == (JobStatus.FAILED, "asr", MAX_ATTEMPTS)
+    assert not process_next(engine, {"k": broken})
+
+
+def test_an_unexpected_crash_fails_the_job_instead_of_killing_the_worker(engine):
+    def crash(job):
+        raise RuntimeError("bug with private detail")
+
+    with session_scope(engine) as session:
+        JobRepository(session).create("j1", "k")
+    assert process_next(engine, {"k": crash})
+    assert job_state(engine, "j1") == (JobStatus.FAILED, "internal", 1)
+
+
+def test_a_handler_can_update_progress_while_its_job_is_claimed(engine):
+    def handler(job):
+        with session_scope(engine) as session:
+            JobRepository(session).set_stage(job.id, "transcribing")
+        return Outcome(status=JobStatus.REVIEW)
+
+    with session_scope(engine) as session:
+        JobRepository(session).create("j1", "k")
+    process_next(engine, {"k": handler})
+    with session_scope(engine) as session:
+        assert JobRepository(session).get("j1").stage == "transcribing"
 
 
 def test_drain_once_exits_when_the_queue_is_empty(engine):

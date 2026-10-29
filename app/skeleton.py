@@ -47,13 +47,16 @@ class Skeleton:
         self.agents: Agents = fake_agents(self.vector, self.graph)
 
     def ingest(
-        self, recording_id: str, audio: bytes = b"fixture-audio", consent: Consent = FULL_CONSENT
+        self,
+        recording_id: str,
+        audio_key: str = "fixture/audio",
+        consent: Consent = FULL_CONSENT,
     ) -> PreservationState:
         graph = build_preservation_graph(self.transcriber, FakeTranslator())
         state: PreservationState = {
             "recording_id": recording_id,
             "consent": consent,
-            "audio": audio,
+            "audio_key": audio_key,
             "language": "ta",
         }
         return cast(PreservationState, graph.invoke(state))
