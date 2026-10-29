@@ -1,8 +1,11 @@
 """Graph state excludes client-controlled authorization claims."""
 
-from typing import TypedDict
+from typing import Any, TypedDict
 
 from app.models.evidence import Claim, Evidence, Route
+
+StateUpdate = dict[str, Any]
+"""A partial state returned by a graph node."""
 
 
 class WorkflowState(TypedDict, total=False):

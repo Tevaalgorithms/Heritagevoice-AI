@@ -1,13 +1,13 @@
 import pytest
 
 from app.agents import answer_agent, graph_rag, hybrid_rag, supervisor, verifier
-from app.config import IntegrationNotConfigured
+from app.config import IntegrationNotConfiguredError
 from app.graph.workflow import build_workflow
 from app.models.evidence import Route
 
 
 def test_default_graph_cannot_fabricate_an_answer(principal):
-    with pytest.raises(IntegrationNotConfigured):
+    with pytest.raises(IntegrationNotConfiguredError):
         build_workflow(principal).invoke({"question": "Who?"})
 
 

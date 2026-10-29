@@ -12,6 +12,8 @@ jobs:
       - run: uv lock --check
       - run: uv run ruff check .
       - run: uv run ruff format --check .
+      - run: uv run mypy
+      - run: uv run xenon --max-absolute A --max-modules A --max-average A app ingestion frontend
       - run: uv run pytest
       - run: |
           uv export --locked --no-header --no-dev --format requirements-txt --output-file /tmp/requirements.txt

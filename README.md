@@ -47,7 +47,7 @@ Trusted identity → Supervisor → Hybrid RAG and/or GraphRAG
                  → final permission and citation checks → response
 ```
 
-The current LangGraph scaffold captures a trusted `Principal` outside model-written state. Combined retrieval runs sequentially initially. Unconfigured adapters raise `IntegrationNotConfigured`; they do not fabricate evidence. Final citation validation and the live agent integrations remain pending.
+The current LangGraph scaffold captures a trusted `Principal` outside model-written state. Combined retrieval runs sequentially initially. Unconfigured adapters raise `IntegrationNotConfiguredError`; they do not fabricate evidence. Final citation validation and the live agent integrations remain pending.
 
 ### Technology baseline
 
@@ -57,13 +57,13 @@ The current LangGraph scaffold captures a trusted `Principal` outside model-writ
 | Frontend | Streamlit | Chat shell implemented |
 | Orchestration | LangGraph | Workflow topology implemented |
 | Lexical retrieval | BM25 adapter with rank-bm25 dependency | Adapter pending |
-| Vector retrieval | Qdrant | Proposed service; adapter pending |
-| Knowledge graph | Neo4j | Proposed service; adapter pending |
+| Vector retrieval | Pinecone (serverless, one namespace per community) | Managed service; adapter pending |
+| Knowledge graph | Neo4j (AuraDB hosted, local container for development) | Adapter pending |
 | Durable checkpoints | PostgreSQL | Proposed service; adapter pending |
 | Tracing | LangSmith | Full tracing and redaction integration pending |
-| Dependencies and checks | uv, pytest, Ruff, GitHub Actions | Configured |
+| Dependencies and checks | uv, pytest, Ruff (complexity limit 5), mypy strict, xenon, GitHub Actions | Configured |
 
-The development document also describes a consolidated PostgreSQL and pgvector option. Resolve this storage choice before implementing indexes and graph persistence, then update both references together. The current Compose PostgreSQL image does not supply pgvector.
+Storage decision: PostgreSQL is the source of truth for records, consent, review state and lexical search. Pinecone and Neo4j hold rebuildable projections of approved content, and every result is re-checked against PostgreSQL before it reaches a prompt. The pgvector option is not used.
 
 ## Development segments
 
@@ -125,7 +125,7 @@ The development token is a local access gate, not user authentication. Keep the 
 
 ### Optional infrastructure
 
-Compose defines PostgreSQL, Neo4j, and Qdrant. Set `POSTGRES_PASSWORD` and `NEO4J_PASSWORD` in `.env` before starting them:
+Compose defines PostgreSQL and Neo4j for local development. Pinecone is a hosted service and has no local container. Set `POSTGRES_PASSWORD` and `NEO4J_PASSWORD` in `.env` before starting them:
 
 ```sh
 docker compose --profile infrastructure up -d

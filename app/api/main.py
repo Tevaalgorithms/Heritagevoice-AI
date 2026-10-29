@@ -27,12 +27,12 @@ def require_development_token(
 
 
 @app.get("/health")
-def health() -> dict:
+def health() -> dict[str, object]:
     return {"status": "ok", "mode": "scaffold"}
 
 
 @app.get("/ready", status_code=503)
-def ready() -> dict:
+def ready() -> dict[str, object]:
     return {
         "ready": False,
         "missing": [

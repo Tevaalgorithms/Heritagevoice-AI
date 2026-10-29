@@ -5,66 +5,96 @@ Authorization comes from the captured trusted principal, never from model output
 The API does not expose this graph until identity, ownership and adapters are ready.
 """
 
+from functools import partial
+from typing import Any, Protocol
+
+from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import END, START, StateGraph
+from langgraph.graph.state import CompiledStateGraph
 
 from app.agents import answer_agent, evidence_merger, graph_rag, hybrid_rag, supervisor, verifier
-from app.graph.state import WorkflowState
+from app.graph.state import StateUpdate, WorkflowState
 from app.models.evidence import Route
 from app.security.permissions import Principal, require_permitted
 
 
-def build_workflow(principal: Principal, checkpointer=None):
-    def hybrid(state: WorkflowState) -> dict:
-        result = hybrid_rag.retrieve(state, principal)
-        require_permitted(principal, result.get("hybrid_evidence", []))
-        return result
+class Node(Protocol):
+    """A graph node; the parameter name matches what LangGraph expects."""
 
-    def graph(state: WorkflowState) -> dict:
-        result = graph_rag.retrieve(state, principal)
-        require_permitted(principal, result.get("graph_evidence", []))
-        return result
+    def __call__(self, state: WorkflowState) -> StateUpdate: ...
 
-    def safe_merge(state: WorkflowState) -> dict:
-        result = evidence_merger.merge(state)
-        require_permitted(principal, result["evidence"])
-        return result
 
-    def stop(state: WorkflowState) -> dict:
-        if state["route"] == Route.CLARIFY:
-            return {"status": "clarify", "answer": "Please clarify the person, place or event."}
-        return {"status": "refused", "answer": "This request cannot be answered."}
+SUPERVISOR_ROUTES = {
+    Route.HYBRID: "hybrid",
+    Route.GRAPH: "graph",
+    Route.BOTH: "hybrid",
+    Route.CLARIFY: "stop",
+    Route.REFUSE: "stop",
+}
+SUPERVISOR_TARGETS = sorted(set(SUPERVISOR_ROUTES.values()))
+STOP_MESSAGES = {
+    Route.CLARIFY: ("clarify", "Please clarify the person, place or event."),
+    Route.REFUSE: ("refused", "This request cannot be answered."),
+}
 
-    builder = StateGraph(WorkflowState)
-    for name, node in (
-        ("supervisor", supervisor.classify),
-        ("hybrid", hybrid),
-        ("graph", graph),
-        ("merge", safe_merge),
-        ("verify", verifier.verify),
-        ("answer", answer_agent.synthesize),
-        ("stop", stop),
-    ):
-        builder.add_node(name, node)
+
+def _authorized(result: StateUpdate, key: str, principal: Principal) -> StateUpdate:
+    require_permitted(principal, result.get(key, []))
+    return result
+
+
+def run_hybrid(state: WorkflowState, principal: Principal) -> StateUpdate:
+    return _authorized(hybrid_rag.retrieve(state, principal), "hybrid_evidence", principal)
+
+
+def run_graph(state: WorkflowState, principal: Principal) -> StateUpdate:
+    return _authorized(graph_rag.retrieve(state, principal), "graph_evidence", principal)
+
+
+def run_merge(state: WorkflowState, principal: Principal) -> StateUpdate:
+    return _authorized(evidence_merger.merge(state), "evidence", principal)
+
+
+def run_stop(state: WorkflowState) -> StateUpdate:
+    status, answer = STOP_MESSAGES[state["route"]]
+    return {"status": status, "answer": answer}
+
+
+def route_after_supervisor(state: WorkflowState) -> str:
+    return SUPERVISOR_ROUTES[state["route"]]
+
+
+def route_after_hybrid(state: WorkflowState) -> str:
+    return "graph" if state["route"] == Route.BOTH else "merge"
+
+
+def _nodes(principal: Principal) -> dict[str, Node]:
+    return {
+        "supervisor": supervisor.classify,
+        "hybrid": partial(run_hybrid, principal=principal),
+        "graph": partial(run_graph, principal=principal),
+        "merge": partial(run_merge, principal=principal),
+        "verify": verifier.verify,
+        "answer": answer_agent.synthesize,
+        "stop": run_stop,
+    }
+
+
+def _wire(builder: StateGraph[WorkflowState]) -> None:
     builder.add_edge(START, "supervisor")
-    builder.add_conditional_edges(
-        "supervisor",
-        lambda s: s["route"],
-        {
-            Route.HYBRID: "hybrid",
-            Route.GRAPH: "graph",
-            Route.BOTH: "hybrid",
-            Route.CLARIFY: "stop",
-            Route.REFUSE: "stop",
-        },
-    )
-    builder.add_conditional_edges(
-        "hybrid",
-        lambda s: "graph" if s["route"] == Route.BOTH else "merge",
-        {"graph": "graph", "merge": "merge"},
-    )
-    builder.add_edge("graph", "merge")
-    builder.add_edge("merge", "verify")
-    builder.add_edge("verify", "answer")
+    builder.add_conditional_edges("supervisor", route_after_supervisor, SUPERVISOR_TARGETS)
+    builder.add_conditional_edges("hybrid", route_after_hybrid, ["graph", "merge"])
+    for source, target in (("graph", "merge"), ("merge", "verify"), ("verify", "answer")):
+        builder.add_edge(source, target)
     builder.add_edge("answer", END)
     builder.add_edge("stop", END)
+
+
+def build_workflow(
+    principal: Principal, checkpointer: BaseCheckpointSaver[Any] | None = None
+) -> CompiledStateGraph[WorkflowState]:
+    builder = StateGraph(WorkflowState)
+    for name, node in _nodes(principal).items():
+        builder.add_node(name, node)
+    _wire(builder)
     return builder.compile(checkpointer=checkpointer)

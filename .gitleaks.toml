@@ -11,6 +11,12 @@ regex = '''\b(lsv2|ls)_(pt|sk)_[A-Za-z0-9]{20,}(_[A-Za-z0-9]+)?\b'''
 keywords = ["lsv2_", "ls_pt_", "ls_sk_"]
 
 [[rules]]
+id = "pinecone-api-key"
+description = "Pinecone API key"
+regex = '''\bpcsk_[A-Za-z0-9_]{20,}'''
+keywords = ["pcsk_"]
+
+[[rules]]
 id = "terraform-sensitive-assignment"
 description = "Hard-coded secret in Terraform or tfvars"
 regex = '''(?i)\b(password|secret|token|api_?key|access_key|secret_key)\b\s*=\s*"[^"$\s]{8,}"'''

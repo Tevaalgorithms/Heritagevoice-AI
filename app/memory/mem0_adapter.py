@@ -1,7 +1,9 @@
 """Deferred extension. Mem0 is deliberately not installed or enabled."""
 
-from app.config import IntegrationNotConfigured
+from typing import NoReturn
+
+from app.config import IntegrationNotConfiguredError
 
 
-def create_mem0_adapter():
-    raise IntegrationNotConfigured("Mem0 is outside the five-day MVP scope")
+def create_mem0_adapter() -> NoReturn:
+    raise IntegrationNotConfiguredError("Mem0 is outside the five-day MVP scope")
