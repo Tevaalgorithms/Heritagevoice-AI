@@ -34,6 +34,8 @@ class Settings(BaseSettings):
     pinecone_api_key: SecretStr | None = Field(
         default=None, validation_alias=AliasChoices("PINECONE_API_KEY")
     )
+    embedding_model: str = "multilingual-e5-large"
+    embedding_dimension: int = Field(default=1024, gt=0)
     pinecone_index: str | None = Field(
         default=None, validation_alias=AliasChoices("PINECONE_INDEX")
     )

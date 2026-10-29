@@ -9,9 +9,12 @@ from dataclasses import dataclass
 from sqlalchemy.orm import Session
 
 from app.db.repositories import ConsentRepository, JobRepository, RecordingRepository
+from app.index_sync import drop_index
+from app.indexing import UNINDEX_KIND
 from app.models.records import RecordingStatus
 
 CONSENT_CODE = "consent"
+CLEANUP = (UNINDEX_KIND,)  # never cancel the jobs that remove content from the indexes
 
 
 @dataclass(frozen=True)
@@ -28,7 +31,9 @@ def revoke_consent(session: Session, consent_id: str) -> Revocation | None:
     ids = recordings.ids_by_consent(consent_id)
     for recording_id in ids:
         recordings.set_status(recording_id, RecordingStatus.REVOKED)
-    stopped = JobRepository(session).fail_open_jobs(ids, CONSENT_CODE)
+    stopped = JobRepository(session).fail_open_jobs(ids, CONSENT_CODE, CLEANUP)
+    for recording_id in ids:
+        drop_index(session, recording_id)
     return Revocation(len(ids), stopped)
 
 
@@ -38,5 +43,6 @@ def revoke_recording(session: Session, recording_id: str) -> Revocation | None:
     if recordings.get(recording_id) is None:
         return None
     recordings.set_status(recording_id, RecordingStatus.REVOKED)
-    stopped = JobRepository(session).fail_open_jobs([recording_id], CONSENT_CODE)
+    stopped = JobRepository(session).fail_open_jobs([recording_id], CONSENT_CODE, CLEANUP)
+    drop_index(session, recording_id)
     return Revocation(1, stopped)

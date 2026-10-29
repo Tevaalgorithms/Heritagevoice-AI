@@ -21,6 +21,7 @@ from app.db.repositories import (
     ReviewDecisionRepository,
     VersionRepository,
 )
+from app.index_sync import drop_index, queue_index
 from app.models.records import (
     Recording,
     RecordingStatus,
@@ -106,6 +107,7 @@ def edit_draft(session: Session, recording: Recording, request: EditInput) -> Ve
     saved = versions.add_draft(draft)
     if recording.status == RecordingStatus.PUBLISHED:
         RecordingRepository(session).set_status(recording.id, RecordingStatus.REVIEW)
+        drop_index(session, recording.id)
     return saved
 
 
@@ -163,4 +165,5 @@ def publish(session: Session, recording: Recording) -> RecordingStatus:
     if VersionRepository(session).approved(recording.id, Subject.TRANSCRIPT) is None:
         raise _transcript_not_approved()
     RecordingRepository(session).set_status(recording.id, RecordingStatus.PUBLISHED)
+    queue_index(session, recording.id)
     return RecordingStatus.PUBLISHED

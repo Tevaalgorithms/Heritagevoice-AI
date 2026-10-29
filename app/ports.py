@@ -17,7 +17,9 @@ from app.security.roles import Role
 class VectorStore(Protocol):
     def upsert(self, items: list[Evidence]) -> None: ...
 
-    def delete(self, evidence_ids: list[str]) -> None: ...
+    def delete_recording(self, recording_id: str, community_id: str) -> None:
+        """Remove every vector of one recording (they all share its ID as a prefix)."""
+        ...
 
     def search(self, query: str, principal: Principal, limit: int = 20) -> list[Evidence]: ...
 
@@ -70,3 +72,12 @@ class ModelTester(Protocol):
     """Checks that a model setting works with the configured key. Never returns the key."""
 
     def check(self, params: ModelParams) -> ProbeResult: ...
+
+
+@runtime_checkable
+class Embedder(Protocol):
+    """Turns text into vectors. Documents and queries are embedded differently by some models."""
+
+    def embed_passages(self, texts: list[str]) -> list[list[float]]: ...
+
+    def embed_query(self, text: str) -> list[float]: ...

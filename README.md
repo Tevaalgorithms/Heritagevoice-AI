@@ -60,8 +60,8 @@ The current LangGraph scaffold captures a trusted `Principal` outside model-writ
 | Backend | Python 3.12 and FastAPI | Scaffold implemented |
 | Frontend | Streamlit | Chat shell implemented |
 | Orchestration | LangGraph | Workflow topology implemented |
-| Lexical retrieval | BM25 adapter with rank-bm25 dependency | Adapter pending |
-| Vector retrieval | Pinecone (serverless, one namespace per community) | Managed service; adapter pending |
+| Lexical retrieval | PostgreSQL full-text search (`simple` configuration, Tamil-safe) | Implemented; verified on PostgreSQL 16 |
+| Vector retrieval | Pinecone (serverless, one namespace per community) | Adapter built and tested with fakes; not yet run against Pinecone |
 | Knowledge graph | Neo4j (AuraDB hosted, local container for development) | Adapter pending |
 | Durable checkpoints | PostgreSQL | Proposed service; adapter pending |
 | Tracing | LangSmith | Full tracing and redaction integration pending |
