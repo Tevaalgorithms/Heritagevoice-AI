@@ -14,7 +14,9 @@ from langgraph.graph.state import CompiledStateGraph
 from app.errors import ProviderError
 from app.graph.state import PreservationState, StateUpdate
 from app.models.job import JobStatus
+from app.models.records import Right
 from app.ports import Transcriber, Translator
+from app.security.consent import ConsentDeniedError, require_right
 
 
 class Step(Protocol):
@@ -31,6 +33,8 @@ def _guarded(step: Callable[[PreservationState], StateUpdate], error_code: str) 
     def run(state: PreservationState) -> StateUpdate:
         try:
             return step(state)
+        except ConsentDeniedError:
+            return _failed("consent")
         except ProviderError:
             return _failed(error_code)
 
@@ -38,11 +42,13 @@ def _guarded(step: Callable[[PreservationState], StateUpdate], error_code: str) 
 
 
 def transcribe(state: PreservationState, transcriber: Transcriber) -> StateUpdate:
+    require_right(state.get("consent"), Right.AI_PROCESSING)
     segments = transcriber.transcribe(state["audio"], state["language"])
     return {"segments": segments, "status": JobStatus.PROCESSING}
 
 
 def translate(state: PreservationState, translator: Translator) -> StateUpdate:
+    require_right(state.get("consent"), Right.TRANSLATION)
     translations = translator.translate(state["segments"], "en")
     return {"translations": translations, "status": JobStatus.REVIEW}
 

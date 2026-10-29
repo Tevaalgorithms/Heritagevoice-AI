@@ -4,16 +4,19 @@ import streamlit as st
 
 from app.config import Settings
 from frontend.api_client import ApiClient, ApiError
+from frontend.auth import COGNITO_PROVIDER, cognito_enabled, resolve_token
 from frontend.messages import message_for
 from frontend.views import ask, review, upload
 
 st.set_page_config(page_title="HeritageVoice AI", page_icon="📚")
 
 
-def make_client() -> ApiClient:
-    settings = Settings()
-    token = settings.dev_api_token.get_secret_value() if settings.dev_api_token else None
-    return ApiClient(settings.api_url, token)
+def require_sign_in(settings: Settings, token: str | None) -> None:
+    """Without a token and with Cognito configured, offer sign-in and stop rendering."""
+    if token is None and cognito_enabled(settings):
+        st.title("HeritageVoice AI")
+        st.button("Sign in", on_click=st.login, args=[COGNITO_PROVIDER])
+        st.stop()
 
 
 def show_status(client: ApiClient) -> None:
@@ -27,7 +30,10 @@ def show_status(client: ApiClient) -> None:
 
 
 def main() -> None:
-    client = make_client()
+    settings = Settings()
+    token = resolve_token(settings, st.user)
+    require_sign_in(settings, token)
+    client = ApiClient(settings.api_url, token)
     st.sidebar.title("HeritageVoice AI")
     show_status(client)
     pages = [

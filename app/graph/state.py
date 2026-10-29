@@ -4,6 +4,7 @@ from typing import Any, TypedDict
 
 from app.models.evidence import Claim, Evidence, Route
 from app.models.job import JobStatus
+from app.models.records import Consent
 from app.models.transcript import Segment
 
 StateUpdate = dict[str, Any]
@@ -24,6 +25,7 @@ class WorkflowState(TypedDict, total=False):
 
 class PreservationState(TypedDict, total=False):
     recording_id: str
+    consent: Consent
     language: str
     audio: bytes
     segments: list[Segment]

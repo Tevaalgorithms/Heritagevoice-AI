@@ -12,6 +12,7 @@ from app.graph.preservation import build_preservation_graph
 from app.graph.state import PreservationState, WorkflowState
 from app.graph.workflow import Agents, build_workflow
 from app.models.evidence import Evidence
+from app.models.records import Consent, Right
 from app.models.transcript import Segment
 from app.ports import Transcriber
 from app.publishing import publish_recording
@@ -27,6 +28,9 @@ FIXTURE_SEGMENTS = [
 ]
 DEMO_PRINCIPAL = Principal(user_id="demo-user", groups=frozenset({"public"}), policy_version="v1")
 PUBLIC = frozenset({"public"})
+FULL_CONSENT = Consent(
+    id="consent-1", community_id="demo", rights=frozenset(Right), policy_version="v1"
+)
 
 
 def graph_view(item: Evidence) -> Evidence:
@@ -42,9 +46,16 @@ class Skeleton:
         self.transcriber = transcriber or FakeTranscriber(FIXTURE_SEGMENTS)
         self.agents: Agents = fake_agents(self.vector, self.graph)
 
-    def ingest(self, recording_id: str, audio: bytes = b"fixture-audio") -> PreservationState:
+    def ingest(
+        self, recording_id: str, audio: bytes = b"fixture-audio", consent: Consent = FULL_CONSENT
+    ) -> PreservationState:
         graph = build_preservation_graph(self.transcriber, FakeTranslator())
-        state: PreservationState = {"recording_id": recording_id, "audio": audio, "language": "ta"}
+        state: PreservationState = {
+            "recording_id": recording_id,
+            "consent": consent,
+            "audio": audio,
+            "language": "ta",
+        }
         return cast(PreservationState, graph.invoke(state))
 
     def publish(self, state: PreservationState, approved: bool) -> list[Evidence]:
