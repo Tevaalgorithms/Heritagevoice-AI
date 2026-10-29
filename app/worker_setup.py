@@ -28,7 +28,10 @@ def _transcriber(settings: Settings) -> Transcriber | None:
     if settings.asr_provider == "fake" and settings.environment == LOCAL:
         return FakeTranscriber(DEV_SEGMENTS)
     if settings.audio_bucket:
-        return AmazonTranscribe(TranscribeConfig(settings.audio_bucket, settings.audio_kms_key_id))
+        config = TranscribeConfig(
+            settings.audio_bucket, settings.audio_kms_key_id, settings.aws_region
+        )
+        return AmazonTranscribe(config)
     return None
 
 

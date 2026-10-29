@@ -78,7 +78,8 @@ curl -i http://127.0.0.1:8000/ready       # 200 when PostgreSQL is reachable, ot
    search until a reviewer approves it (segment 04).
 
 Deployed, the worker uses Amazon Transcribe (Tamil `ta-IN`, English `en-US`) on the audio already
-in the private bucket. Its IAM role needs `transcribe:StartTranscriptionJob`,
+in the private bucket; set `HERITAGEVOICE_AWS_REGION` (the region comes from settings, not from the
+machine's AWS config). Its IAM role needs `transcribe:StartTranscriptionJob`,
 `GetTranscriptionJob` and `DeleteTranscriptionJob`, read and write on the bucket, and use of the
 KMS key. Provider failures are retried up to three times, then the job fails with a safe code
 (`asr`). Consent withdrawn after upload fails the job at once with `consent`.

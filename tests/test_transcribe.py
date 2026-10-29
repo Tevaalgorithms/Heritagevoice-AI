@@ -257,7 +257,8 @@ def test_no_speech_service_means_no_ingest_handler(engine):
 
 
 def test_a_bucket_enables_the_ingest_handler(engine):
-    handlers = build_handlers(Settings(_env_file=None, audio_bucket="audio-bucket"), engine)
+    settings = Settings(_env_file=None, audio_bucket="audio-bucket", aws_region="eu-west-2")
+    handlers = build_handlers(settings, engine)
     assert set(handlers) == {"ingest_recording"}
 
 
@@ -266,3 +267,11 @@ def test_the_fake_speech_service_is_refused_outside_the_local_environment(engine
     prod = Settings(_env_file=None, asr_provider="fake", environment="production")
     assert set(build_handlers(local, engine)) == {"ingest_recording"}
     assert build_handlers(prod, engine) == {}
+
+
+def test_the_region_comes_from_settings_not_the_machine(monkeypatch):
+    monkeypatch.delenv("AWS_DEFAULT_REGION", raising=False)
+    monkeypatch.delenv("AWS_REGION", raising=False)
+    monkeypatch.setenv("AWS_CONFIG_FILE", "/dev/null")
+    asr = AmazonTranscribe(TranscribeConfig("audio-bucket", region="eu-west-2"))
+    assert isinstance(asr, Transcriber)

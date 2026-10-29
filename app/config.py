@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     dev_role: Role = Role.MEMBER
     api_url: str = "http://127.0.0.1:8000"
     database_url: SecretStr | None = None
+    aws_region: str | None = None
     audio_bucket: str | None = None
     audio_kms_key_id: str | None = None
     audio_local_dir: str | None = None

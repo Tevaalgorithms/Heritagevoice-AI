@@ -103,6 +103,7 @@ def segments_from_items(items: list[dict[str, Any]]) -> list[Segment]:
 class TranscribeConfig:
     bucket: str
     kms_key_id: str | None = None
+    region: str | None = None
     poll_seconds: float = 5.0
     timeout_seconds: float = 900.0
 
@@ -111,16 +112,24 @@ class TranscribeConfig:
 class Runtime:
     """Clients and clock, replaceable in tests."""
 
-    transcribe: Any = field(default_factory=lambda: boto3.client("transcribe", config=CONFIG))
-    s3: Any = field(default_factory=lambda: boto3.client("s3", config=CONFIG))
+    transcribe: Any
+    s3: Any
     sleep: Callable[[float], None] = time.sleep
     job_name: Callable[[], str] = lambda: f"hv-{uuid4().hex}"
+
+
+def default_runtime(region: str | None) -> Runtime:
+    """Real AWS clients. The region comes from settings, not from the machine's AWS config."""
+    return Runtime(
+        transcribe=boto3.client("transcribe", region_name=region, config=CONFIG),
+        s3=boto3.client("s3", region_name=region, config=CONFIG),
+    )
 
 
 class AmazonTranscribe:
     def __init__(self, config: TranscribeConfig, runtime: Runtime | None = None) -> None:
         self._config = config
-        self._rt = runtime or Runtime()
+        self._rt = runtime or default_runtime(config.region)
 
     def transcribe(self, audio_key: str, language: str) -> list[Segment]:
         code = LANGUAGE_CODES.get(language)
