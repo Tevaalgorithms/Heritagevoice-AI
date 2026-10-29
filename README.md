@@ -1,5 +1,7 @@
 # HeritageVoice AI
 
+![HeritageVoice AI — oral storytelling connected to preserved cultural knowledge](assets/heritagevoice-banner.png)
+
 Community-controlled oral history preservation with multi-agent AI, Hybrid RAG, GraphRAG, and source-grounded answers.
 
 HeritageVoice AI aims to help communities preserve spoken stories, languages, and cultural knowledge. The intended workflow turns consented recordings into reviewed transcripts and translations, then answers questions with evidence linked to the original sources. Community reviewers retain authority over publication and culturally sensitive material.
@@ -18,7 +20,7 @@ Implemented foundations:
 
 Still to build: trusted user identity, consent and review workflows, audio ingestion, transcription, translation, live retrieval, graph extraction and traversal, semantic verification, answer synthesis, and source playback.
 
-`/health` returns 200 in scaffold mode. `/ready` returns 503. Even with valid development credentials, `/query` returns 503 until the required integrations are implemented. Passing scaffold tests does not establish MVP readiness.
+`/health` returns 200 in scaffold mode. `/ready` returns 200 only when every configured dependency (PostgreSQL, and the audio bucket if set) is reachable, otherwise 503. Even with valid development credentials, `/query` returns 503 until the required integrations are implemented. Passing scaffold tests does not establish MVP readiness.
 
 ## MVP scope
 
@@ -33,6 +35,8 @@ Still to build: trusted user identity, consent and review workflows, audio inges
 Streaming speech, broad language coverage, large graph summaries, cross-conversation memory, and production scale are deferred. Durable conversation ownership and storage must be implemented before persistent conversations are enabled.
 
 ## Architecture
+
+![From consented recording to a cited, source-grounded answer: record, transcribe and translate, human review, Hybrid RAG and GraphRAG, cited answer with audio playback](docs/assets/pipeline.svg)
 
 The target system has two connected workflows:
 
@@ -111,6 +115,15 @@ Copy the environment example only on first setup; preserve an existing `.env`. S
 ```sh
 uv run uvicorn app.api.main:app --reload --host 127.0.0.1
 ```
+
+Create the tables and start the worker (a third terminal), after setting `HERITAGEVOICE_DATABASE_URL`:
+
+```sh
+uv run alembic upgrade head
+uv run python -m app.worker
+```
+
+Full walkthrough: [`docs/runbooks/setup.md`](docs/runbooks/setup.md).
 
 In a second terminal:
 

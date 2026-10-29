@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 440" width="1200" height="440" role="img" aria-labelledby="t d" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif">
+  <title id="t">HeritageVoice AI</title>
+  <desc id="d">A sound wave above the pipeline: consented recording, transcribe and translate, human review, Hybrid RAG plus GraphRAG, cited answer with audio playback.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#14213d"/>
+      <stop offset="0.6" stop-color="#2a2550"/>
+      <stop offset="1" stop-color="#4a2c4f"/>
+    </linearGradient>
+    <linearGradient id="wave" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f5b740"/>
+      <stop offset="1" stop-color="#e76f51"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.72" cy="0.3" r="0.5">
+      <stop offset="0" stop-color="#f5b740" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#f5b740" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="440" rx="24" fill="url(#bg)"/>
+  <rect width="1200" height="440" rx="24" fill="url(#glow)"/>
+    <rect x="700" y="129.3" width="9" height="41.4" rx="4.5" fill="url(#wave)"/>
+  <rect x="718" y="122.7" width="9" height="54.5" rx="4.5" fill="url(#wave)"/>
+  <rect x="736" y="116.5" width="9" height="67.0" rx="4.5" fill="url(#wave)"/>
+  <rect x="754" y="111.6" width="9" height="76.8" rx="4.5" fill="url(#wave)"/>
+  <rect x="772" y="108.9" width="9" height="82.3" rx="4.5" fill="url(#wave)"/>
+  <rect x="790" y="109.0" width="9" height="82.1" rx="4.5" fill="url(#wave)"/>
+  <rect x="808" y="112.3" width="9" height="75.5" rx="4.5" fill="url(#wave)"/>
+  <rect x="826" y="118.7" width="9" height="62.5" rx="4.5" fill="url(#wave)"/>
+  <rect x="844" y="128.0" width="9" height="44.0" rx="4.5" fill="url(#wave)"/>
+  <rect x="862" y="139.3" width="9" height="21.5" rx="4.5" fill="url(#wave)"/>
+  <rect x="880" y="130.6" width="9" height="38.9" rx="4.5" fill="url(#wave)"/>
+  <rect x="898" y="118.7" width="9" height="62.6" rx="4.5" fill="url(#wave)"/>
+  <rect x="916" y="108.3" width="9" height="83.3" rx="4.5" fill="url(#wave)"/>
+  <rect x="934" y="100.6" width="9" height="98.8" rx="4.5" fill="url(#wave)"/>
+  <rect x="952" y="96.3" width="9" height="107.4" rx="4.5" fill="url(#wave)"/>
+  <rect x="970" y="95.8" width="9" height="108.4" rx="4.5" fill="url(#wave)"/>
+  <rect x="988" y="99.1" width="9" height="101.8" rx="4.5" fill="url(#wave)"/>
+  <rect x="1006" y="105.7" width="9" height="88.6" rx="4.5" fill="url(#wave)"/>
+  <rect x="1024" y="114.9" width="9" height="70.3" rx="4.5" fill="url(#wave)"/>
+  <rect x="1042" y="125.5" width="9" height="49.1" rx="4.5" fill="url(#wave)"/>
+  <rect x="1060" y="136.3" width="9" height="27.3" rx="4.5" fill="url(#wave)"/>
+  <rect x="1078" y="135.7" width="9" height="28.7" rx="4.5" fill="url(#wave)"/>
+  <rect x="1096" y="127.4" width="9" height="45.1" rx="4.5" fill="url(#wave)"/>
+  <rect x="1114" y="121.7" width="9" height="56.6" rx="4.5" fill="url(#wave)"/>
+  <rect x="1132" y="118.7" width="9" height="62.6" rx="4.5" fill="url(#wave)"/>
+  <rect x="1150" y="118.4" width="9" height="63.3" rx="4.5" fill="url(#wave)"/>
+  <rect x="1168" y="120.3" width="9" height="59.4" rx="4.5" fill="url(#wave)"/>
+  <text x="50" y="108" font-size="58" font-weight="800" fill="#ffffff">HeritageVoice <tspan fill="#f5b740">AI</tspan></text>
+  <text x="50" y="152" font-size="23" fill="#e8ebfa">Preserving languages, stories and human knowledge</text>
+  <text x="50" y="186" font-size="17" fill="#b9bfe0">Community-controlled oral histories, turned into reviewed,</text>
+  <text x="50" y="210" font-size="17" fill="#b9bfe0">searchable knowledge with answers you can trace to the recording.</text>
+    <g>
+  <rect x="50" y="268" width="196" height="84" rx="14" fill="#ffffff" fill-opacity="0.07" stroke="#7dd3c0" stroke-opacity="0.75" stroke-width="1.5"/>
+  <circle cx="74" cy="292" r="12" fill="#7dd3c0"/>
+  <text x="74" y="297" text-anchor="middle" font-size="14" font-weight="700" fill="#14213d">1</text>
+  <text x="96" y="298" font-size="17" font-weight="700" fill="#ffffff">Consented</text>
+  <text x="96" y="322" font-size="16" fill="#d8dcf0">recording</text>
+</g>
+  <path d="M251 303.0 L271 310.0 L251 317.0 Z" fill="#f5b740"/>
+  <g>
+  <rect x="276" y="268" width="196" height="84" rx="14" fill="#ffffff" fill-opacity="0.07" stroke="#7dd3c0" stroke-opacity="0.75" stroke-width="1.5"/>
+  <circle cx="300" cy="292" r="12" fill="#7dd3c0"/>
+  <text x="300" y="297" text-anchor="middle" font-size="14" font-weight="700" fill="#14213d">2</text>
+  <text x="322" y="298" font-size="17" font-weight="700" fill="#ffffff">Transcribe</text>
+  <text x="322" y="322" font-size="16" fill="#d8dcf0">and translate</text>
+</g>
+  <path d="M477 303.0 L497 310.0 L477 317.0 Z" fill="#f5b740"/>
+  <g>
+  <rect x="502" y="268" width="196" height="84" rx="14" fill="#ffffff" fill-opacity="0.07" stroke="#f5b740" stroke-opacity="0.75" stroke-width="1.5"/>
+  <circle cx="526" cy="292" r="12" fill="#f5b740"/>
+  <text x="526" y="297" text-anchor="middle" font-size="14" font-weight="700" fill="#14213d">3</text>
+  <text x="548" y="298" font-size="17" font-weight="700" fill="#ffffff">Human</text>
+  <text x="548" y="322" font-size="16" fill="#d8dcf0">review</text>
+</g>
+  <path d="M703 303.0 L723 310.0 L703 317.0 Z" fill="#f5b740"/>
+  <g>
+  <rect x="728" y="268" width="196" height="84" rx="14" fill="#ffffff" fill-opacity="0.07" stroke="#7dd3c0" stroke-opacity="0.75" stroke-width="1.5"/>
+  <circle cx="752" cy="292" r="12" fill="#7dd3c0"/>
+  <text x="752" y="297" text-anchor="middle" font-size="14" font-weight="700" fill="#14213d">4</text>
+  <text x="774" y="298" font-size="17" font-weight="700" fill="#ffffff">Hybrid RAG</text>
+  <text x="774" y="322" font-size="16" fill="#d8dcf0">+ GraphRAG</text>
+</g>
+  <path d="M929 303.0 L949 310.0 L929 317.0 Z" fill="#f5b740"/>
+  <g>
+  <rect x="954" y="268" width="196" height="84" rx="14" fill="#ffffff" fill-opacity="0.07" stroke="#f5b740" stroke-opacity="0.75" stroke-width="1.5"/>
+  <circle cx="978" cy="292" r="12" fill="#f5b740"/>
+  <text x="978" y="297" text-anchor="middle" font-size="14" font-weight="700" fill="#14213d">5</text>
+  <text x="1000" y="298" font-size="17" font-weight="700" fill="#ffffff">Cited answer</text>
+  <text x="1000" y="322" font-size="16" fill="#d8dcf0">+ audio playback</text>
+</g>
+  <text x="50" y="398" font-size="15" fill="#9aa3d1">Tamil · English  |  LangGraph · LangChain · LangSmith  |  Pinecone · Neo4j · PostgreSQL</text>
+  <text x="50" y="420" font-size="13" fill="#7f88b8">Humans approve what is published. Permissions are enforced by code, never by the model.</text>
+</svg>

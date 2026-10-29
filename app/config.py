@@ -1,6 +1,6 @@
 """Environment configuration; never expose SecretStr values in responses."""
 
-from pydantic import SecretStr
+from pydantic import AliasChoices, Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -8,6 +8,19 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="HERITAGEVOICE_", env_file=".env", extra="ignore")
     dev_api_token: SecretStr | None = None
     api_url: str = "http://127.0.0.1:8000"
+    database_url: SecretStr | None = None
+    audio_bucket: str | None = None
+    llm_api_key: SecretStr | None = None
+    llm_model: str = "claude-sonnet-5-5"
+    llm_timeout_s: float = Field(default=30.0, gt=0)
+    llm_max_retries: int = Field(default=2, ge=0, le=5)
+    # The Pinecone SDK reads these unprefixed names itself, so we accept the same ones.
+    pinecone_api_key: SecretStr | None = Field(
+        default=None, validation_alias=AliasChoices("PINECONE_API_KEY")
+    )
+    pinecone_index: str | None = Field(
+        default=None, validation_alias=AliasChoices("PINECONE_INDEX")
+    )
 
 
 class IntegrationNotConfiguredError(RuntimeError):
