@@ -1,0 +1,50 @@
+#!/bin/bash
+# First-boot setup. It installs Docker, mounts the data disk, fetches the code and writes the
+# non-secret settings. It does NOT start the app: secrets do not exist yet. After `terraform
+# apply`, create the SSM parameters, then run /opt/heritagevoice/deploy/start.sh as root.
+set -euxo pipefail
+exec > >(tee /var/log/heritagevoice-bootstrap.log) 2>&1
+
+dnf -y install docker git
+systemctl enable --now docker
+
+COMPOSE_URL=https://github.com/docker/compose/releases/download/v2.29.7/docker-compose-linux-aarch64
+COMPOSE_SHA256=6e9fbd5daa20dca5d7d89145081ae8155d68ef2928b497d9f85b54fe0f9dbb2c
+install -d /usr/local/lib/docker/cli-plugins
+curl -fsSL -o /usr/local/lib/docker/cli-plugins/docker-compose "$COMPOSE_URL"
+echo "$COMPOSE_SHA256  /usr/local/lib/docker/cli-plugins/docker-compose" | sha256sum -c -
+chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+
+# Data disk: found by its stable volume ID, formatted once, mounted at /data.
+DEV=/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_${data_volume_id}
+for i in $(seq 1 60); do [ -e "$DEV" ] && break; sleep 5; done
+[ -e "$DEV" ] || { echo "data disk did not appear" >&2; exit 1; }
+blkid "$DEV" || mkfs.ext4 -L hvdata "$DEV"
+UUID="$(blkid -s UUID -o value "$DEV")"
+grep -q "$UUID" /etc/fstab || echo "UUID=$UUID /data ext4 defaults,nofail 0 2" >> /etc/fstab
+mkdir -p /data
+mount -a
+install -d -m 0700 /data/postgres /data/caddy
+
+git clone --depth 1 --branch ${repo_ref} ${repo_url} /opt/heritagevoice
+
+install -d -m 0750 /etc/heritagevoice
+umask 077
+cat > /etc/heritagevoice/config.env <<'CONFIG'
+HV_DOMAIN=${domain}
+HV_SSM_PATH=${ssm_path}
+HERITAGEVOICE_ENVIRONMENT=production
+HERITAGEVOICE_API_URL=http://api:8000
+HERITAGEVOICE_AWS_REGION=${region}
+HERITAGEVOICE_AUDIO_BUCKET=${audio_bucket}
+HERITAGEVOICE_AUDIO_KMS_KEY_ID=${kms_key_arn}
+HERITAGEVOICE_ASR_PROVIDER=transcribe
+HERITAGEVOICE_COGNITO_REGION=${region}
+HERITAGEVOICE_COGNITO_USER_POOL_ID=${cognito_user_pool_id}
+HERITAGEVOICE_COGNITO_APP_CLIENT_ID=${cognito_app_client_id}
+LANGSMITH_TRACING=false
+LANGSMITH_HIDE_INPUTS=true
+LANGSMITH_HIDE_OUTPUTS=true
+CONFIG
+
+echo "Bootstrap finished. Create the SSM parameters, then run /opt/heritagevoice/deploy/start.sh"

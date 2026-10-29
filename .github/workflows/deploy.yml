@@ -1,0 +1,104 @@
+# Deploys a Git tag (or branch) to the instance through AWS Systems Manager.
+# Authentication is OpenID Connect: no AWS keys are stored in GitHub.
+#
+# One-time setup (see docs/runbooks/deploy-single-instance.md): create the GitHub environment
+# "demo" with required reviewers and these environment variables:
+#   AWS_DEPLOY_ROLE_ARN, AWS_REGION, INSTANCE_ID, SITE_DOMAIN
+name: deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Git tag or branch to deploy
+        required: true
+        default: main
+  push:
+    tags: ["v*"]
+
+concurrency:
+  group: deploy-demo
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: demo # requires approval from the reviewers set on the environment
+    permissions:
+      id-token: write
+      contents: read
+      checks: read
+    env:
+      INPUT_REF: ${{ inputs.ref }}
+    steps:
+      - name: Validate the ref
+        id: ref
+        run: |
+          ref="${INPUT_REF:-$GITHUB_REF_NAME}"
+          [[ "$ref" =~ ^[A-Za-z0-9._/-]{1,100}$ ]] || { echo "Invalid ref" >&2; exit 1; }
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.ref.outputs.ref }}
+
+      - name: Require green CI on this exact commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sha="$(git rev-parse HEAD)"
+          runs="$(gh api "repos/$GITHUB_REPOSITORY/commits/$sha/check-runs?per_page=100")"
+          failed="$(jq '[.check_runs[] | select(.name | IN("checks","secrets","image","terraform")) | select(.conclusion != "success")] | length' <<<"$runs")"
+          passed="$(jq '[.check_runs[] | select(.name | IN("checks","secrets","image","terraform")) | select(.conclusion == "success") | .name] | unique | length' <<<"$runs")"
+          echo "commit $sha: $passed of 4 checks passed, $failed not successful"
+          [[ "$passed" == "4" && "$failed" == "0" ]] || { echo "CI is not green for this commit" >&2; exit 1; }
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-session-name: heritagevoice-deploy
+
+      - name: Deploy through Systems Manager
+        env:
+          INSTANCE_ID: ${{ vars.INSTANCE_ID }}
+          REF: ${{ steps.ref.outputs.ref }}
+        run: |
+          command_id="$(aws ssm send-command \
+            --instance-ids "$INSTANCE_ID" \
+            --document-name AWS-RunShellScript \
+            --comment "deploy $REF" \
+            --timeout-seconds 1200 \
+            --parameters "commands=[\"/opt/heritagevoice/deploy/start.sh $REF\"]" \
+            --query Command.CommandId --output text)"
+          echo "SSM command: $command_id"
+          for _ in $(seq 1 120); do
+            status="$(aws ssm get-command-invocation --command-id "$command_id" \
+              --instance-id "$INSTANCE_ID" --query Status --output text 2>/dev/null || echo Pending)"
+            case "$status" in
+              Success) break ;;
+              Failed|Cancelled|TimedOut)
+                aws ssm get-command-invocation --command-id "$command_id" --instance-id "$INSTANCE_ID" \
+                  --query '[StandardOutputContent,StandardErrorContent]' --output text | tail -n 60
+                echo "Deploy $status" >&2
+                exit 1 ;;
+            esac
+            sleep 10
+          done
+          [[ "$status" == "Success" ]] || { echo "Deploy did not finish in time" >&2; exit 1; }
+          aws ssm get-command-invocation --command-id "$command_id" --instance-id "$INSTANCE_ID" \
+            --query StandardOutputContent --output text | tail -n 15
+
+      - name: Smoke test
+        env:
+          SITE_DOMAIN: ${{ vars.SITE_DOMAIN }}
+        run: |
+          for _ in $(seq 1 30); do
+            if curl -fsS "https://$SITE_DOMAIN/ready"; then echo; echo "Site is ready"; exit 0; fi
+            sleep 10
+          done
+          echo "Site did not become ready" >&2
+          exit 1

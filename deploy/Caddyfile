@@ -1,0 +1,24 @@
+# HTTPS is automatic for a real domain (Let's Encrypt). The API is reachable only on these
+# paths; everything else goes to the UI. /docs and /openapi.json are not exposed.
+{$HV_DOMAIN} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		-Server
+	}
+
+	@api path /v1/* /admin/* /query /health /ready
+	handle @api {
+		request_body {
+			max_size 210MB
+		}
+		reverse_proxy api:8000
+	}
+
+	handle {
+		reverse_proxy ui:8501
+	}
+}
