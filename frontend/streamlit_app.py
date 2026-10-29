@@ -1,5 +1,7 @@
 """API-backed shell. API token stays on the Streamlit server, not in browser inputs."""
 
+from http import HTTPStatus
+
 import httpx
 import streamlit as st
 
@@ -36,7 +38,7 @@ if question := st.chat_input("Ask about heritage sources"):
                 response.raise_for_status()
                 response_text = response.json().get("answer", "No answer returned.")
         except httpx.HTTPStatusError as error:
-            if error.response.status_code == 503:
+            if error.response.status_code == HTTPStatus.SERVICE_UNAVAILABLE:
                 response_text = "The agent integrations are not ready yet."
             else:
                 response_text = (

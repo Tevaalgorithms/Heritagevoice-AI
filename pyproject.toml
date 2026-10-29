@@ -4,15 +4,36 @@ version = "0.1.0"
 description = "HeritageVoice AI MVP architecture scaffold"
 requires-python = ">=3.12,<3.14"
 dependencies = [
-  "fastapi>=0.115,<1", "uvicorn[standard]>=0.34,<1",
-  "pydantic-settings>=2.7,<3", "langgraph>=1,<2",
-  "langgraph-checkpoint-postgres>=3,<4", "psycopg[binary,pool]>=3.2,<4",
-  "langsmith>=0.3,<1", "streamlit>=1.42,<2", "httpx>=0.28,<1",
-  "rank-bm25>=0.2.2,<1", "neo4j>=5.26,<7", "qdrant-client>=1.13,<2",
+  "fastapi>=0.115,<1",
+  "uvicorn[standard]>=0.34,<1",
+  "pydantic-settings>=2.7,<3",
+  "langgraph>=1,<2",
+  "langgraph-checkpoint-postgres>=3,<4",
+  "psycopg[binary,pool]>=3.2,<4",
+  "langsmith>=0.3,<1",
+  "streamlit>=1.42,<2",
+  "httpx>=0.28,<1",
+  "rank-bm25>=0.2.2,<1",
+  "neo4j>=5.26,<7",
+  "pinecone>=7.3.0,<8",
+  "langchain>=1.4.7,<2",
+  "langchain-core>=1.7.0,<2",
+  "langchain-pinecone>=0.2.13,<1",
+  "langchain-neo4j>=0.11.0,<1",
+  "pyjwt[crypto]>=2.15.1,<3",
+  "langchain-anthropic>=1.7.7,<2",
+  "sqlalchemy>=2.1.6,<3",
+  "alembic>=1.20.1,<2",
 ]
 
 [dependency-groups]
-dev = ["pytest>=8,<10", "ruff>=0.11,<1"]
+dev = [
+    "mypy>=2.4.1,<3",
+    "pytest>=8,<10",
+    "radon>=6.0.1,<7",
+    "ruff>=0.11,<1",
+    "xenon>=0.9.3,<1",
+]
 
 [tool.uv]
 package = false
@@ -26,4 +47,21 @@ target-version = "py312"
 line-length = 100
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "B", "UP"]
+select = ["E", "F", "I", "B", "UP", "C90", "PL", "SIM", "RET", "N", "PT"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 5
+
+[tool.ruff.lint.pylint]
+max-args = 4
+max-branches = 5
+max-statements = 20
+max-returns = 3
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["PLR2004"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["app"]

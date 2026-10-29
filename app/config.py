@@ -10,5 +10,5 @@ class Settings(BaseSettings):
     api_url: str = "http://127.0.0.1:8000"
 
 
-class IntegrationNotConfigured(RuntimeError):
+class IntegrationNotConfiguredError(RuntimeError):
     """An adapter must be implemented before the MVP is ready."""

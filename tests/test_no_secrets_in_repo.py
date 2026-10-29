@@ -31,6 +31,7 @@ PATTERNS = {
     "AWS access key id": re.compile(r"\b(AKIA|ASIA)[0-9A-Z]{16}\b"),
     "provider API key": re.compile(r"\bsk-[A-Za-z0-9_-]{20,}\b"),
     "LangSmith API key": re.compile(r"\b(lsv2|ls)_(pt|sk)_[A-Za-z0-9]{20,}"),
+    "Pinecone API key": re.compile(r"\bpcsk_[A-Za-z0-9_]{20,}"),
     "private key block": re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----"),
     "URL with inline password": re.compile(r"://[A-Za-z0-9_.-]+:[^@\s/${}<>'\"]{3,}@(?!localhost)"),
     "hard-coded secret assignment": re.compile(

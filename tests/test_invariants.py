@@ -51,7 +51,7 @@ def test_merge_preserves_all_provenance(evidence):
     ],
 )
 def test_same_chunk_cannot_change_identity_or_policy(evidence, change):
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Inconsistent source identity"):
         merge_evidence([evidence, evidence.model_copy(update=change)])
 
 
@@ -71,5 +71,5 @@ def test_fusion_rewards_cross_retriever_agreement_without_duplicate_votes():
     assert result["a"] == pytest.approx(1 / 61)
     assert result["b"] == pytest.approx(1 / 63 + 1 / 61)
     assert next(iter(result)) == "b"
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="k must be positive"):
         reciprocal_rank_fusion([["a"]], k=0)
