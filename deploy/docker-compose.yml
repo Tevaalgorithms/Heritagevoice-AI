@@ -1,0 +1,95 @@
+# Single-instance deployment: Caddy (HTTPS) -> UI and API, plus worker and PostgreSQL.
+# Run on the instance with:
+#   docker compose --env-file /etc/heritagevoice/app.env -f deploy/docker-compose.yml up -d --build
+# Paths below can be overridden for local testing with HV_DATA_DIR and HV_CONFIG_DIR.
+name: heritagevoice
+
+# All app services share one image. Only `migrate` builds it, so the others never race to tag it.
+x-app: &app
+  image: heritagevoice:${HV_VERSION:-local}
+  env_file: ${HV_CONFIG_DIR:-/etc/heritagevoice}/app.env
+  environment:
+    HERITAGEVOICE_DATABASE_URL: postgresql+psycopg://heritagevoice:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is not set}@postgres:5432/heritagevoice?connect_timeout=5
+  restart: unless-stopped
+  networks: [internal]
+
+x-hardened: &hardened
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  tmpfs: ["/tmp", "/home/hv"]
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: heritagevoice
+      POSTGRES_USER: heritagevoice
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is not set}
+    volumes: ["${HV_DATA_DIR:-/data}/postgres:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U heritagevoice -d heritagevoice"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [internal]
+
+  migrate:
+    <<: [*app, *hardened]
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    command: ["alembic", "upgrade", "head"]
+    restart: "no"
+    depends_on:
+      postgres: {condition: service_healthy}
+
+  api:
+    <<: [*app, *hardened]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  worker:
+    <<: [*app, *hardened]
+    command: ["python", "-m", "app.worker"]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+
+  ui:
+    <<: [*app, *hardened]
+    command:
+      - python
+      - -m
+      - streamlit
+      - run
+      - frontend/streamlit_app.py
+      - --server.address=0.0.0.0
+      - --server.port=8501
+      - --server.headless=true
+      - --browser.gatherUsageStats=false
+    volumes: ["${HV_CONFIG_DIR:-/etc/heritagevoice}/secrets.toml:/app/.streamlit/secrets.toml:ro"]
+    depends_on:
+      api: {condition: service_healthy}
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "${HV_HTTP_PORT:-80}:80"
+      - "${HV_HTTPS_PORT:-443}:443"
+    environment:
+      HV_DOMAIN: ${HV_DOMAIN:?HV_DOMAIN is not set}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${HV_DATA_DIR:-/data}/caddy:/data
+    depends_on: [api, ui]
+    networks: [internal]
+
+networks:
+  internal: {}
