@@ -1,32 +1,19 @@
 """Runnable development API. No live-data query path is enabled in this scaffold."""
 
-import secrets
-from typing import Annotated
-
 from fastapi import Depends, FastAPI, HTTPException, Response
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from app.api.admin import router as admin_router
+from app.api.auth import require_action
 from app.api.readiness import run_checks
 from app.api.tracing import current_trace_id, install_trace_logging, trace_id_middleware
 from app.config import Settings
 from app.models.evidence import QueryRequest
+from app.security.roles import Action
 
 app = FastAPI(title="HeritageVoice AI", version="0.1.0")
 app.middleware("http")(trace_id_middleware)
 install_trace_logging()
-bearer = HTTPBearer(auto_error=False)
-
-
-def require_development_token(
-    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer)],
-) -> None:
-    expected = Settings().dev_api_token
-    if expected is None or not expected.get_secret_value():
-        raise HTTPException(status_code=503, detail="Development access is not configured")
-    if credentials is None or not secrets.compare_digest(
-        credentials.credentials, expected.get_secret_value()
-    ):
-        raise HTTPException(status_code=401, detail="Invalid development credentials")
+app.include_router(admin_router)
 
 
 @app.get("/health")
@@ -42,7 +29,7 @@ def ready(response: Response) -> dict[str, object]:
     return {"ready": is_ready, "checks": checks}
 
 
-@app.post("/query", dependencies=[Depends(require_development_token)])
+@app.post("/query", dependencies=[Depends(require_action(Action.QUERY_ASK))])
 def query(payload: QueryRequest) -> None:
     raise HTTPException(
         status_code=503,

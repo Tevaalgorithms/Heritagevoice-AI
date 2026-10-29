@@ -57,6 +57,42 @@ curl -i http://127.0.0.1:8000/ready       # 200 when PostgreSQL is reachable, ot
 - The UI is at <http://127.0.0.1:8501>; the sidebar shows the API status. Upload and Review are
   placeholders until segments 03 and 04. `/query` stays closed (503) until the agents are built.
 
+## Sign-in and roles (Amazon Cognito)
+
+Local runs need none of this: with `HERITAGEVOICE_ENVIRONMENT=local` the dev token signs you in
+as a member of a `dev` community (`HERITAGEVOICE_DEV_ROLE` picks member, reviewer or admin).
+In any other environment only Cognito access tokens are accepted.
+
+1. Create the user pool with `infra/cognito/` (see `infra/README.md`), then set
+   `HERITAGEVOICE_COGNITO_REGION`, `HERITAGEVOICE_COGNITO_USER_POOL_ID` and
+   `HERITAGEVOICE_COGNITO_APP_CLIENT_ID` and `HERITAGEVOICE_ENVIRONMENT=production` (or staging).
+2. UI sign-in uses Streamlit's built-in OIDC login. Put this in `.streamlit/secrets.toml`
+   (git-ignored; values come from Secrets Manager, never from the repo):
+
+   ```toml
+   [auth]
+   redirect_uri = "https://<your-domain>/oauth2callback"
+   cookie_secret = "<long random string>"
+   expose_tokens = ["access"]
+
+   [auth.cognito]
+   client_id = "<app client id>"
+   client_secret = "<app client secret>"
+   server_metadata_url = "https://cognito-idp.<region>.amazonaws.com/<user pool id>/.well-known/openid-configuration"
+   client_kwargs = { scope = "openid email" }
+   ```
+
+3. Create the first admin: invite yourself in the Cognito console, add yourself to the `admin`
+   group, then run `uv run python -m app.bootstrap --sub <your Cognito sub>`.
+4. Admins manage everyone else through the API: `POST /admin/users` (invite),
+   `PUT /admin/users/{sub}/role`, `PUT /admin/users/{sub}/communities` and
+   `POST /admin/users/{sub}/disable`. A disabled user is blocked on their next request.
+
+How a request is authorized: the API verifies the Cognito access token, loads the user from
+PostgreSQL, and takes the **lower** of the token's group and the stored role. Community
+membership always comes from PostgreSQL. An admin has no access to community content just by
+being an admin. Nothing in a request body or header can grant a role.
+
 ## 5. Checks before opening a pull request
 
 ```sh

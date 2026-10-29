@@ -9,6 +9,7 @@ from typing import Protocol, runtime_checkable
 from app.models.evidence import Evidence
 from app.models.transcript import Segment
 from app.security.permissions import Principal
+from app.security.roles import Role
 
 
 @runtime_checkable
@@ -33,3 +34,18 @@ class Transcriber(Protocol):
 @runtime_checkable
 class Translator(Protocol):
     def translate(self, segments: list[Segment], target_language: str) -> list[Segment]: ...
+
+
+@runtime_checkable
+class IdentityProvider(Protocol):
+    """Account administration in the identity service (Amazon Cognito in production)."""
+
+    def invite_user(self, email: str, role: Role) -> str:
+        """Create the account, put it in the role's group, return the stable subject ID."""
+        ...
+
+    def set_role(self, sub: str, role: Role) -> None: ...
+
+    def disable_user(self, sub: str) -> None:
+        """Disable the account and sign it out everywhere."""
+        ...

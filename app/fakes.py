@@ -8,6 +8,7 @@ from app.models.evidence import Claim, Evidence, Route
 from app.models.transcript import Segment
 from app.ports import GraphStore, VectorStore
 from app.security.permissions import Principal, can_read
+from app.security.roles import Role
 
 
 def _words(text: str) -> set[str]:
@@ -116,3 +117,21 @@ def fake_agents(vector: VectorStore, graph: GraphStore, route: Route = Route.BOT
         return {"graph_evidence": graph.traverse(state["question"], principal)}
 
     return Agents(classify, hybrid, graph_branch, fake_verify, fake_answer)
+
+
+class FakeIdentityProvider:
+    """Records what was asked of the identity service."""
+
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, ...]] = []
+
+    def invite_user(self, email: str, role: Role) -> str:
+        sub = f"sub-{len(self.calls) + 1}"
+        self.calls.append(("invite", email, role.value, sub))
+        return sub
+
+    def set_role(self, sub: str, role: Role) -> None:
+        self.calls.append(("set_role", sub, role.value))
+
+    def disable_user(self, sub: str) -> None:
+        self.calls.append(("disable", sub))

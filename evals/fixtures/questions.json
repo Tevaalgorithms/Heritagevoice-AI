@@ -1,0 +1,131 @@
+{
+  "_note": "SYNTHETIC evaluation questions. Expected sources are recording:segment IDs from recordings.json.",
+  "questions": [
+    {
+      "id": "q01",
+      "category": "exact_term",
+      "language": "ta",
+      "question": "ஏற்றம்",
+      "expected_sources": [
+        "rec-01:s1",
+        "rec-01:s3"
+      ],
+      "answerable": true
+    },
+    {
+      "id": "q02",
+      "category": "exact_term",
+      "language": "en",
+      "question": "kanmai tank",
+      "expected_sources": [
+        "rec-02:s1",
+        "rec-02:s2"
+      ],
+      "answerable": true
+    },
+    {
+      "id": "q03",
+      "category": "exact_term",
+      "language": "en",
+      "question": "kummi",
+      "expected_sources": [
+        "rec-03:s1",
+        "rec-05:s2"
+      ],
+      "answerable": true
+    },
+    {
+      "id": "q04",
+      "category": "exact_term",
+      "language": "ta",
+      "question": "ஆடிப்பட்டம்",
+      "expected_sources": [
+        "rec-06:s1"
+      ],
+      "answerable": true
+    },
+    {
+      "id": "q05",
+      "category": "paraphrase",
+      "language": "en",
+      "question": "How did villagers manage farming when there was little rain?",
+      "expected_sources": [
+        "rec-04:s1",
+        "rec-04:s2",
+        "rec-01:s2"
+      ],
+      "answerable": true
+    },
+    {
+      "id": "q06",
+      "category": "paraphrase",
+      "language": "ta",
+      "question": "வறட்சியில் தண்ணீரை எப்படி பகிர்ந்தார்கள்?",
+      "expected_sources": [
+        "rec-01:s2",
+        "rec-04:s2"
+      ],
+      "answerable": true
+    },
+    {
+      "id": "q07",
+      "category": "paraphrase",
+      "language": "en",
+      "question": "What do people do together before the monsoon to prepare water storage?",
+      "expected_sources": [
+        "rec-02:s1"
+      ],
+      "answerable": true
+    },
+    {
+      "id": "q08",
+      "category": "relationship",
+      "language": "en",
+      "question": "Which harvest songs are connected to Pongal in both villages?",
+      "expected_sources": [
+        "rec-03:s1",
+        "rec-05:s2"
+      ],
+      "answerable": true
+    },
+    {
+      "id": "q09",
+      "category": "relationship",
+      "language": "en",
+      "question": "How are the water-sharing customs of the two villages related?",
+      "expected_sources": [
+        "rec-01:s2",
+        "rec-04:s2"
+      ],
+      "answerable": true
+    },
+    {
+      "id": "q10",
+      "category": "relationship",
+      "language": "en",
+      "question": "How have harvest songs changed between generations across the two villages?",
+      "expected_sources": [
+        "rec-03:s3",
+        "rec-05:s2",
+        "rec-05:s3"
+      ],
+      "answerable": true
+    },
+    {
+      "id": "q11",
+      "category": "unsupported",
+      "language": "en",
+      "question": "What was the exact population of the village in 1950?",
+      "expected_sources": [],
+      "answerable": false
+    },
+    {
+      "id": "q12",
+      "category": "unsupported",
+      "language": "en",
+      "question": "Which king built the tank in the village?",
+      "expected_sources": [],
+      "answerable": false
+    }
+  ]
+}

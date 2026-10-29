@@ -1,0 +1,237 @@
+{
+  "_note": "SYNTHETIC test data written for evaluation. Not real community material. Tamil text needs native-speaker review before it is used as ground truth.",
+  "recordings": [
+    {
+      "id": "rec-01",
+      "community_id": "village-a",
+      "language": "ta",
+      "speaker": "speaker-01",
+      "consent": {
+        "rights": [
+          "playback",
+          "ai_processing",
+          "translation",
+          "indexing",
+          "summarization",
+          "attribution"
+        ],
+        "policy_version": "v1",
+        "revoked": false
+      },
+      "segments": [
+        {
+          "segment_id": "s1",
+          "start_s": 0.0,
+          "end_s": 6.5,
+          "text": "கோடை காலத்தில் கிணற்றில் இருந்து ஏற்றம் வைத்து தண்ணீர் இறைப்போம்.",
+          "translation": "In summer we drew water from the well using the ērram lever."
+        },
+        {
+          "segment_id": "s2",
+          "start_s": 6.5,
+          "end_s": 13.0,
+          "text": "மழை குறைவாக இருந்தால் எல்லோரும் ஒன்றாக தண்ணீரைப் பகிர்ந்து கொள்வோம்.",
+          "translation": "When rain was scarce, everyone shared the water together."
+        },
+        {
+          "segment_id": "s3",
+          "start_s": 13.0,
+          "end_s": 19.5,
+          "text": "பெரியவர்கள் ஏற்றம் இறைக்கும் போது பாட்டு பாடுவார்கள்.",
+          "translation": "The elders sang songs while working the ērram."
+        }
+      ]
+    },
+    {
+      "id": "rec-02",
+      "community_id": "village-a",
+      "language": "ta",
+      "speaker": "speaker-02",
+      "consent": {
+        "rights": [
+          "playback",
+          "ai_processing",
+          "translation",
+          "indexing",
+          "summarization",
+          "attribution"
+        ],
+        "policy_version": "v1",
+        "revoked": false
+      },
+      "segments": [
+        {
+          "segment_id": "s1",
+          "start_s": 0.0,
+          "end_s": 6.5,
+          "text": "ஒவ்வொரு ஆண்டும் மழைக்கு முன் கண்மாயை எல்லோரும் சேர்ந்து தூர் வாருவோம்.",
+          "translation": "Every year before the rains we all desilted the kanmai tank together."
+        },
+        {
+          "segment_id": "s2",
+          "start_s": 6.5,
+          "end_s": 13.0,
+          "text": "கண்மாயில் தண்ணீர் நிறைந்தால் நெல் நடவு தொடங்கும்.",
+          "translation": "When the tank filled with water, rice transplanting began."
+        }
+      ]
+    },
+    {
+      "id": "rec-03",
+      "community_id": "village-b",
+      "language": "ta",
+      "speaker": "speaker-03",
+      "consent": {
+        "rights": [
+          "playback",
+          "ai_processing",
+          "translation",
+          "indexing",
+          "summarization",
+          "attribution"
+        ],
+        "policy_version": "v1",
+        "revoked": false
+      },
+      "segments": [
+        {
+          "segment_id": "s1",
+          "start_s": 0.0,
+          "end_s": 6.5,
+          "text": "பொங்கல் அன்று பெண்கள் கும்மி பாடி ஆடுவார்கள்.",
+          "translation": "On Pongal the women sang and danced the kummi."
+        },
+        {
+          "segment_id": "s2",
+          "start_s": 6.5,
+          "end_s": 13.0,
+          "text": "அறுவடை முடிந்ததும் அந்தப் பாட்டுகள் நன்றி சொல்வதற்காக பாடப்படும்.",
+          "translation": "Those songs were sung to give thanks once the harvest was done."
+        },
+        {
+          "segment_id": "s3",
+          "start_s": 13.0,
+          "end_s": 19.5,
+          "text": "இப்போது இளையவர்கள் அந்தப் பாட்டுகளை மிகக் குறைவாகவே பாடுகிறார்கள்.",
+          "translation": "Nowadays the young people sing those songs much less often."
+        }
+      ]
+    },
+    {
+      "id": "rec-04",
+      "community_id": "village-b",
+      "language": "en",
+      "speaker": "speaker-04",
+      "consent": {
+        "rights": [
+          "playback",
+          "ai_processing",
+          "translation",
+          "indexing",
+          "summarization",
+          "attribution"
+        ],
+        "policy_version": "v1",
+        "revoked": false
+      },
+      "segments": [
+        {
+          "segment_id": "s1",
+          "start_s": 0.0,
+          "end_s": 6.5,
+          "text": "When the monsoon failed, my grandmother's village dug shallow wells near the tank.",
+          "translation": "When the monsoon failed, my grandmother's village dug shallow wells near the tank."
+        },
+        {
+          "segment_id": "s2",
+          "start_s": 6.5,
+          "end_s": 13.0,
+          "text": "The families agreed to take turns, so every household got water for a few hours each day.",
+          "translation": "The families agreed to take turns, so every household got water for a few hours each day."
+        },
+        {
+          "segment_id": "s3",
+          "start_s": 13.0,
+          "end_s": 19.5,
+          "text": "Seed grain was kept in clay pots so the next season could still be planted.",
+          "translation": "Seed grain was kept in clay pots so the next season could still be planted."
+        }
+      ]
+    },
+    {
+      "id": "rec-05",
+      "community_id": "village-a",
+      "language": "en",
+      "speaker": "speaker-05",
+      "consent": {
+        "rights": [
+          "playback",
+          "ai_processing",
+          "translation",
+          "indexing",
+          "summarization",
+          "attribution"
+        ],
+        "policy_version": "v1",
+        "revoked": false
+      },
+      "segments": [
+        {
+          "segment_id": "s1",
+          "start_s": 0.0,
+          "end_s": 6.5,
+          "text": "In our village the Pongal festival starts at the temple square before sunrise.",
+          "translation": "In our village the Pongal festival starts at the temple square before sunrise."
+        },
+        {
+          "segment_id": "s2",
+          "start_s": 6.5,
+          "end_s": 13.0,
+          "text": "Long ago the same kummi songs were sung there after the harvest, my father told me.",
+          "translation": "Long ago the same kummi songs were sung there after the harvest, my father told me."
+        },
+        {
+          "segment_id": "s3",
+          "start_s": 13.0,
+          "end_s": 19.5,
+          "text": "Now a recorded song plays from a speaker instead of people singing.",
+          "translation": "Now a recorded song plays from a speaker instead of people singing."
+        }
+      ]
+    },
+    {
+      "id": "rec-06",
+      "community_id": "village-b",
+      "language": "ta",
+      "speaker": "speaker-06",
+      "consent": {
+        "rights": [
+          "playback",
+          "ai_processing",
+          "translation",
+          "indexing",
+          "summarization",
+          "attribution"
+        ],
+        "policy_version": "v1",
+        "revoked": false
+      },
+      "segments": [
+        {
+          "segment_id": "s1",
+          "start_s": 0.0,
+          "end_s": 6.5,
+          "text": "ஆடிப்பட்டம் தேடி விதை என்று எங்கள் தாத்தா சொல்வார்.",
+          "translation": "My grandfather used to say: look for the Aadi season to sow your seed."
+        },
+        {
+          "segment_id": "s2",
+          "start_s": 6.5,
+          "end_s": 13.0,
+          "text": "ஆடி மாதத்தில் மழை வந்தால் விதைப்பு தொடங்கும்.",
+          "translation": "If rain came in the month of Aadi, sowing began."
+        }
+      ]
+    }
+  ]
+}

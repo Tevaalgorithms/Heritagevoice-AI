@@ -102,3 +102,16 @@ def test_migrations_create_the_job_table(tmp_path, monkeypatch):
     assert "job" in inspect(create_engine(url)).get_table_names()
     command.downgrade(config, "base")
     assert "job" not in inspect(create_engine(url)).get_table_names()
+
+
+def test_migrations_match_the_table_definitions(tmp_path, monkeypatch):
+    """Guards drift: every table and column in the models exists after `alembic upgrade head`."""
+    url = f"sqlite:///{tmp_path / 'drift.db'}"
+    monkeypatch.setenv("HERITAGEVOICE_DATABASE_URL", url)
+    config = Config(str(ROOT / "alembic.ini"))
+    config.set_main_option("script_location", str(ROOT / "migrations"))
+    command.upgrade(config, "head")
+    inspector = inspect(create_engine(url))
+    for table in Base.metadata.sorted_tables:
+        migrated = {c["name"] for c in inspector.get_columns(table.name)}
+        assert migrated == {c.name for c in table.columns}, table.name

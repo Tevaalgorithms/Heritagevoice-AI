@@ -3,13 +3,20 @@
 from pydantic import AliasChoices, Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.security.roles import Role
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="HERITAGEVOICE_", env_file=".env", extra="ignore")
+    environment: str = "local"
     dev_api_token: SecretStr | None = None
+    dev_role: Role = Role.MEMBER
     api_url: str = "http://127.0.0.1:8000"
     database_url: SecretStr | None = None
     audio_bucket: str | None = None
+    cognito_region: str | None = None
+    cognito_user_pool_id: str | None = None
+    cognito_app_client_id: str | None = None
     llm_api_key: SecretStr | None = None
     llm_model: str = "claude-sonnet-5-5"
     llm_timeout_s: float = Field(default=30.0, gt=0)
