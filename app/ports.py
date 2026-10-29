@@ -28,7 +28,9 @@ class GraphStore(Protocol):
 
 @runtime_checkable
 class Transcriber(Protocol):
-    def transcribe(self, audio: bytes, language: str) -> list[Segment]: ...
+    def transcribe(self, audio_key: str, language: str) -> list[Segment]:
+        """Transcribe the stored audio object. Segments must be ordered and inside the audio."""
+        ...
 
 
 @runtime_checkable
@@ -49,3 +51,14 @@ class IdentityProvider(Protocol):
     def disable_user(self, sub: str) -> None:
         """Disable the account and sign it out everywhere."""
         ...
+
+
+@runtime_checkable
+class AudioStore(Protocol):
+    """Private audio storage. Keys never contain file names or other personal data."""
+
+    def put(self, key: str, data: bytes, content_type: str) -> None: ...
+
+    def get(self, key: str) -> bytes: ...
+
+    def delete(self, key: str) -> None: ...

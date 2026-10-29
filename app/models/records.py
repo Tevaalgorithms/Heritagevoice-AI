@@ -45,6 +45,10 @@ class Recording(BaseModel):
     language: str
     consent_id: str
     status: RecordingStatus = RecordingStatus.DRAFT
+    audio_key: str | None = None
+    content_type: str | None = None
+    size_bytes: int | None = None
+    duration_s: float | None = None
 
 
 class VersionStatus(StrEnum):

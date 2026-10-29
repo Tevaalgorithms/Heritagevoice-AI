@@ -61,7 +61,7 @@ class FakeTranscriber:
     def __init__(self, segments: list[Segment]) -> None:
         self._segments = segments
 
-    def transcribe(self, audio: bytes, language: str) -> list[Segment]:
+    def transcribe(self, audio_key: str, language: str) -> list[Segment]:
         return list(self._segments)
 
 
@@ -135,3 +135,17 @@ class FakeIdentityProvider:
 
     def disable_user(self, sub: str) -> None:
         self.calls.append(("disable", sub))
+
+
+class FakeAudioStore:
+    def __init__(self) -> None:
+        self.objects: dict[str, tuple[bytes, str]] = {}
+
+    def put(self, key: str, data: bytes, content_type: str) -> None:
+        self.objects[key] = (data, content_type)
+
+    def get(self, key: str) -> bytes:
+        return self.objects[key][0]
+
+    def delete(self, key: str) -> None:
+        self.objects.pop(key, None)

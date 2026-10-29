@@ -43,7 +43,7 @@ def _guarded(step: Callable[[PreservationState], StateUpdate], error_code: str) 
 
 def transcribe(state: PreservationState, transcriber: Transcriber) -> StateUpdate:
     require_right(state.get("consent"), Right.AI_PROCESSING)
-    segments = transcriber.transcribe(state["audio"], state["language"])
+    segments = transcriber.transcribe(state["audio_key"], state["language"])
     return {"segments": segments, "status": JobStatus.PROCESSING}
 
 
@@ -57,13 +57,21 @@ def continue_unless_failed(state: PreservationState) -> str:
     return END if state.get("status") == JobStatus.FAILED else "translate"
 
 
+def _stop_after_transcription(state: PreservationState) -> str:
+    return END
+
+
 def build_preservation_graph(
-    transcriber: Transcriber, translator: Translator
+    transcriber: Transcriber, translator: Translator | None = None
 ) -> CompiledStateGraph[PreservationState]:
+    """Without a translator the graph stops after the draft transcript (translation: segment 04)."""
     builder = StateGraph(PreservationState)
     builder.add_node("transcribe", _guarded(partial(transcribe, transcriber=transcriber), "asr"))
-    builder.add_node("translate", _guarded(partial(translate, translator=translator), "mt"))
     builder.add_edge(START, "transcribe")
+    if translator is None:
+        builder.add_conditional_edges("transcribe", _stop_after_transcription, [END])
+        return builder.compile()
+    builder.add_node("translate", _guarded(partial(translate, translator=translator), "mt"))
     builder.add_conditional_edges("transcribe", continue_unless_failed, ["translate", END])
     builder.add_edge("translate", END)
     return builder.compile()

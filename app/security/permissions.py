@@ -7,7 +7,14 @@ from enum import StrEnum
 from pydantic import BaseModel, ConfigDict
 
 from app.models.evidence import Evidence
-from app.security.roles import ANY_COMMUNITY, COMMUNITY_SCOPED, ROLE_PERMISSIONS, Action, Role
+from app.security.roles import (
+    ANY_COMMUNITY,
+    COMMUNITY_SCOPED,
+    OWNED_ONLY,
+    ROLE_PERMISSIONS,
+    Action,
+    Role,
+)
 
 
 class Principal(BaseModel):
@@ -87,8 +94,8 @@ def _self_approval_rule(principal: Principal, action: Action, resource: Resource
 
 
 def _ownership_rule(principal: Principal, action: Action, resource: Resource) -> Reason | None:
-    members_edit_own = action is Action.DRAFT_EDIT and principal.role is Role.MEMBER
-    return Reason.NOT_OWNER if members_edit_own and resource.owner_id != principal.user_id else None
+    own_only = action in OWNED_ONLY and principal.role is Role.MEMBER
+    return Reason.NOT_OWNER if own_only and resource.owner_id != principal.user_id else None
 
 
 RULES: tuple[Rule, ...] = (_role_rule, _community_rule, _self_approval_rule, _ownership_rule)

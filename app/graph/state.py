@@ -27,7 +27,7 @@ class PreservationState(TypedDict, total=False):
     recording_id: str
     consent: Consent
     language: str
-    audio: bytes
+    audio_key: str
     segments: list[Segment]
     translations: list[Segment]
     status: JobStatus
