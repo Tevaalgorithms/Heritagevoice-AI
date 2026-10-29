@@ -86,6 +86,81 @@
         "title": "ConsentResponse",
         "type": "object"
       },
+      "DecisionRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "approved": {
+            "title": "Approved",
+            "type": "boolean"
+          },
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "kind": {
+            "enum": [
+              "transcript",
+              "translation"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "required": [
+          "kind",
+          "expected_version",
+          "approved"
+        ],
+        "title": "DecisionRequest",
+        "type": "object"
+      },
+      "EditRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "edits": {
+            "items": {
+              "$ref": "#/components/schemas/SegmentEdit"
+            },
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Edits",
+            "type": "array"
+          },
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "kind": {
+            "enum": [
+              "transcript",
+              "translation"
+            ],
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "expected_version",
+          "edits"
+        ],
+        "title": "EditRequest",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -182,6 +257,24 @@
         "title": "JobResponse",
         "type": "object"
       },
+      "PublishResult": {
+        "properties": {
+          "recording_id": {
+            "title": "Recording Id",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "recording_id",
+          "status"
+        ],
+        "title": "PublishResult",
+        "type": "object"
+      },
       "QueryRequest": {
         "additionalProperties": false,
         "properties": {
@@ -269,6 +362,46 @@
           "translation"
         ],
         "title": "RecordingResponse",
+        "type": "object"
+      },
+      "RecordingSummary": {
+        "properties": {
+          "community_id": {
+            "title": "Community Id",
+            "type": "string"
+          },
+          "duration_s": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration S"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "community_id",
+          "language",
+          "status",
+          "duration_s"
+        ],
+        "title": "RecordingSummary",
         "type": "object"
       },
       "RevokeRequest": {
@@ -371,6 +504,28 @@
         "title": "Segment",
         "type": "object"
       },
+      "SegmentEdit": {
+        "additionalProperties": false,
+        "properties": {
+          "segment_id": {
+            "pattern": "^[A-Za-z0-9_-]{1,64}$",
+            "title": "Segment Id",
+            "type": "string"
+          },
+          "text": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "segment_id",
+          "text"
+        ],
+        "title": "SegmentEdit",
+        "type": "object"
+      },
       "UploadForm": {
         "additionalProperties": false,
         "properties": {
@@ -460,6 +615,29 @@
           "type"
         ],
         "title": "ValidationError",
+        "type": "object"
+      },
+      "VersionResult": {
+        "properties": {
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "kind",
+          "version",
+          "status"
+        ],
+        "title": "VersionResult",
         "type": "object"
       },
       "VersionView": {
@@ -1050,6 +1228,35 @@
       }
     },
     "/v1/recordings": {
+      "get": {
+        "description": "Members see their own recordings, reviewers those of their communities, admins none.",
+        "operationId": "list_recordings_v1_recordings_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RecordingSummary"
+                  },
+                  "title": "Response List Recordings V1 Recordings Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Recordings",
+        "tags": [
+          "review"
+        ]
+      },
       "post": {
         "operationId": "upload_recording_v1_recordings_post",
         "parameters": [
@@ -1152,6 +1359,170 @@
         "summary": "Get Recording",
         "tags": [
           "recordings"
+        ]
+      }
+    },
+    "/v1/recordings/{recording_id}/draft": {
+      "patch": {
+        "operationId": "edit_recording_draft_v1_recordings__recording_id__draft_patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recording_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "title": "Recording Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Edit Recording Draft",
+        "tags": [
+          "review"
+        ]
+      }
+    },
+    "/v1/recordings/{recording_id}/publish": {
+      "post": {
+        "operationId": "publish_recording_endpoint_v1_recordings__recording_id__publish_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recording_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "title": "Recording Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublishResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Publish Recording Endpoint",
+        "tags": [
+          "review"
+        ]
+      }
+    },
+    "/v1/recordings/{recording_id}/review": {
+      "post": {
+        "operationId": "review_recording_v1_recordings__recording_id__review_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recording_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "title": "Recording Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecisionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Review Recording",
+        "tags": [
+          "review"
         ]
       }
     },

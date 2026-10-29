@@ -7,6 +7,7 @@ from app.api.auth import require_action
 from app.api.consents import router as consents_router
 from app.api.readiness import run_checks
 from app.api.recordings import router as recordings_router
+from app.api.review import router as review_router
 from app.api.tracing import current_trace_id, install_trace_logging, trace_id_middleware
 from app.config import Settings
 from app.models.evidence import QueryRequest
@@ -20,6 +21,7 @@ install_trace_logging()
 app.include_router(admin_router)
 app.include_router(consents_router)
 app.include_router(recordings_router)
+app.include_router(review_router)
 
 
 @app.get("/health")

@@ -24,7 +24,11 @@ CODE_MESSAGES = {
     "unreadable": "That audio file could not be read. It may be damaged.",
     "bad_language": "That language is not supported.",
     "consent_denied": "Processing consent is missing, withdrawn or does not cover this recording.",
-    "forbidden": "You are not a member of that community.",
+    "forbidden": "You are not allowed to do that here.",
+    "stale_version": "Someone else changed this draft. Reload to see the latest version.",
+    "not_reviewable": "This item is not waiting for review (decided, revoked or processing).",
+    "transcript_not_approved": "Approve the current transcript first, then its translation.",
+    "unknown_segment": "One of the edited segments no longer exists. Reload and try again.",
 }
 
 

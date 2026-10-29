@@ -89,6 +89,27 @@ class RecordingView(BaseModel):
     translation: VersionView | None = None
 
 
+class RecordingSummary(BaseModel):
+    id: str
+    community_id: str
+    language: str
+    status: str
+    duration_s: float | None = None
+
+
+class ReviewSpec(BaseModel):
+    kind: str
+    expected_version: int
+    approved: bool
+    note: str | None = None
+
+
+class VersionResult(BaseModel):
+    kind: str
+    version: int
+    status: str
+
+
 class ApiClient:
     def __init__(
         self,
@@ -139,6 +160,31 @@ class ApiClient:
     def get_recording(self, recording_id: str) -> RecordingView:
         response = self._send("GET", f"/v1/recordings/{recording_id}", auth=True)
         return RecordingView.model_validate(response.json())
+
+    def list_recordings(self) -> list[RecordingSummary]:
+        response = self._send("GET", "/v1/recordings", auth=True)
+        return [RecordingSummary.model_validate(item) for item in response.json()]
+
+    def edit_draft(
+        self, recording_id: str, kind: str, expected_version: int, edits: dict[str, str]
+    ) -> VersionResult:
+        body = {
+            "kind": kind,
+            "expected_version": expected_version,
+            "edits": [{"segment_id": sid, "text": text} for sid, text in edits.items()],
+        }
+        response = self._send("PATCH", f"/v1/recordings/{recording_id}/draft", auth=True, json=body)
+        return VersionResult.model_validate(response.json())
+
+    def review(self, recording_id: str, spec: ReviewSpec) -> VersionResult:
+        response = self._send(
+            "POST", f"/v1/recordings/{recording_id}/review", auth=True, json=spec.model_dump()
+        )
+        return VersionResult.model_validate(response.json())
+
+    def publish(self, recording_id: str) -> str:
+        response = self._send("POST", f"/v1/recordings/{recording_id}/publish", auth=True)
+        return str(response.json()["status"])
 
     def _send(
         self,
