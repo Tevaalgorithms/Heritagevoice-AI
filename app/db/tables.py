@@ -140,4 +140,5 @@ class AuditLogRow(Base):
     action: Mapped[str] = mapped_column(String(64))
     target: Mapped[str] = mapped_column(String(128))
     trace_id: Mapped[str] = mapped_column(String(64))
+    detail: Mapped[str | None] = mapped_column(String(200), default=None)
     at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)

@@ -24,14 +24,21 @@ from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 
 from app.adapters.audio_store import LocalAudioStore, S3AudioStore
+from app.api.admin import AdminContext, context_for
 from app.api.auth import SessionFactory, current_principal, get_session_factory
 from app.audio import AudioRules, UploadError
 from app.config import Settings
-from app.db.repositories import JobRepository, RecordingRepository, TranscriptRepository
+from app.db.repositories import (
+    AuditRepository,
+    JobRepository,
+    RecordingRepository,
+    TranscriptRepository,
+)
 from app.models.job import Job
 from app.models.records import Recording
 from app.models.transcript import Segment
 from app.ports import AudioStore
+from app.revocation import revoke_recording
 from app.security.consent import ConsentDeniedError
 from app.security.permissions import Principal, Resource, authorize
 from app.security.roles import Action
@@ -117,6 +124,18 @@ class VersionView(BaseModel):
     segments: list[Segment]
 
 
+class RevokeRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    policy_version: Annotated[str, Field(pattern=r"^[A-Za-z0-9._-]{1,32}$")]
+    reason: Annotated[str, Field(min_length=1, max_length=150)]
+
+
+class RevokeResponse(BaseModel):
+    recording_id: str
+    status: str
+    jobs_stopped: int
+
+
 class RecordingResponse(BaseModel):
     id: str
     community_id: str
@@ -170,6 +189,26 @@ def _job_response(job: Job) -> JobResponse:
         stage=job.stage,
         error=job.error,
         recording_id=job.recording_id,
+    )
+
+
+RevokeCtx = Annotated[AdminContext, Depends(context_for(Action.RECORDING_REVOKE))]
+
+
+@router.post("/recordings/{recording_id}/revoke")
+def revoke_recording_endpoint(
+    recording_id: Annotated[str, PathId], body: RevokeRequest, ctx: RevokeCtx
+) -> RevokeResponse:
+    """Withdraw one recording at once: no further processing, indexing or playback."""
+    detail = f"{body.policy_version}: {body.reason}"
+    with ctx.factory() as session:
+        result = revoke_recording(session, recording_id)
+        if result is None:
+            raise NOT_FOUND
+        entry = ctx.entry("recording:revoke", f"recording:{recording_id}", detail)
+        AuditRepository(session).record(entry)
+    return RevokeResponse(
+        recording_id=recording_id, status="revoked", jobs_stopped=result.jobs_stopped
     )
 
 

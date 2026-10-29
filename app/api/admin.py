@@ -17,7 +17,7 @@ from app.adapters.cognito import CognitoIdentityProvider
 from app.api.auth import SessionFactory, get_session_factory, require_action
 from app.api.tracing import current_trace_id
 from app.config import Settings
-from app.db.repositories import AuditRepository, UserRepository
+from app.db.repositories import AuditEntry, AuditRepository, UserRepository
 from app.models.users import UserStatus
 from app.ports import IdentityProvider
 from app.security.permissions import Principal
@@ -45,15 +45,23 @@ class AdminContext:
     admin: Principal
     factory: SessionFactory
 
-
-def admin_context(
-    admin: Annotated[Principal, Depends(require_action(Action.USER_MANAGE))],
-    factory: Annotated[SessionFactory, Depends(get_session_factory)],
-) -> AdminContext:
-    return AdminContext(admin, factory)
+    def entry(self, action: str, target: str, detail: str | None = None) -> AuditEntry:
+        return AuditEntry(self.admin.user_id, action, target, current_trace_id(), detail)
 
 
-Ctx = Annotated[AdminContext, Depends(admin_context)]
+def context_for(action: Action) -> Callable[..., AdminContext]:
+    """A dependency that requires `action` and bundles the admin with a session factory."""
+
+    def dependency(
+        admin: Annotated[Principal, Depends(require_action(action))],
+        factory: Annotated[SessionFactory, Depends(get_session_factory)],
+    ) -> AdminContext:
+        return AdminContext(admin, factory)
+
+    return dependency
+
+
+Ctx = Annotated[AdminContext, Depends(context_for(Action.USER_MANAGE))]
 
 
 class InviteRequest(BaseModel):
@@ -79,7 +87,7 @@ def _not_self(admin: Principal, sub: str) -> None:
 
 
 def _audit(session: Session, ctx: AdminContext, action: str, sub: str) -> None:
-    AuditRepository(session).record(ctx.admin.user_id, action, f"user:{sub}", current_trace_id())
+    AuditRepository(session).record(ctx.entry(action, f"user:{sub}"))
 
 
 def _update(session: Session, sub: str, change: Callable[[UserRepository], None]) -> None:
