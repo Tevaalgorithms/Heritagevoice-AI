@@ -24,6 +24,7 @@ dependencies = [
   "langchain-anthropic>=1.7.7,<2",
   "sqlalchemy>=2.1.6,<3",
   "alembic>=1.20.1,<2",
+  "boto3>=1.43.121,<2",
 ]
 
 [dependency-groups]
@@ -65,3 +66,7 @@ max-returns = 3
 python_version = "3.12"
 strict = true
 files = ["app"]
+
+[[tool.mypy.overrides]]
+module = ["boto3.*", "botocore.*"]
+ignore_missing_imports = true
