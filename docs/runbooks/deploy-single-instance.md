@@ -34,7 +34,7 @@ printed or passed through Terraform.
 | Workflow | What it does | Confirmation |
 | --- | --- | --- |
 | `infra` | Pull request: read-only `terraform plan`. Manual run on `main`: apply `cognito` or `single-instance` | type the stack name |
-| `secrets` | Creates the generated secrets in Parameter Store (never overwrites) | type the stack name |
+| `secrets` | Creates the generated secrets in Parameter Store (never overwrites) | type `create-secrets` |
 | `deploy` | Packs the code, uploads it to the private releases bucket, runs it on the instance, smoke-tests `/ready` | type `deploy` |
 
 ## One-time bootstrap (by a person, because it defines what CI may do)
