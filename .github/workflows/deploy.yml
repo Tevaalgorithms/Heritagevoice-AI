@@ -4,7 +4,8 @@
 # Authentication is OpenID Connect: no AWS keys are stored in GitHub.
 #
 # One-time setup (see docs/runbooks/deploy-single-instance.md): create the GitHub environment
-# "prod" with required reviewers and these environment variables:
+# "prod" and these environment variables (required reviewers need a paid GitHub plan on a
+# private repo, so the typed confirmation below is the check):
 #   AWS_DEPLOY_ROLE_ARN, AWS_REGION, INSTANCE_ID, SITE_DOMAIN, RELEASES_BUCKET
 name: deploy
 
@@ -15,8 +16,9 @@ on:
         description: Git tag or branch to deploy
         required: true
         default: main
-  push:
-    tags: ["v*"]
+      confirm:
+        description: Type deploy to confirm
+        required: true
 
 concurrency:
   group: deploy-prod
@@ -27,8 +29,9 @@ permissions:
 
 jobs:
   deploy:
+    if: inputs.confirm == 'deploy'
     runs-on: ubuntu-latest
-    environment: prod # requires approval from the reviewers set on the environment
+    environment: prod
     permissions:
       id-token: write
       contents: read
@@ -39,7 +42,7 @@ jobs:
       - name: Validate the ref
         id: ref
         run: |
-          ref="${INPUT_REF:-$GITHUB_REF_NAME}"
+          ref="$INPUT_REF"
           [[ "$ref" =~ ^[A-Za-z0-9._/-]{1,100}$ ]] || { echo "Invalid ref" >&2; exit 1; }
           echo "ref=$ref" >> "$GITHUB_OUTPUT"
 

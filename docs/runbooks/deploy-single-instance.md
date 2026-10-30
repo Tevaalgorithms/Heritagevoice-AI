@@ -31,11 +31,11 @@ Nothing is created or deployed from a laptop, except the one-time bootstrap belo
 is private, so workflow logs are visible only to people with access; secrets are still never
 printed or passed through Terraform.
 
-| Workflow | What it does | Approval |
+| Workflow | What it does | Confirmation |
 | --- | --- | --- |
-| `infra` | Pull request: read-only `terraform plan`. Manual run on `main`: apply `cognito` or `single-instance` | `infra` environment |
-| `secrets` | Creates the generated secrets in Parameter Store (never overwrites) | `infra` environment |
-| `deploy` | Packs the code, uploads it to the private releases bucket, runs it on the instance, smoke-tests `/ready` | `prod` environment |
+| `infra` | Pull request: read-only `terraform plan`. Manual run on `main`: apply `cognito` or `single-instance` | type the stack name |
+| `secrets` | Creates the generated secrets in Parameter Store (never overwrites) | type `create-secrets` |
+| `deploy` | Packs the code, uploads it to the private releases bucket, runs it on the instance, smoke-tests `/ready` | type `deploy` |
 
 ## One-time bootstrap (by a person, because it defines what CI may do)
 
@@ -57,15 +57,22 @@ printed or passed through Terraform.
    `instance_id` does not exist before the first `infra` run. Apply this stack twice: first with
    a placeholder such as `i-00000000000000000`, then again with the real ID after step 4.
 3. **GitHub settings**
-   - Environment `infra`: required reviewer (you), deployments from `main` only.
+   - Environment `infra`: deployments from `main` only.
      Variable `AWS_TF_APPLY_ROLE_ARN` = output `terraform_apply_role_arn`.
-   - Environment `prod`: required reviewer, `main` and `v*` tags only. Variables
+   - Environment `prod`: `main` and `v*` tags only. Variables
      `AWS_DEPLOY_ROLE_ARN`, `AWS_REGION`, `INSTANCE_ID`, `SITE_DOMAIN`, `RELEASES_BUCKET`.
    - Repository variables: `AWS_REGION`, `TF_STATE_BUCKET`, `TF_ENVIRONMENT` (`prod`),
      `SITE_DOMAIN`, `ROUTE53_ZONE_NAME`, `COGNITO_DOMAIN_PREFIX` (unique, e.g. `hv-prod-<6 hex>`),
      `TF_BUDGET_EMAIL` (empty to skip the alert), `AWS_TF_PLAN_ROLE_ARN`, and after step 4
      `COGNITO_USER_POOL_ID`, `COGNITO_APP_CLIENT_ID`.
    - CODEOWNERS or branch protection should require review for `infra/**`.
+
+> **No approval gate.** Required reviewers on environments need a paid GitHub plan for private
+> repositories, and this project uses the free plan. Instead, every apply, secrets and deploy
+> run is manual (nothing deploys on a push or tag) and needs a typed confirmation, and only
+> people with write access can start one: keep the repository's collaborators to the people who
+> may change production. Read the `Plan` step of an `infra` run before relying on it; it cannot
+> stop the apply that follows. Moving to a paid plan later means adding required reviewers.
 
 ## Order of the first run
 
@@ -78,7 +85,7 @@ printed or passed through Terraform.
    they are not in state or plans.
 4. Add the provider keys yourself in the Parameter Store console as `SecureString` under
    `/heritagevoice/prod/` (LLM key, `PINECONE_API_KEY`, `PINECONE_INDEX`).
-5. Run `deploy` (Actions, deploy, Run workflow, a tag or `main`) and approve it.
+5. Run `deploy` (Actions, deploy, Run workflow, a tag or `main`, type `deploy`).
 6. Check `https://<domain>/health` and `/ready`.
 
 Values in Parameter Store may use letters, digits and `. _ ~ + / = : @ , -` only.
@@ -104,7 +111,7 @@ the first two.
 
 ## Releasing and rolling back
 
-Actions, deploy, Run workflow with a tag or branch. Approve it. Each run uploads
+Actions, deploy, Run workflow with a tag or branch, and type `deploy`. Each run uploads
 `releases/<commit>.tar.gz` and runs `hv-deploy <commit>` on the instance. **Rolling back** is
 the same workflow on the previous tag. The workflow refuses a commit whose CI checks are not
 all green and accepts only refs made of letters, digits and `. _ / -`.
