@@ -1,6 +1,9 @@
 /* Palette from the README banner. Static; never built from user input. */
 .stApp { background: linear-gradient(180deg, #FBF5E9 0%, #F7EEDC 100%); color: #1B2A41; }
 .block-container { max-width: 1080px; padding-top: 2.2rem; padding-bottom: 4rem; }
+/* This Streamlit version names the page container differently, so the rule above alone leaves a tall gap. */
+[data-testid="stMainBlockContainer"] { max-width: 1080px; padding-top: 2.5rem; padding-bottom: 4rem; }
+[data-testid="stSidebarHeader"] { padding-top: .6rem; padding-bottom: 0; height: auto; min-height: 0; }
 h1, h2, h3, h4, h1 *, h2 *, h3 * { font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif !important; color: #14284B; letter-spacing: -0.01em; font-weight: 600 !important; }
 h2 { border-bottom: 2px solid #E4D6BC; padding-bottom: .4rem; margin-bottom: 1rem; }
 [data-testid="stHeader"] { background: transparent; }
