@@ -26,6 +26,8 @@ def _code_for(error: Exception) -> str:
 
 
 class AnthropicModelTester:
+    """Sends one tiny request to check that a model and key work together."""
+
     def check(self, params: ModelParams, api_key: SecretStr | None) -> ProbeResult:
         if api_key is None:
             return ProbeResult(ok=False, code="no_key")

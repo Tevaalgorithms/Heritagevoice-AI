@@ -26,6 +26,8 @@ MISSING_TTL_S = 30.0
 
 
 class SecretReader(Protocol):
+    """Reads a secret by name; the value never leaves memory."""
+
     def get(self, name: str) -> SecretStr | None: ...
 
     def is_configured(self, name: str) -> bool: ...
@@ -43,6 +45,8 @@ class SecretsConfig:
 
 
 class ParameterStoreSecrets:
+    """Reads secrets from AWS Parameter Store, cached briefly, with the environment as fallback."""
+
     def __init__(self, config: SecretsConfig) -> None:
         self._config = config
         self._path = config.path.rstrip("/") if config.path else None

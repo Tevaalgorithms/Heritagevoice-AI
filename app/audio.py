@@ -23,6 +23,8 @@ STATUS = {
 
 
 class UploadError(Exception):
+    """An upload was refused; carries a safe code and the HTTP status to answer with."""
+
     def __init__(self, code: str) -> None:
         super().__init__(code)
         self.code = code
@@ -31,6 +33,8 @@ class UploadError(Exception):
 
 @dataclass(frozen=True)
 class AudioRules:
+    """The limits an upload must meet: size, length and accepted languages."""
+
     max_bytes: int
     max_seconds: float
     languages: frozenset[str]
@@ -38,6 +42,8 @@ class AudioRules:
 
 @dataclass(frozen=True)
 class AudioInfo:
+    """What was learned about an accepted audio file."""
+
     content_type: str
     size_bytes: int
     duration_s: float

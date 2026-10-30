@@ -4,6 +4,8 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class Segment(BaseModel):
+    """A timed piece of speech with its text and speaker."""
+
     model_config = ConfigDict(extra="forbid", frozen=True)
     segment_id: str = Field(min_length=1)
     start_s: float = Field(ge=0)

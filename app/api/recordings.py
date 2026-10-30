@@ -78,6 +78,8 @@ def get_upload_deps(
 
 @dataclass(frozen=True)
 class UploadContext:
+    """Who is uploading and the dependencies the upload needs."""
+
     principal: Principal
     deps: UploadDeps
     idempotency_key: str
@@ -98,6 +100,8 @@ def upload_context(
 
 
 class UploadForm(BaseModel):
+    """The multipart form for an upload: the audio and what it contains."""
+
     model_config = ConfigDict(extra="forbid")
     file: UploadFile
     language: Annotated[str, Field(pattern=r"^[a-z]{2,8}$")]
@@ -107,11 +111,15 @@ class UploadForm(BaseModel):
 
 
 class UploadResponse(BaseModel):
+    """The IDs of the new recording and its processing job."""
+
     recording_id: str
     job_id: str
 
 
 class JobResponse(BaseModel):
+    """The state of a processing job, with a safe error code if it failed."""
+
     job_id: str
     status: str
     stage: str | None
@@ -120,24 +128,32 @@ class JobResponse(BaseModel):
 
 
 class VersionView(BaseModel):
+    """One draft or approved version of a transcript or translation."""
+
     version: int
     status: str
     segments: list[Segment]
 
 
 class RevokeRequest(BaseModel):
+    """Request body to withdraw a recording, with the policy version and reason."""
+
     model_config = ConfigDict(extra="forbid")
     policy_version: Annotated[str, Field(pattern=r"^[A-Za-z0-9._-]{1,32}$")]
     reason: Annotated[str, Field(min_length=1, max_length=150)]
 
 
 class RevokeResponse(BaseModel):
+    """What revoking a recording changed."""
+
     recording_id: str
     status: str
     jobs_stopped: int
 
 
 class RecordingResponse(BaseModel):
+    """A recording with its latest transcript and translation."""
+
     id: str
     community_id: str
     language: str

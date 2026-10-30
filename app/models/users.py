@@ -8,11 +8,15 @@ from app.security.roles import Role
 
 
 class UserStatus(StrEnum):
+    """Whether a user may sign in."""
+
     ACTIVE = "active"
     DISABLED = "disabled"
 
 
 class StoredUser(BaseModel):
+    """A user as stored: role, status and communities."""
+
     model_config = ConfigDict(frozen=True)
     sub: str
     role: Role

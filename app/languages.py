@@ -11,6 +11,8 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class Language:
+    """A spoken language: its code, names and the speech-service code."""
+
     code: str
     name: str
     native_name: str

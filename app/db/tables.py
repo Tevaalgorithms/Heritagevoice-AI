@@ -22,10 +22,14 @@ def _now() -> datetime:
 
 
 class Base(DeclarativeBase):
+    """Base class for all database tables."""
+
     pass
 
 
 class JobRow(Base):
+    """Database table for background jobs."""
+
     __tablename__ = "job"
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
@@ -42,6 +46,8 @@ class JobRow(Base):
 
 
 class ConsentRow(Base):
+    """Database table for consent records."""
+
     __tablename__ = "consent"
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
@@ -52,6 +58,8 @@ class ConsentRow(Base):
 
 
 class RecordingRow(Base):
+    """Database table for recordings."""
+
     __tablename__ = "recording"
     __table_args__ = (UniqueConstraint("uploader_id", "idempotency_key"),)
 
@@ -71,6 +79,8 @@ class RecordingRow(Base):
 
 
 class TranscriptVersionRow(Base):
+    """Database table for transcript versions."""
+
     __tablename__ = "transcript_version"
     __table_args__ = (UniqueConstraint("recording_id", "version"),)
 
@@ -83,6 +93,8 @@ class TranscriptVersionRow(Base):
 
 
 class TranslationVersionRow(Base):
+    """Database table for translation versions."""
+
     __tablename__ = "translation_version"
     __table_args__ = (UniqueConstraint("recording_id", "target_language", "version"),)
 
@@ -97,6 +109,8 @@ class TranslationVersionRow(Base):
 
 
 class ReviewDecisionRow(Base):
+    """Database table for review decisions."""
+
     __tablename__ = "review_decision"
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
@@ -110,6 +124,8 @@ class ReviewDecisionRow(Base):
 
 
 class GraphAssertionRow(Base):
+    """Database table for reviewed knowledge-graph assertions (source of truth for Neo4j)."""
+
     __tablename__ = "graph_assertion"
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
@@ -126,6 +142,8 @@ class GraphAssertionRow(Base):
 
 
 class AppUserRow(Base):
+    """Database table for users."""
+
     __tablename__ = "app_user"
 
     sub: Mapped[str] = mapped_column(String(64), primary_key=True)
@@ -135,6 +153,8 @@ class AppUserRow(Base):
 
 
 class CommunityMemberRow(Base):
+    """Database table linking users to communities."""
+
     __tablename__ = "community_member"
 
     user_sub: Mapped[str] = mapped_column(ForeignKey("app_user.sub"), primary_key=True)

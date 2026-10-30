@@ -42,6 +42,8 @@ Identity = Annotated[IdentityProvider, Depends(get_identity_provider)]
 
 @dataclass(frozen=True)
 class AdminContext:
+    """The verified admin making a request, with a way to open database sessions."""
+
     admin: Principal
     factory: SessionFactory
 
@@ -65,6 +67,8 @@ Ctx = Annotated[AdminContext, Depends(context_for(Action.USER_MANAGE))]
 
 
 class InviteRequest(BaseModel):
+    """Request body to invite a new user with a role and communities."""
+
     model_config = ConfigDict(extra="forbid")
     email: str = Field(pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$", max_length=254)
     role: Role = Role.MEMBER
@@ -72,11 +76,15 @@ class InviteRequest(BaseModel):
 
 
 class RoleRequest(BaseModel):
+    """Request body to change a user's role."""
+
     model_config = ConfigDict(extra="forbid")
     role: Role
 
 
 class CommunitiesRequest(BaseModel):
+    """Request body to replace a user's community memberships."""
+
     model_config = ConfigDict(extra="forbid")
     communities: list[Annotated[str, COMMUNITY_ID]]
 

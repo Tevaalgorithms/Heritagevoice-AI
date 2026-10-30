@@ -5,6 +5,8 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class Kind:
+    """One kind of heritage a recording can hold, with its label, icon and hint."""
+
     key: str
     label: str
     icon: str

@@ -6,6 +6,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class Route(StrEnum):
+    """How a question will be answered: from text, from the graph, both, or not at all."""
+
     HYBRID = "hybrid"
     GRAPH = "graph"
     BOTH = "both"
@@ -14,6 +16,8 @@ class Route(StrEnum):
 
 
 class Evidence(BaseModel):
+    """One cited passage with its source, version, timing and access labels."""
+
     model_config = ConfigDict(extra="forbid", frozen=True)
     evidence_id: str = Field(min_length=1)
     document_id: str = Field(min_length=1)
@@ -29,18 +33,24 @@ class Evidence(BaseModel):
 
 
 class Claim(BaseModel):
+    """One statement in an answer and the evidence that supports it."""
+
     text: str
     evidence_ids: list[str] = Field(min_length=1)
     verdict: str = "unverified"
 
 
 class QueryRequest(BaseModel):
+    """A user's question."""
+
     model_config = ConfigDict(extra="forbid")
     question: str = Field(min_length=1, max_length=8000)
     conversation_id: str | None = None
 
 
 class QueryResponse(BaseModel):
+    """The answer to a question, with its citations and outcome."""
+
     status: str
     answer: str = ""
     citations: list[Evidence] = Field(default_factory=list)

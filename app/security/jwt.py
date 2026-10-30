@@ -19,6 +19,8 @@ class TokenError(Exception):
 
 @dataclass(frozen=True)
 class CognitoConfig:
+    """Which Cognito pool and app client a token must come from."""
+
     region: str
     user_pool_id: str
     client_id: str
@@ -33,6 +35,8 @@ class CognitoConfig:
 
 
 class KeyResolver(Protocol):
+    """Finds the public key that signed a token."""
+
     def signing_key(self, token: str) -> Any: ...
 
 
@@ -47,6 +51,8 @@ class JwksKeyResolver:
 
 
 class TokenClaims(BaseModel):
+    """The claims we trust from a verified access token."""
+
     model_config = ConfigDict(frozen=True)
     sub: str
     groups: frozenset[str]

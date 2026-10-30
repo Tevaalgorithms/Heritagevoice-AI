@@ -12,6 +12,8 @@ StateUpdate = dict[str, Any]
 
 
 class WorkflowState(TypedDict, total=False):
+    """What the question-answering graph carries between steps."""
+
     question: str
     route: Route
     hybrid_evidence: list[Evidence]
@@ -24,6 +26,8 @@ class WorkflowState(TypedDict, total=False):
 
 
 class PreservationState(TypedDict, total=False):
+    """What the recording-processing graph carries between steps."""
+
     recording_id: str
     consent: Consent
     language: str

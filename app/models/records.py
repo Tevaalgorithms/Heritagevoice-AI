@@ -19,6 +19,8 @@ class Right(StrEnum):
 
 
 class Consent(BaseModel):
+    """What a community has allowed for a recording, and whether it was withdrawn."""
+
     model_config = ConfigDict(frozen=True)
     id: str
     community_id: str
@@ -31,6 +33,8 @@ class Consent(BaseModel):
 
 
 class RecordingStatus(StrEnum):
+    """Where a recording is in its life, from draft to published or revoked."""
+
     DRAFT = "draft"
     REVIEW = "review"
     PUBLISHED = "published"
@@ -48,6 +52,8 @@ class HeritageKind(StrEnum):
 
 
 class Recording(BaseModel):
+    """A recorded piece of heritage and its processing state."""
+
     model_config = ConfigDict(frozen=True)
     id: str
     community_id: str
@@ -63,6 +69,8 @@ class Recording(BaseModel):
 
 
 class VersionStatus(StrEnum):
+    """Whether a transcript or translation version is a draft or approved."""
+
     DRAFT = "draft"
     APPROVED = "approved"
     REJECTED = "rejected"
@@ -70,6 +78,8 @@ class VersionStatus(StrEnum):
 
 
 class TranscriptVersion(BaseModel):
+    """A version of a recording's transcript."""
+
     model_config = ConfigDict(frozen=True)
     id: str
     recording_id: str
@@ -80,6 +90,8 @@ class TranscriptVersion(BaseModel):
 
 
 class TranslationVersion(BaseModel):
+    """A version of a recording's translation."""
+
     model_config = ConfigDict(frozen=True)
     id: str
     recording_id: str
@@ -92,6 +104,8 @@ class TranslationVersion(BaseModel):
 
 
 class Subject(StrEnum):
+    """What a review decision is about: the transcript or the translation."""
+
     TRANSCRIPT = "transcript"
     TRANSLATION = "translation"
     ASSERTION = "assertion"
@@ -109,6 +123,8 @@ class VersionRef(BaseModel):
 
 
 class ReviewDecision(BaseModel):
+    """A reviewer's decision on one version."""
+
     model_config = ConfigDict(frozen=True)
     id: str
     recording_id: str
@@ -120,6 +136,8 @@ class ReviewDecision(BaseModel):
 
 
 class Relation(StrEnum):
+    """The kinds of relationship the knowledge graph can record."""
+
     SPOKE_IN = "SPOKE_IN"
     MENTIONS = "MENTIONS"
     DESCRIBES = "DESCRIBES"
@@ -129,6 +147,8 @@ class Relation(StrEnum):
 
 
 class ReviewState(StrEnum):
+    """Whether a graph assertion is pending, approved or rejected."""
+
     PENDING = "pending"
     APPROVED = "approved"
     REJECTED = "rejected"

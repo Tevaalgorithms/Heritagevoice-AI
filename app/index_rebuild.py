@@ -13,6 +13,8 @@ from app.models.records import RecordingStatus
 
 @dataclass(frozen=True)
 class RebuildResult:
+    """How many chunks a rebuild indexed and how many it removed."""
+
     indexed: int
     removed: int
 

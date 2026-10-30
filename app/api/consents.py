@@ -25,6 +25,8 @@ NOT_FOUND = HTTPException(status_code=404, detail="Not found")
 
 
 class ConsentRequest(BaseModel):
+    """Request body to record a community's consent for a set of rights."""
+
     model_config = ConfigDict(extra="forbid")
     community_id: Annotated[str, Field(pattern=r"^[A-Za-z0-9_-]{1,64}$")]
     rights: Annotated[list[Right], Field(min_length=1, max_length=len(Right))]
@@ -32,6 +34,8 @@ class ConsentRequest(BaseModel):
 
 
 class ConsentResponse(BaseModel):
+    """A consent record as the API returns it."""
+
     id: str
     community_id: str
     rights: list[Right]
@@ -40,6 +44,8 @@ class ConsentResponse(BaseModel):
 
 
 class RevokeResponse(BaseModel):
+    """What a revocation changed: recordings revoked and jobs stopped."""
+
     consent_id: str
     recordings_revoked: int
     jobs_stopped: int

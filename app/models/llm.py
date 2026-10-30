@@ -13,6 +13,8 @@ class ModelRole(StrEnum):
 
 
 class Provider(StrEnum):
+    """The model providers the code knows how to call."""
+
     ANTHROPIC = "anthropic"
 
 
@@ -50,6 +52,8 @@ class NewModel(BaseModel):
 
 
 class CatalogEntry(BaseModel):
+    """An approved model: its provider, status and key name."""
+
     model_config = ConfigDict(frozen=True)
     model_id: str
     provider: Provider
@@ -58,6 +62,8 @@ class CatalogEntry(BaseModel):
 
 
 class StatusChange(BaseModel):
+    """Request body to change a catalogue model's status."""
+
     model_config = ConfigDict(extra="forbid", frozen=True)
     status: ModelStatus
 

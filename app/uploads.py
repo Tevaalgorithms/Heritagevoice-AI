@@ -31,6 +31,8 @@ class AccessDeniedError(PermissionError):
 
 @dataclass(frozen=True)
 class UploadDeps:
+    """What an upload needs: database sessions, audio storage and the rules."""
+
     sessions: SessionFactory
     store: AudioStore
     rules: AudioRules
@@ -38,6 +40,8 @@ class UploadDeps:
 
 @dataclass(frozen=True)
 class UploadRequest:
+    """Everything about one upload request, with the audio bytes."""
+
     principal: Principal
     community_id: str
     language: str
@@ -49,6 +53,8 @@ class UploadRequest:
 
 @dataclass(frozen=True)
 class Accepted:
+    """The outcome of an accepted upload."""
+
     recording_id: str
     job_id: str
     created: bool

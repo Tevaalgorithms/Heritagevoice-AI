@@ -47,6 +47,8 @@ Secrets = Annotated[SecretReader, Depends(get_secrets)]
 
 @dataclass(frozen=True)
 class ProbeDeps:
+    """The tester and secret reader the Test button needs, grouped for injection."""
+
     tester: ModelTester
     secrets: SecretReader
 
@@ -58,6 +60,8 @@ def probe_deps(
 
 
 class CatalogView(BaseModel):
+    """A catalogue model as shown to admins, with whether its key is configured."""
+
     model_id: str
     provider: str
     key_name: str
@@ -66,6 +70,8 @@ class CatalogView(BaseModel):
 
 
 class ModelView(BaseModel):
+    """The model setting in force for one job."""
+
     role: ModelRole
     provider: str
     model: str
@@ -77,6 +83,8 @@ class ModelView(BaseModel):
 
 
 class ModelsOverview(BaseModel):
+    """Everything the Settings page needs: the catalogue and each job's setting."""
+
     catalog: list[CatalogView]
     roles: list[ModelView]
 

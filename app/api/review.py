@@ -27,12 +27,16 @@ MAX_EDITS = 500
 
 
 class SegmentEdit(BaseModel):
+    """A corrected text for one segment."""
+
     model_config = ConfigDict(extra="forbid")
     segment_id: Annotated[str, SEGMENT_ID]
     text: Annotated[str, Field(min_length=1, max_length=2000)]
 
 
 class EditRequest(BaseModel):
+    """Request body to edit a draft, guarded by the version the editor saw."""
+
     model_config = ConfigDict(extra="forbid")
     kind: Kind
     expected_version: Annotated[int, Field(ge=1)]
@@ -40,6 +44,8 @@ class EditRequest(BaseModel):
 
 
 class DecisionRequest(BaseModel):
+    """Request body to approve or reject a version, guarded by its version."""
+
     model_config = ConfigDict(extra="forbid")
     kind: Kind
     expected_version: Annotated[int, Field(ge=1)]
@@ -48,17 +54,23 @@ class DecisionRequest(BaseModel):
 
 
 class VersionResult(BaseModel):
+    """The new version created or decided by a review action."""
+
     kind: str
     version: int
     status: str
 
 
 class PublishResult(BaseModel):
+    """The recording's status after a publish attempt."""
+
     recording_id: str
     status: str
 
 
 class RecordingSummary(BaseModel):
+    """A recording as listed for reviewers."""
+
     id: str
     community_id: str
     language: str

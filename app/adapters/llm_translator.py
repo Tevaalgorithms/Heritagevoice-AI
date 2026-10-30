@@ -30,15 +30,21 @@ LANGUAGE_NAMES = {"en": "English", "ta": "Tamil"}
 
 
 class TranslatedSegment(BaseModel):
+    """One translated segment, tied to its source by segment ID."""
+
     segment_id: str
     text: str
 
 
 class TranslationBatch(BaseModel):
+    """The structured answer the model must return for a batch of segments."""
+
     segments: list[TranslatedSegment]
 
 
 class LangChainTranslator:
+    """Translates segments with one LangChain chain and validates what comes back."""
+
     def __init__(self, chain: Runnable[dict[str, str], Any]) -> None:
         self._chain = chain
 

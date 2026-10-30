@@ -125,6 +125,8 @@ uv run python -m app.worker
 
 Full walkthrough: [`docs/runbooks/setup.md`](docs/runbooks/setup.md).
 
+New to the code? Read the [code guide](docs/code-guide.md): the layers, the conventions and where to change things.
+
 In a second terminal:
 
 ```sh

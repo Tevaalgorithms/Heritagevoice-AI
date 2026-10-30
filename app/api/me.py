@@ -12,6 +12,8 @@ router = APIRouter(prefix="/v1", tags=["me"])
 
 
 class Me(BaseModel):
+    """The signed-in user as the server knows them: ID, role and communities."""
+
     user_id: str
     role: str
     communities: list[str]
