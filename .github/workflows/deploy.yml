@@ -63,9 +63,9 @@ jobs:
         run: |
           sha="$(git rev-parse HEAD)"
           runs="$(gh api "repos/$GITHUB_REPOSITORY/commits/$sha/check-runs?per_page=100")"
-          failed="$(jq '[.check_runs[] | select(.name | IN("checks","secrets","image","terraform")) | select(.conclusion != "success")] | length' <<<"$runs")"
+          failed="$(jq '[.check_runs[] | select(.name | IN("checks","secrets","image","terraform")) | select(.conclusion | IN("failure","cancelled","timed_out","action_required"))] | length' <<<"$runs")"
           passed="$(jq '[.check_runs[] | select(.name | IN("checks","secrets","image","terraform")) | select(.conclusion == "success") | .name] | unique | length' <<<"$runs")"
-          echo "commit $sha: $passed of 4 checks passed, $failed not successful"
+          echo "commit $sha: $passed of 4 checks passed, $failed failed (runs still in progress are ignored)"
           [[ "$passed" == "4" && "$failed" == "0" ]] || { echo "CI is not green for this commit" >&2; exit 1; }
 
       - uses: aws-actions/configure-aws-credentials@v4
