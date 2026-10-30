@@ -128,3 +128,34 @@ def test_the_authorized_search_returns_evidence_from_postgres(engine):
         assert found.document_id == "r1"
         assert found.retrieval_methods == {"bm25"}
         assert lexical_evidence(session, person(communities=("c2",)), "ஏற்றம்") == []
+
+
+# --- public visibility on the real full-text path ------------------------------------------
+
+
+def test_public_chunks_are_found_by_outsiders_and_by_users_with_no_community(engine):
+    from app.models.records import Visibility  # noqa: PLC0415
+
+    index_published(engine, "r-pub", "c2", visibility=Visibility.PUBLIC)
+    index_published(
+        engine, "r-priv", "c3", consent_id="consent-c3", visibility=Visibility.COMMUNITY
+    )
+    assert any("r-pub" in found for found in ids(engine, "தண்ணீர்", ("c1",)))
+    assert any("r-pub" in found for found in ids(engine, "தண்ணீர்", ()))  # no community at all
+    assert not any("r-priv" in found for found in ids(engine, "தண்ணீர்", ("c1",)))
+    assert not any("r-priv" in found for found in ids(engine, "தண்ணீர்", ()))
+    assert any("r-priv" in found for found in ids(engine, "தண்ணீர்", ("c3",)))  # its own community
+
+
+def test_the_eligibility_gate_on_postgres_hides_public_chunks_once_consent_is_revoked(engine):
+    from app.db.repositories import ConsentRepository  # noqa: PLC0415
+    from app.models.records import Visibility  # noqa: PLC0415
+
+    index_published(engine, "r-pub", "c2", visibility=Visibility.PUBLIC)
+    outsider = person(communities=("c1",))
+    with Session(engine) as session:
+        assert [e.document_id for e in lexical_evidence(session, outsider, "தண்ணீர்")] == ["r-pub"]
+    with session_scope(engine) as session:
+        ConsentRepository(session).revoke("consent-1")
+    with Session(engine) as session:
+        assert lexical_evidence(session, outsider, "தண்ணீர்") == []

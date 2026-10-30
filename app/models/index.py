@@ -4,6 +4,8 @@ from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.models.records import Visibility
+
 
 class ChunkKind(StrEnum):
     """Whether a searchable chunk comes from a transcript or a translation."""
@@ -29,3 +31,4 @@ class ChunkRecord(BaseModel):
     end_s: float
     segment_ids: tuple[str, ...]
     speaker: str | None = None
+    visibility: Visibility = Visibility.COMMUNITY

@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 
 from app.audio import AudioInfo, AudioRules, UploadError, check_language, validate_audio
 from app.db.repositories import ConsentRepository, JobRepository, RecordingRepository
-from app.models.records import HeritageKind, Recording, Right
+from app.models.records import HeritageKind, Recording, Right, Visibility
 from app.ports import AudioStore
 from app.security.consent import ConsentDeniedError, require_right
 from app.security.permissions import Principal, Resource, authorize
@@ -49,6 +49,7 @@ class UploadRequest:
     idempotency_key: str
     data: bytes
     heritage_kind: HeritageKind = HeritageKind.STORY
+    visibility: Visibility = Visibility.COMMUNITY
 
 
 @dataclass(frozen=True)
@@ -82,6 +83,8 @@ def _check_consent(request: UploadRequest, deps: UploadDeps) -> None:
         consent = None  # a consent from another community is the same as no consent
     require_right(consent, Right.AI_PROCESSING)
     require_right(consent, Right.TRANSLATION)
+    if request.visibility is Visibility.PUBLIC:
+        require_right(consent, Right.PUBLIC_SHARING)
 
 
 def _storage_key(community_id: str, recording_id: str) -> str:
@@ -96,6 +99,7 @@ def _new_recording(request: UploadRequest, info: AudioInfo, key: str) -> Recordi
         language=request.language,
         consent_id=request.consent_id,
         heritage_kind=request.heritage_kind,
+        visibility=request.visibility,
         audio_key=key,
         content_type=info.content_type,
         size_bytes=info.size_bytes,

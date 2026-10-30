@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     max_audio_mb: int = Field(default=200, gt=0)
     max_audio_minutes: int = Field(default=120, gt=0)
     allowed_languages: str = DEFAULT_ALLOWED
+    # Lets an admin approve their own upload. Off by default (a second admin must review); turn it
+    # on only for a deployment with a single admin.
+    allow_self_review: bool = False
     ssm_path: str | None = Field(
         default=None, validation_alias=AliasChoices("HV_SSM_PATH", "HERITAGEVOICE_SSM_PATH")
     )

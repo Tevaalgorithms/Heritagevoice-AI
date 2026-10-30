@@ -26,6 +26,9 @@ def engine(tmp_path):
         repo.add(consent("consent-c2", "c2"))
         repo.add(consent("consent-noai", "c1", rights=[Right.PLAYBACK, Right.TRANSLATION]))
         repo.add(consent("consent-notr", "c1", rights=[Right.AI_PROCESSING]))
+        repo.add(
+            consent("consent-nopub", "c1", rights=[r for r in Right if r != Right.PUBLIC_SHARING])
+        )
         repo.add(consent("consent-revoked", "c1", revoked=True))
     return engine
 
@@ -186,7 +189,7 @@ def test_job_status_is_visible_to_the_uploader_and_a_reviewer_of_the_community(c
     job_id = upload(client).json()["job_id"]
     body = client.get(f"/v1/jobs/{job_id}").json()
     assert (body["status"], body["stage"], body["error"]) == ("queued", None, None)
-    act_as(person(Role.REVIEWER, user_id="rev"))
+    act_as(person(Role.ADMIN, user_id="rev"))
     assert client.get(f"/v1/jobs/{job_id}").status_code == 200
 
 
@@ -197,7 +200,6 @@ def test_hidden_and_missing_jobs_and_recordings_look_identical(client):
     for principal in (
         person(user_id="other-member"),
         person(Role.REVIEWER, user_id="r", communities=("c2",)),
-        person(Role.ADMIN, user_id="a", communities=()),
     ):
         act_as(principal)
         hidden_job = client.get(f"/v1/jobs/{ids['job_id']}")
@@ -228,5 +230,30 @@ def test_a_recording_without_a_kind_is_a_story(client):
 
 def test_an_unknown_kind_is_rejected_before_anything_is_stored(client, engine, store):
     assert upload(client, heritage_kind="gossip").status_code == 422
+    assert store.objects == {}
+    assert count(engine, RecordingRow) == 0
+
+
+def test_a_recording_is_community_only_unless_public_is_requested(client):
+    recording_id = upload(client).json()["recording_id"]
+    assert client.get(f"/v1/recordings/{recording_id}").json()["visibility"] == "community"
+
+
+def test_public_can_be_requested_at_upload_when_the_consent_allows_it(client):
+    recording_id = upload(client, visibility="public").json()["recording_id"]
+    assert client.get(f"/v1/recordings/{recording_id}").json()["visibility"] == "public"
+
+
+def test_public_is_refused_at_upload_when_the_consent_lacks_public_sharing(client, engine, store):
+    response = upload(client, visibility="public", consent_id="consent-nopub")
+    assert (response.status_code, response.json()["detail"]["code"]) == (403, "consent_denied")
+    assert store.objects == {}
+    assert count(engine, RecordingRow) == 0
+    # the same consent is fine for a community-only upload
+    assert upload(client, consent_id="consent-nopub", key="key-00000002").status_code == 201
+
+
+def test_an_unknown_visibility_is_rejected_before_anything_is_stored(client, engine, store):
+    assert upload(client, visibility="everyone").status_code == 422
     assert store.objects == {}
     assert count(engine, RecordingRow) == 0

@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 from app.api.admin import router as admin_router
 from app.api.auth import require_action
 from app.api.consents import router as consents_router
+from app.api.library import router as library_router
 from app.api.me import router as me_router
 from app.api.model_settings import router as model_settings_router
 from app.api.readiness import run_checks
@@ -31,6 +32,7 @@ def validation_error(request: Request, error: RequestValidationError) -> JSONRes
 
 app.include_router(admin_router)
 app.include_router(consents_router)
+app.include_router(library_router)
 app.include_router(model_settings_router)
 app.include_router(me_router)
 app.include_router(recordings_router)

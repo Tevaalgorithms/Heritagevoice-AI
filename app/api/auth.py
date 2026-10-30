@@ -103,7 +103,7 @@ def _principal_from_cognito(
         raise _unauthorized() from error
     with factory() as session:
         user = UserRepository(session).get(claims.sub)
-    principal = build_principal(user, claims.groups)
+    principal = build_principal(user, claims.groups, Settings().allow_self_review)
     if principal is None:
         raise HTTPException(status_code=403, detail="Access denied")
     return principal

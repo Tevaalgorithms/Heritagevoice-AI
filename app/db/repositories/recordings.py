@@ -1,15 +1,17 @@
 """Recordings and their lifecycle status."""
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.db.tables import (
     RecordingRow,
 )
+from app.models.library import LibraryFilter
 from app.models.records import (
     HeritageKind,
     Recording,
     RecordingStatus,
+    Visibility,
 )
 
 
@@ -21,6 +23,7 @@ def _to_recording(row: RecordingRow) -> Recording:
         language=row.language,
         consent_id=row.consent_id,
         heritage_kind=HeritageKind(row.heritage_kind),
+        visibility=Visibility(row.visibility),
         status=RecordingStatus(row.status),
         audio_key=row.audio_key,
         content_type=row.content_type,
@@ -59,6 +62,40 @@ class RecordingRepository:
         if owner_id is not None:
             query = query.where(RecordingRow.uploader_id == owner_id)
         query = query.order_by(RecordingRow.created_at.desc()).limit(200)
+        return [_to_recording(r) for r in self._session.scalars(query)]
+
+    def get_many(self, recording_ids: list[str]) -> dict[str, Recording]:
+        if not recording_ids:
+            return {}
+        query = select(RecordingRow).where(RecordingRow.id.in_(recording_ids))
+        return {row.id: _to_recording(row) for row in self._session.scalars(query)}
+
+    def list_visible(self, communities: frozenset[str], where: LibraryFilter) -> list[Recording]:
+        """Published recordings this reader may see: public ones, plus their own communities'."""
+        query = select(RecordingRow).where(
+            RecordingRow.status == RecordingStatus.PUBLISHED,
+            or_(
+                RecordingRow.visibility == Visibility.PUBLIC,
+                RecordingRow.community_id.in_(communities),
+            ),
+        )
+        if where.language is not None:
+            query = query.where(RecordingRow.language == where.language)
+        if where.kind is not None:
+            query = query.where(RecordingRow.heritage_kind == where.kind)
+        query = query.order_by(RecordingRow.created_at.desc(), RecordingRow.id).limit(where.limit)
+        return [_to_recording(r) for r in self._session.scalars(query)]
+
+    def set_visibility(self, recording_id: str, visibility: Visibility) -> None:
+        row = self._session.get(RecordingRow, recording_id)
+        if row is None:
+            raise KeyError(recording_id)
+        row.visibility = visibility
+        self._session.flush()
+
+    def list_all(self, limit: int = 200) -> list[Recording]:
+        """Every recording, newest first. For admins, who review across communities."""
+        query = select(RecordingRow).order_by(RecordingRow.created_at.desc()).limit(limit)
         return [_to_recording(r) for r in self._session.scalars(query)]
 
     def ids_by_status(self, status: RecordingStatus) -> list[str]:

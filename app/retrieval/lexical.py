@@ -1,4 +1,4 @@
-"""Keyword search over indexed chunks, limited to the caller's communities.
+"""Keyword search over indexed chunks: the caller's communities plus public chunks.
 
 On PostgreSQL this is full-text search with the 'simple' configuration (no stemming or stop
 words, so exact local terms and Tamil words match). Query words become exact OR-ed lexemes, so a
@@ -10,7 +10,7 @@ IDs through `eligibility`; this only narrows candidates.
 import math
 from collections import Counter
 
-from sqlalchemy import bindparam, text
+from sqlalchemy import String, bindparam, text
 from sqlalchemy.orm import Session
 
 from app.db.repositories import ChunkRepository
@@ -29,11 +29,12 @@ POSTGRES_QUERY = text(
     )
     SELECT evidence_id
     FROM evidence_chunk, q
-    WHERE community_id IN :communities AND to_tsvector('simple', text) @@ q.tsq
+    WHERE (community_id IN :communities OR visibility = 'public')
+      AND to_tsvector('simple', text) @@ q.tsq
     ORDER BY ts_rank(to_tsvector('simple', text), q.tsq) DESC, evidence_id
     LIMIT :limit
     """
-).bindparams(bindparam("communities", expanding=True))
+).bindparams(bindparam("communities", expanding=True, type_=String))
 
 
 def _document_frequency(docs: dict[str, list[str]]) -> Counter[str]:
@@ -79,7 +80,7 @@ def bm25_ranking(query_tokens: list[str], docs: dict[str, list[str]]) -> list[st
 
 
 def _portable(session: Session, query: str, communities: frozenset[str], limit: int) -> list[str]:
-    chunks = ChunkRepository(session).for_communities(communities)
+    chunks = ChunkRepository(session).visible_to(communities)
     docs = {chunk.evidence_id: tokens(chunk.text) for chunk in chunks}
     return bm25_ranking(tokens(query), docs)[:limit]
 
@@ -94,8 +95,8 @@ def _postgres(session: Session, query: str, communities: frozenset[str], limit: 
 def lexical_search(
     session: Session, query: str, communities: frozenset[str], limit: int = 20
 ) -> list[str]:
-    """Candidate chunk IDs for the query, best first. Empty without communities or query words."""
-    if not communities or not tokens(query):
+    """Candidate chunk IDs, best first: the reader's communities plus public chunks."""
+    if not tokens(query):
         return []
     search = _postgres if session.get_bind().dialect.name == "postgresql" else _portable
     return search(session, query, communities, limit)

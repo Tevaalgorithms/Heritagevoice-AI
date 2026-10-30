@@ -8,7 +8,14 @@ from app.db.repositories import (
     RecordingRepository,
     VersionRepository,
 )
-from app.models.records import Recording, RecordingStatus, Subject, VersionStatus
+from app.models.records import (
+    HeritageKind,
+    Recording,
+    RecordingStatus,
+    Subject,
+    VersionStatus,
+    Visibility,
+)
 from app.models.transcript import Segment
 from tests.helpers import consent
 
@@ -37,18 +44,21 @@ def add_consent(session: Session, consent_id="consent-1", community="c1", **kwar
 def published(session: Session, recording_id="r1", community="c1", **content) -> Recording:
     """A published recording whose transcript (and translation) are approved.
 
-    Options: consent_id, transcript (default TAMIL), translation (default ENGLISH, or None).
+    Options: consent_id, consent (extra kwargs for the consent, e.g. rights), transcript (default
+    TAMIL), translation (default ENGLISH, or None), language, kind, visibility.
     """
     consent_id = content.get("consent_id", "consent-1")
     transcript = content.get("transcript", TAMIL)
     translation = content.get("translation", ENGLISH)
-    add_consent(session, consent_id, community)
+    add_consent(session, consent_id, community, **content.get("consent", {}))
     recording = Recording(
         id=recording_id,
         community_id=community,
         uploader_id="uploader",
-        language="ta",
+        language=content.get("language", "ta"),
         consent_id=consent_id,
+        heritage_kind=content.get("kind", HeritageKind.STORY),
+        visibility=content.get("visibility", Visibility.COMMUNITY),
         status=RecordingStatus.PUBLISHED,
     )
     RecordingRepository(session).create(recording)

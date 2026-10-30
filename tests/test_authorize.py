@@ -32,12 +32,17 @@ def test_every_action_has_a_role_rule():
         (Role.MEMBER, Action.QUERY_ASK, True),
         (Role.MEMBER, Action.REVIEW_APPROVE, False),
         (Role.MEMBER, Action.USER_MANAGE, False),
-        (Role.REVIEWER, Action.REVIEW_APPROVE, True),
+        (Role.REVIEWER, Action.REVIEW_APPROVE, False),
         (Role.REVIEWER, Action.USER_MANAGE, False),
+        (Role.MEMBER, Action.LIBRARY_VIEW, True),
+        (Role.MEMBER, Action.VISIBILITY_MANAGE, False),
+        (Role.REVIEWER, Action.VISIBILITY_MANAGE, False),
+        (Role.ADMIN, Action.VISIBILITY_MANAGE, True),
+        (Role.ADMIN, Action.LIBRARY_VIEW, True),
         (Role.ADMIN, Action.USER_MANAGE, True),
         (Role.ADMIN, Action.RECORDING_REVOKE, True),
-        (Role.ADMIN, Action.REVIEW_APPROVE, False),
-        (Role.ADMIN, Action.RECORDING_UPLOAD, False),
+        (Role.ADMIN, Action.REVIEW_APPROVE, True),
+        (Role.ADMIN, Action.RECORDING_UPLOAD, True),
     ],
 )
 def test_role_table(role, action, allowed):
@@ -45,9 +50,16 @@ def test_role_table(role, action, allowed):
     assert decision.allowed is allowed
 
 
-def test_other_community_is_denied_even_for_a_reviewer():
-    decision = authorize(person(Role.REVIEWER), Action.REVIEW_APPROVE, Resource("c2", "other"))
-    assert (decision.allowed, decision.reason) == (False, Reason.COMMUNITY)
+def test_an_admin_may_approve_in_any_community_but_only_members_of_it_may_upload():
+    admin = person(Role.ADMIN, communities=())
+    assert authorize(admin, Action.REVIEW_APPROVE, Resource("c2", "other")).allowed
+    denied = authorize(admin, Action.RECORDING_UPLOAD, Resource("c2", admin.user_id))
+    assert (denied.allowed, denied.reason) == (False, Reason.COMMUNITY)
+
+
+def test_the_old_reviewer_role_is_denied_approval_everywhere():
+    decision = authorize(person(Role.REVIEWER), Action.REVIEW_APPROVE, Resource("c1", "other"))
+    assert (decision.allowed, decision.reason) == (False, Reason.ROLE)
 
 
 def test_admin_has_no_content_access_without_membership():
@@ -59,11 +71,13 @@ def test_admin_actions_do_not_need_a_community():
     assert authorize(person(Role.ADMIN, communities=()), Action.USER_MANAGE).allowed
 
 
-def test_reviewer_cannot_approve_their_own_upload():
-    me = person(Role.REVIEWER, user_id="rev")
-    decision = authorize(me, Action.REVIEW_APPROVE, Resource("c1", owner_id="rev"))
+def test_an_admin_cannot_approve_their_own_upload_unless_the_deployment_allows_it():
+    me = person(Role.ADMIN, user_id="boss")
+    decision = authorize(me, Action.REVIEW_APPROVE, Resource("c1", owner_id="boss"))
     assert decision.reason == Reason.SELF_APPROVAL
     assert authorize(me, Action.REVIEW_APPROVE, Resource("c1", owner_id="someone")).allowed
+    solo = me.model_copy(update={"self_review": True})
+    assert authorize(solo, Action.REVIEW_APPROVE, Resource("c1", owner_id="boss")).allowed
 
 
 def test_members_edit_only_their_own_drafts_but_reviewers_edit_any():
