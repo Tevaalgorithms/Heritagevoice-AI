@@ -18,6 +18,16 @@ variable "instance_id" {
   description = "ID of the instance to deploy to (output of infra/single-instance)."
 }
 
+variable "releases_bucket" {
+  type        = string
+  description = "Name of the private releases bucket (output of infra/single-instance)."
+}
+
+variable "state_bucket" {
+  type        = string
+  description = "Name of the Terraform state bucket (the CI roles read it for plans)."
+}
+
 variable "create_oidc_provider" {
   type        = bool
   default     = true

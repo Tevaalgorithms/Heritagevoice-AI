@@ -1,9 +1,11 @@
-# Deploys a Git tag (or branch) to the instance through AWS Systems Manager.
+# Deploys a Git tag (or branch) to the instance. CI packs the code into a tarball, uploads it to a
+# private S3 bucket and runs the deploy script on the instance through AWS Systems Manager. The
+# instance pulls with its own role, so it never needs GitHub credentials (the repository is private).
 # Authentication is OpenID Connect: no AWS keys are stored in GitHub.
 #
 # One-time setup (see docs/runbooks/deploy-single-instance.md): create the GitHub environment
 # "demo" with required reviewers and these environment variables:
-#   AWS_DEPLOY_ROLE_ARN, AWS_REGION, INSTANCE_ID, SITE_DOMAIN
+#   AWS_DEPLOY_ROLE_ARN, AWS_REGION, INSTANCE_ID, SITE_DOMAIN, RELEASES_BUCKET
 name: deploy
 
 on:
@@ -62,17 +64,28 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
           role-session-name: heritagevoice-deploy
 
+      - name: Package and upload the release
+        id: release
+        env:
+          RELEASES_BUCKET: ${{ vars.RELEASES_BUCKET }}
+        run: |
+          release="$(git rev-parse --short=12 HEAD)"
+          git archive --format=tar.gz --output release.tar.gz HEAD
+          aws s3 cp --only-show-errors release.tar.gz "s3://$RELEASES_BUCKET/releases/$release.tar.gz"
+          echo "release=$release" >> "$GITHUB_OUTPUT"
+
       - name: Deploy through Systems Manager
         env:
           INSTANCE_ID: ${{ vars.INSTANCE_ID }}
           REF: ${{ steps.ref.outputs.ref }}
+          RELEASE: ${{ steps.release.outputs.release }}
         run: |
           command_id="$(aws ssm send-command \
             --instance-ids "$INSTANCE_ID" \
             --document-name AWS-RunShellScript \
             --comment "deploy $REF" \
             --timeout-seconds 1200 \
-            --parameters "commands=[\"/opt/heritagevoice/deploy/start.sh $REF\"]" \
+            --parameters "commands=[\"/usr/local/bin/hv-deploy $RELEASE\"]" \
             --query Command.CommandId --output text)"
           echo "SSM command: $command_id"
           for _ in $(seq 1 120); do

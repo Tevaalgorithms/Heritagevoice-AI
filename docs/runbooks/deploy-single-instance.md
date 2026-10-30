@@ -25,90 +25,65 @@ record them here.
 - Check the zone has no `CAA` record that blocks Let's Encrypt (`letsencrypt.org`).
 - This repository's URL (it must be reachable by the instance: public, or add a deploy key).
 
-## 1. Remote state (once)
+## Everything runs through CI/CD
 
-Create an encrypted, versioned S3 bucket for Terraform state and add a `backend "s3"` block to
-`versions.tf` in both stacks. Never commit state, plans or `*.tfvars` (`AGENTS.md`).
+Nothing is created or deployed from a laptop, except the one-time bootstrap below. The repository
+is private, so workflow logs are visible only to people with access; secrets are still never
+printed or passed through Terraform.
 
-## 2. Cognito (sign-in)
+| Workflow | What it does | Approval |
+| --- | --- | --- |
+| `infra` | Pull request: read-only `terraform plan`. Manual run on `main`: apply `cognito` or `single-instance` | `infra` environment |
+| `secrets` | Creates the generated secrets in Parameter Store (never overwrites) | `infra` environment |
+| `deploy` | Packs the code, uploads it to the private releases bucket, runs it on the instance, smoke-tests `/ready` | `demo` environment |
 
-```sh
-cd infra/cognito
-terraform init
-terraform apply \
-  -var region=<region> -var environment=demo -var domain_prefix=<unique-prefix> \
-  -var 'callback_urls=["https://<domain>/oauth2callback"]' \
-  -var 'logout_urls=["https://<domain>/"]'
-```
+## One-time bootstrap (by a person, because it defines what CI may do)
 
-Note the outputs `user_pool_id` and `app_client_id`. Copy the app client **secret** from the
-Cognito console (it is intentionally not a Terraform output).
+1. **State bucket**: a private, versioned, encrypted S3 bucket named `heritagevoice-tfstate-<account>`
+   (it already exists in this account). Never put the account ID in Git.
+2. **CI roles** (`infra/github-oidc`):
 
-## 3. The instance
+   ```sh
+   cd infra/github-oidc
+   terraform init -backend-config="bucket=<state bucket>" -backend-config="region=us-west-2"
+   terraform apply -var region=us-west-2 -var environment=demo \
+     -var github_repo=Tevaalgorithms/Heritagevoice-AI -var instance_id=<see below> \
+     -var releases_bucket=heritagevoice-demo-releases-<account> -var state_bucket=<state bucket> \
+     -var create_oidc_provider=false   # the account already has the GitHub OIDC provider
+   ```
 
-Create `infra/single-instance/demo.tfvars` (git-ignored):
+   `instance_id` does not exist before the first `infra` run. Apply this stack twice: first with
+   a placeholder such as `i-00000000000000000`, then again with the real ID after step 4.
+3. **GitHub settings**
+   - Environment `infra`: required reviewer (you), deployments from `main` only.
+     Variable `AWS_TF_APPLY_ROLE_ARN` = output `terraform_apply_role_arn`.
+   - Environment `demo`: required reviewer, `main` and `v*` tags only. Variables
+     `AWS_DEPLOY_ROLE_ARN`, `AWS_REGION`, `INSTANCE_ID`, `SITE_DOMAIN`, `RELEASES_BUCKET`.
+   - Repository variables: `AWS_REGION`, `TF_STATE_BUCKET`, `TF_ENVIRONMENT` (`demo`),
+     `SITE_DOMAIN`, `ROUTE53_ZONE_NAME`, `COGNITO_DOMAIN_PREFIX` (unique, e.g. `hv-demo-<6 hex>`),
+     `TF_BUDGET_EMAIL` (empty to skip the alert), `AWS_TF_PLAN_ROLE_ARN`, and after step 4
+     `COGNITO_USER_POOL_ID`, `COGNITO_APP_CLIENT_ID`.
+   - CODEOWNERS or branch protection should require review for `infra/**`.
 
-```hcl
-region                = "us-west-2"
-environment           = "demo"
-domain                = "heritagevoice.tevaalgorithms.com"
-route53_zone_name     = "tevaalgorithms.com"   # optional: Terraform adds only the A record
-repo_url              = "https://github.com/Tevaalgorithms/Heritagevoice-AI.git"
-repo_ref              = "main"                 # use a release tag when sharing
-cognito_user_pool_id  = "<from step 2>"
-cognito_app_client_id = "<from step 2>"
-budget_email          = "<your email>"
-```
+## Order of the first run
 
-(`demo.tfvars.example` has the same content. Terraform looks the zone up by name, so no zone ID
-is needed.)
+1. Run `infra` with `cognito`. Copy `user_pool_id` and `app_client_id` from the log into the
+   repository variables `COGNITO_USER_POOL_ID` and `COGNITO_APP_CLIENT_ID`.
+2. Run `infra` with `single-instance`. Copy `instance_id` into the `demo` variable `INSTANCE_ID`
+   and into the second `github-oidc` apply; copy `releases_bucket` into `RELEASES_BUCKET`.
+3. Run `secrets`. It creates `POSTGRES_PASSWORD`, `HV_COOKIE_SECRET` and
+   `HV_COGNITO_CLIENT_SECRET` directly in Parameter Store. Terraform never sees the values, so
+   they are not in state or plans.
+4. Add the provider keys yourself in the Parameter Store console as `SecureString` under
+   `/heritagevoice/demo/` (LLM key, `PINECONE_API_KEY`, `PINECONE_INDEX`).
+5. Run `deploy` (Actions, deploy, Run workflow, a tag or `main`) and approve it.
+6. Check `https://<domain>/health` and `/ready`.
 
-```sh
-cd infra/single-instance
-terraform init
-terraform plan -var-file=demo.tfvars     # review locally; do not paste the output anywhere
-terraform apply -var-file=demo.tfvars
-```
+Values in Parameter Store may use letters, digits and `. _ ~ + / = : @ , -` only.
 
-The instance boots, installs Docker, mounts its data disk, fetches the code and writes the
-non-secret settings. **It does not start the app yet**, because the secrets do not exist.
-
-## 4. DNS
-
-Skipped when `route53_zone_name` is set: Terraform creates the `A` record. Otherwise point the
-domain's `A` record at the `public_ip` output.
-Caddy needs this to get a certificate. No domain yet? A name such as `1-2-3-4.nip.io` (your IP
-with dashes) also works for a demo.
-
-## 5. Secrets (SSM Parameter Store)
-
-Create these as `SecureString`, encrypted with the stack's key, under the path from the
-`ssm_parameter_path` output (`/heritagevoice/demo`). Values may use letters, digits and
-`. _ ~ + / = : @ , -` only.
-
-```sh
-put() { aws ssm put-parameter --region <region> --type SecureString --overwrite \
-  --key-id alias/heritagevoice-demo --name "/heritagevoice/demo/$1" --value "$2" >/dev/null; }
-
-put POSTGRES_PASSWORD "$(python3 -c 'import secrets; print(secrets.token_hex(16))')"
-put HV_COOKIE_SECRET  "$(python3 -c 'import secrets; print(secrets.token_hex(24))')"
-put HV_COGNITO_CLIENT_SECRET "<app client secret from the console>"
-```
-
-## 6. Start the app
-
-```sh
-aws ssm start-session --target <instance_id> --region <region>      # the session_command output
-sudo /opt/heritagevoice/deploy/start.sh
-```
-
-This renders the configuration from the parameters, builds the image (tagged with the Git
-commit), runs the database migrations and starts everything. Check it:
-
-```sh
-curl -i https://<domain>/health
-curl -i https://<domain>/ready        # 200 once PostgreSQL and the bucket are reachable
-```
+Rules that keep secrets out of Terraform: no `aws_ssm_parameter` resource with a value, no
+`random_password`, no secret `variable`, no `TF_VAR_*` secret. The repository scan test checks
+the first two.
 
 ## 7. First admin
 
@@ -125,55 +100,20 @@ curl -i https://<domain>/ready        # 200 once PostgreSQL and the bucket are r
 4. Uploads also need a consent record for each community. There is no endpoint for that yet
    (TODO task 2.8); until it exists, create one from a short script run the same way.
 
-## Deploy from GitHub Actions (CI/CD)
+## Releasing and rolling back
 
-After the first manual start, releases go out from GitHub. The workflow
-`.github/workflows/deploy.yml` signs in to AWS with OpenID Connect (no access keys), then runs
-`deploy/start.sh <tag>` on the instance through Systems Manager and smoke-tests `/ready`. It
-needs the reviewer's approval, refuses to deploy a commit whose CI checks are not all green, and
-only accepts a Git ref made of letters, digits and `. _ / -`.
-
-One-time setup:
-
-1. Create the deploy role (needs the instance ID from step 3):
-
-   ```sh
-   cd infra/github-oidc
-   terraform init
-   terraform apply -var region=us-west-2 -var environment=demo \
-     -var github_repo=Tevaalgorithms/Heritagevoice-AI -var instance_id=<instance_id>
-   # add -var create_oidc_provider=false if the account already has the GitHub OIDC provider
-   ```
-
-2. In GitHub: Settings, Environments, New environment `demo`. Add yourself as a **required
-   reviewer** and restrict deployments to the `main` branch and `v*` tags. The role trusts only
-   this environment of this repository.
-3. Add the environment variables (they are not secrets, but keep them out of Git):
-
-   ```sh
-   gh variable set AWS_DEPLOY_ROLE_ARN --env demo --body "<deploy_role_arn output>"
-   gh variable set AWS_REGION --env demo --body us-west-2
-   gh variable set INSTANCE_ID --env demo --body "<instance_id>"
-   gh variable set SITE_DOMAIN --env demo --body heritagevoice.tevaalgorithms.com
-   ```
-
-Releasing: `git tag v0.1.0 && git push origin v0.1.0` (or Actions, deploy, Run workflow with a
-tag or branch). Approve the run; it deploys and smoke-tests. **Rolling back** is the same
-workflow with the previous tag.
-
-Why `terraform apply` is not in CI: this repository is public, so workflow logs are public, and
-apply output shows account details. Infrastructure changes are applied from your own machine
-(`terraform plan` locally first); CI only checks `fmt` and `validate`. Secrets are rotated by
-hand in SSM, then re-run the deploy.
+Actions, deploy, Run workflow with a tag or branch. Approve it. Each run uploads
+`releases/<commit>.tar.gz` and runs `hv-deploy <commit>` on the instance. **Rolling back** is
+the same workflow on the previous tag. The workflow refuses a commit whose CI checks are not
+all green and accepts only refs made of letters, digits and `. _ / -`.
 
 ## Update, roll back, stop, tear down
 
-- **Update or roll back** (manual alternative to the workflow):
-  `sudo /opt/heritagevoice/deploy/start.sh <tag-or-branch>`; roll back with the previous tag.
+- **Update or roll back:** run the `deploy` workflow (previous tag to roll back).
 - **Stop between demos:** `aws ec2 stop-instances --instance-ids <id>`. You still pay for the
   disks, the public IP and the key (about $8 a month). Start it again with `start-instances`;
   the containers restart on their own.
-- **Tear down:** `terraform destroy -var-file=demo.tfvars`. The audio bucket is versioned and
+- **Tear down:** destroy through a reviewed change; the Cognito pool has deletion protection on. The audio bucket is versioned and
   not force-destroyed, so empty it deliberately first. Delete the SSM parameters yourself.
 
 ## Security notes

@@ -1,7 +1,7 @@
 #!/bin/bash
 # First-boot setup. It installs Docker, mounts the data disk, fetches the code and writes the
 # non-secret settings. It does NOT start the app: secrets do not exist yet. After `terraform
-# apply`, create the SSM parameters, then run /opt/heritagevoice/deploy/start.sh as root.
+# apply`, create the SSM parameters, then deploy a release with `hv-deploy <release-id>` as root.
 set -euxo pipefail
 exec > >(tee /var/log/heritagevoice-bootstrap.log) 2>&1
 
@@ -26,13 +26,20 @@ mkdir -p /data
 mount -a
 install -d -m 0700 /data/postgres /data/caddy
 
-git clone --depth 1 --branch ${repo_ref} ${repo_url} /opt/heritagevoice
+# Releases arrive from CI through a private S3 bucket (the repository is private, so the host
+# holds no GitHub credentials). The deploy script is the same file CI relies on.
+install -d /opt/heritagevoice
+cat > /usr/local/bin/hv-deploy <<'HVDEPLOY'
+${hv_deploy_script}
+HVDEPLOY
+chmod 0755 /usr/local/bin/hv-deploy
 
 install -d -m 0750 /etc/heritagevoice
 umask 077
 cat > /etc/heritagevoice/config.env <<'CONFIG'
 HV_DOMAIN=${domain}
 HV_SSM_PATH=${ssm_path}
+HV_RELEASES_BUCKET=${releases_bucket}
 HERITAGEVOICE_ENVIRONMENT=production
 HERITAGEVOICE_API_URL=http://api:8000
 HERITAGEVOICE_AWS_REGION=${region}
@@ -47,4 +54,4 @@ LANGSMITH_HIDE_INPUTS=true
 LANGSMITH_HIDE_OUTPUTS=true
 CONFIG
 
-echo "Bootstrap finished. Create the SSM parameters, then run /opt/heritagevoice/deploy/start.sh"
+echo "Bootstrap finished. Create the SSM parameters, then deploy a release with: hv-deploy <release-id>"

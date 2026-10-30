@@ -1,0 +1,97 @@
+# Terraform from CI. Pull requests get a read-only plan; applying is a manual run of this workflow
+# on main, approved in the `infra` environment. The CI role can manage only heritagevoice-*
+# resources, and the github-oidc stack (which defines CI's own permissions) is applied by hand.
+#
+# Setup (docs/runbooks/deploy-single-instance.md): repository variables AWS_REGION,
+# TF_STATE_BUCKET, TF_ENVIRONMENT, SITE_DOMAIN, ROUTE53_ZONE_NAME, COGNITO_USER_POOL_ID,
+# COGNITO_APP_CLIENT_ID, COGNITO_DOMAIN_PREFIX, TF_BUDGET_EMAIL (may be empty),
+# AWS_TF_PLAN_ROLE_ARN; and environment `infra` with the variable AWS_TF_APPLY_ROLE_ARN.
+name: infra
+
+on:
+  pull_request:
+    paths: ["infra/**", ".github/workflows/infra.yml"]
+  workflow_dispatch:
+    inputs:
+      stack:
+        description: Stack to apply
+        required: true
+        type: choice
+        options: [cognito, single-instance]
+
+concurrency:
+  group: infra
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  # Non-secret settings; Terraform reads TF_VAR_* from the environment.
+  TF_VAR_region: ${{ vars.AWS_REGION }}
+  TF_VAR_environment: ${{ vars.TF_ENVIRONMENT }}
+  TF_VAR_domain: ${{ vars.SITE_DOMAIN }}
+  TF_VAR_route53_zone_name: ${{ vars.ROUTE53_ZONE_NAME }}
+  TF_VAR_cognito_user_pool_id: ${{ vars.COGNITO_USER_POOL_ID }}
+  TF_VAR_cognito_app_client_id: ${{ vars.COGNITO_APP_CLIENT_ID }}
+  TF_VAR_domain_prefix: ${{ vars.COGNITO_DOMAIN_PREFIX }}
+  TF_VAR_budget_email: ${{ vars.TF_BUDGET_EMAIL }}
+  TF_VAR_callback_urls: '["https://${{ vars.SITE_DOMAIN }}/oauth2callback"]'
+  TF_VAR_logout_urls: '["https://${{ vars.SITE_DOMAIN }}/"]'
+
+jobs:
+  plan:
+    # Skipped until the one-time bootstrap has created the plan role and set its variable.
+    if: github.event_name == 'pull_request' && vars.AWS_TF_PLAN_ROLE_ARN != ''
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        stack: [cognito, single-instance]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_TF_PLAN_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-session-name: heritagevoice-plan
+      - name: Init
+        run: >
+          terraform -chdir=infra/${{ matrix.stack }} init -input=false
+          -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}"
+          -backend-config="region=${{ vars.AWS_REGION }}"
+      - name: Plan (read-only, no state lock)
+        run: terraform -chdir=infra/${{ matrix.stack }} plan -input=false -lock=false -no-color
+
+  apply:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: infra # requires approval from the reviewers set on the environment
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_TF_APPLY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-session-name: heritagevoice-apply
+      - name: Init
+        run: >
+          terraform -chdir=infra/${{ inputs.stack }} init -input=false
+          -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}"
+          -backend-config="region=${{ vars.AWS_REGION }}"
+      - name: Plan
+        run: terraform -chdir=infra/${{ inputs.stack }} plan -input=false -no-color -out=tfplan
+      - name: Apply the plan above
+        run: terraform -chdir=infra/${{ inputs.stack }} apply -input=false -no-color tfplan
