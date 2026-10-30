@@ -57,6 +57,11 @@ def passage_html(text: str) -> str:
     return f"<div class='hv-passage'>{escape(text)}</div>"
 
 
+def answer_html(text: str) -> str:
+    """An answer as safe, styled HTML: escaped, with line breaks kept."""
+    return f"<div class='hv-answer'>{escape(text).replace(chr(10), '<br>')}</div>"
+
+
 def apply() -> None:
     st.markdown(f"<style>{STYLESHEET.read_text()}</style>", unsafe_allow_html=True)
 

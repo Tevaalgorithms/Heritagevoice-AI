@@ -1,5 +1,17 @@
 {
   "status": "answered",
-  "answer": "Synthetic elder describes seasonal wells. [rec-1:s1:v1]",
+  "answer": "Water was shared among the families [1].",
+  "citations": [
+    {
+      "evidence_id": "rec-1:transcript:v1:c0",
+      "recording_id": "rec-1",
+      "title": "Recording rec-1",
+      "passage": "In summer we drew water from the well and shared it.",
+      "start_s": 0.0,
+      "end_s": 6.5,
+      "notices": []
+    }
+  ],
+  "warnings": [],
   "request_id": "0e496f5bb1004c30a3017fcf68a76ae8"
 }

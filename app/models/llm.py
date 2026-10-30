@@ -7,9 +7,12 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class ModelRole(StrEnum):
-    """A job that calls a language model. Later segments add supervisor, verifier and answer."""
+    """A job that calls a language model. Each can use its own models and fall-backs."""
 
     TRANSLATION = "translation"
+    SUPERVISOR = "supervisor"
+    VERIFIER = "verifier"
+    ANSWER = "answer"
 
 
 class Provider(StrEnum):

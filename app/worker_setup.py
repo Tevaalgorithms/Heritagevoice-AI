@@ -4,11 +4,9 @@ import logging
 from collections.abc import Callable, Mapping
 from functools import partial
 
-from pinecone import Pinecone
 from sqlalchemy import Engine
 
 from app.adapters.llm_translator import build_translator
-from app.adapters.pinecone_store import PineconeEmbedder, PineconeVectorStore
 from app.adapters.transcribe import AmazonTranscribe, TranscribeConfig
 from app.config import Settings
 from app.db.session import session_scope
@@ -16,14 +14,12 @@ from app.fakes import FakeTranscriber
 from app.indexing import INDEX_KIND, UNINDEX_KIND, IndexDeps, index_recording, unindex_recording
 from app.ingest import IngestDeps, ingest_handler
 from app.model_registry import ModelRegistry
-from app.models.evidence import Evidence
 from app.models.job import Job, Outcome
 from app.models.transcript import Segment
-from app.ports import Transcriber, VectorStore
-from app.retrieval.evidence_store import hydrate
+from app.ports import Transcriber
 from app.secrets import secrets_for
-from app.security.permissions import Principal
 from app.uploads import INGEST_KIND
+from app.vector_setup import vector_store_for
 
 logger = logging.getLogger("heritagevoice.worker")
 Handler = Callable[[Job], Outcome]
@@ -45,24 +41,8 @@ def _transcriber(settings: Settings) -> Transcriber | None:
     return None
 
 
-def _vector_store(settings: Settings, engine: Engine) -> VectorStore | None:
-    """Pinecone when a key and index are configured; otherwise keyword search only."""
-    if settings.pinecone_api_key is None or not settings.pinecone_index:
-        logger.warning("Pinecone is not configured; only keyword search will be indexed")
-        return None
-    client = Pinecone(api_key=settings.pinecone_api_key.get_secret_value())
-
-    def hydrate_for(ids: list[str], principal: Principal) -> list[Evidence]:
-        with session_scope(engine) as session:
-            return hydrate(session, ids, principal, "vector")
-
-    embedder = PineconeEmbedder(client, settings.embedding_model)
-    index = client.Index(settings.pinecone_index)
-    return PineconeVectorStore(index, embedder, hydrate_for, settings.embedding_dimension)
-
-
 def index_deps(settings: Settings, engine: Engine) -> IndexDeps:
-    return IndexDeps(lambda: session_scope(engine), _vector_store(settings, engine))
+    return IndexDeps(lambda: session_scope(engine), vector_store_for(settings, engine))
 
 
 def _ingest_handlers(settings: Settings, engine: Engine) -> dict[str, Handler]:

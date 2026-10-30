@@ -28,6 +28,8 @@ class Settings(BaseSettings):
     # Lets an admin approve their own upload. Off by default (a second admin must review); turn it
     # on only for a deployment with a single admin.
     allow_self_review: bool = False
+    # A question that takes longer than this is abandoned and answered with a timeout error.
+    query_deadline_s: float = Field(default=45.0, gt=0)
     ssm_path: str | None = Field(
         default=None, validation_alias=AliasChoices("HV_SSM_PATH", "HERITAGEVOICE_SSM_PATH")
     )

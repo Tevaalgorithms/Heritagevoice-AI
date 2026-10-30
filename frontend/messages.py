@@ -32,6 +32,8 @@ CODE_MESSAGES = {
     "model_exists": "That model is already in the catalogue. Deprecate or disable it instead.",
     "model_not_available": "Every model in the chain must be active, and each can appear once.",
     "unknown_model": "That model is not in the catalogue.",
+    "unavailable": "Answers are not available right now. Please try again in a few minutes.",
+    "deadline": "That took too long to answer. Try a shorter or simpler question.",
 }
 
 

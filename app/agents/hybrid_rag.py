@@ -42,7 +42,7 @@ class HybridRetriever:
         self._limits = limits
 
     def __call__(self, state: WorkflowState, principal: Principal) -> StateUpdate:
-        question = state["question"]
+        question = state.get("search_query") or state["question"]
         meaning, warnings = self._meaning(question, principal)
         hits = fuse_branches({"bm25": self._keyword(question, principal), "vector": meaning})
         update: StateUpdate = {

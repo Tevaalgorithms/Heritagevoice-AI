@@ -17,11 +17,25 @@ class Readiness(BaseModel):
     checks: dict[str, str]
 
 
+class CitationView(BaseModel):
+    """A source for an answer: the passage and where it is in the recording."""
+
+    evidence_id: str
+    recording_id: str
+    title: str
+    passage: str
+    start_s: float
+    end_s: float
+    notices: list[str] = []
+
+
 class QueryResult(BaseModel):
-    """The answer to a question."""
+    """The answer to a question, its sources, and how complete it is."""
 
     status: str
     answer: str = ""
+    citations: list[CitationView] = []
+    warnings: list[str] = []
     request_id: str = ""
 
 

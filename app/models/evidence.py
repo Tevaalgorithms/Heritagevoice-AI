@@ -30,6 +30,7 @@ class Evidence(BaseModel):
     access_groups: frozenset[str] = Field(min_length=1)
     retrieval_methods: frozenset[str] = Field(min_length=1)
     graph_paths: tuple[tuple[str, ...], ...] = ()
+    notices: tuple[str, ...] = ()  # must be shown with the passage (for example, for remedies)
 
 
 class Claim(BaseModel):
@@ -48,11 +49,27 @@ class QueryRequest(BaseModel):
     conversation_id: str | None = None
 
 
+class Citation(BaseModel):
+    """A source as shown to the reader: the passage and where it is in the recording. It carries
+    no access labels, community, uploader or storage location."""
+
+    evidence_id: str
+    recording_id: str
+    title: str
+    passage: str
+    start_s: float
+    end_s: float
+    notices: list[str] = Field(default_factory=list)
+
+
 class QueryResponse(BaseModel):
-    """The answer to a question, with its citations and outcome."""
+    """The answer to a question, with its citations and outcome.
+
+    `status` is one of answered, partial, insufficient_evidence, clarify or refused."""
 
     status: str
     answer: str = ""
-    citations: list[Evidence] = Field(default_factory=list)
+    citations: list[Citation] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
     request_id: str
     conversation_id: str | None = None

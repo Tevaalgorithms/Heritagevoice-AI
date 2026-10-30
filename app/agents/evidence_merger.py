@@ -30,6 +30,8 @@ def merge_evidence(items: list[Evidence]) -> list[Evidence]:
 def merge(state: WorkflowState) -> StateUpdate:
     return {
         "evidence": merge_evidence(
-            state.get("hybrid_evidence", []) + state.get("graph_evidence", [])
+            state.get("earlier_evidence", [])
+            + state.get("hybrid_evidence", [])
+            + state.get("graph_evidence", [])
         )
     }

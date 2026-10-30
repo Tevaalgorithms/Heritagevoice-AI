@@ -10,7 +10,7 @@
 		-Server
 	}
 
-	@api path /v1/* /admin/* /query /health /ready
+	@api path /v1/* /admin/* /health /ready
 	handle @api {
 		request_body {
 			max_size 210MB
