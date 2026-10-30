@@ -19,6 +19,9 @@ from frontend.api_models import (
     CatalogView,
     CitationView,
     Health,
+    IntegrationGroup,
+    IntegrationItem,
+    IntegrationsOverview,
     JobView,
     LibraryItem,
     LibraryResult,
@@ -44,6 +47,9 @@ from frontend.api_models import (
 
 __all__ = [
     "ApiClient",
+    "IntegrationGroup",
+    "IntegrationItem",
+    "IntegrationsOverview",
     "CitationView",
     "LibraryItem",
     "LibraryResult",
@@ -180,6 +186,21 @@ class ApiClient:
     def add_model(self, spec: NewModelSpec) -> CatalogView:
         response = self._send("POST", "/admin/models/catalog", auth=True, json=spec.model_dump())
         return CatalogView.model_validate(response.json())
+
+    def integrations(self) -> IntegrationsOverview:
+        response = self._send("GET", "/admin/integrations", auth=True)
+        return IntegrationsOverview.model_validate(response.json())
+
+    def save_integration(self, name: str, value: str) -> IntegrationItem:
+        """Send a key or setting once. The server stores it and never returns a secret."""
+        response = self._send(
+            "PUT", f"/admin/integrations/{name}", auth=True, json={"value": value}
+        )
+        return IntegrationItem.model_validate(response.json())
+
+    def test_pinecone(self) -> ProbeView:
+        response = self._send("POST", "/admin/integrations/pinecone/test", auth=True)
+        return ProbeView.model_validate(response.json())
 
     def set_model_status(self, model_id: str, status: str) -> CatalogView:
         response = self._send(

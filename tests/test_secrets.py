@@ -118,3 +118,102 @@ def test_the_value_is_never_shown_by_repr():
 def test_the_reader_is_built_from_the_settings_path():
     settings = Settings(_env_file=None, ssm_path="/heritagevoice/prod/")
     assert isinstance(secrets_for(settings), ParameterStoreSecrets)
+
+
+# --- writing -------------------------------------------------------------------------------
+
+
+class RecordingSsm:
+    def __init__(self, error=None):
+        self.calls, self.error = [], error
+
+    def put_parameter(self, **kwargs):
+        self.calls.append(kwargs)
+        if self.error is not None:
+            raise self.error
+
+
+def writer(ssm, path="/heritagevoice/prod"):
+    from app.secrets import ParameterStoreWriter  # noqa: PLC0415
+
+    return ParameterStoreWriter(path, client=ssm)
+
+
+def test_a_secret_is_written_encrypted_with_the_sites_key_and_overwrites():
+    ssm = RecordingSsm()
+    writer(ssm).put("OPENAI_API_KEY", "value-123", secret=True)
+    assert ssm.calls == [
+        {
+            "Name": "/heritagevoice/prod/OPENAI_API_KEY",
+            "Value": "value-123",
+            "Type": "SecureString",
+            "Overwrite": True,
+            "KeyId": "alias/heritagevoice-prod",
+        }
+    ]
+
+
+def test_a_plain_setting_is_written_as_text_without_a_key():
+    ssm = RecordingSsm()
+    writer(ssm).put("PINECONE_INDEX", "heritage", secret=False)
+    (call,) = ssm.calls
+    assert call["Type"] == "String"
+    assert "KeyId" not in call
+
+
+def test_the_encryption_key_follows_the_environment_in_the_path():
+    ssm = RecordingSsm()
+    writer(ssm, "/heritagevoice/staging/").put("OPENAI_API_KEY", "v", secret=True)
+    assert ssm.calls[0]["KeyId"] == "alias/heritagevoice-staging"
+
+
+@pytest.mark.parametrize(
+    ("error", "code"),
+    [
+        (
+            ClientError({"Error": {"Code": "AccessDeniedException", "Message": "x"}}, "Put"),
+            "write_denied",
+        ),
+        (
+            ClientError({"Error": {"Code": "ThrottlingException", "Message": "x"}}, "Put"),
+            "write_failed",
+        ),
+        (EndpointConnectionError(endpoint_url="https://ssm.example"), "write_failed"),
+    ],
+    ids=["denied", "throttled", "unreachable"],
+)
+def test_a_failed_write_becomes_a_short_code_that_never_carries_the_value(error, code, caplog):
+    from app.secrets import SecretWriteError  # noqa: PLC0415
+
+    with (
+        caplog.at_level(logging.WARNING, logger="heritagevoice.secrets"),
+        pytest.raises(SecretWriteError) as raised,
+    ):
+        writer(RecordingSsm(error)).put("OPENAI_API_KEY", "super-secret-value", secret=True)
+    assert raised.value.code == code
+    assert "super-secret-value" not in caplog.text
+    assert "super-secret-value" not in str(raised.value)
+
+
+def test_without_a_path_nothing_can_be_written():
+    from app.secrets import SecretWriteError  # noqa: PLC0415
+
+    with pytest.raises(SecretWriteError) as raised:
+        writer(RecordingSsm(), path=None).put("X_API_KEY", "v", secret=True)
+    assert raised.value.code == "not_configured"
+
+
+def test_forgetting_a_name_makes_the_next_read_fetch_it_again():
+    clock, ssm = Clock(), FakeSsm(MY_KEY="old")
+    secret = reader(ssm, clock=clock)
+    assert secret.get("MY_KEY").get_secret_value() == "old"
+    ssm.values["MY_KEY"] = "new"
+    secret.forget("MY_KEY")
+    assert secret.get("MY_KEY").get_secret_value() == "new"
+
+
+def test_one_reader_is_shared_per_process_so_the_cache_actually_helps():
+    from app.secrets import secrets_for  # noqa: PLC0415
+
+    settings = Settings(_env_file=None, ssm_path="/heritagevoice/prod")
+    assert secrets_for(settings) is secrets_for(settings)

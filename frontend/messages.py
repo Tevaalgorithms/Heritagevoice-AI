@@ -33,6 +33,17 @@ CODE_MESSAGES = {
     "model_not_available": "Every model in the chain must be active, and each can appear once.",
     "unknown_model": "That model is not in the catalogue.",
     "unavailable": "Answers are not available right now. Please try again in a few minutes.",
+    "invalid_value": (
+        "That value has characters that are not allowed. "
+        "Use letters, digits and . _ ~ + / = : @ , - only."
+    ),
+    "unknown_integration": "That setting is not one the portal manages.",
+    "write_denied": (
+        "This server is not yet allowed to save keys. "
+        "Apply the latest infrastructure change, then try again."
+    ),
+    "write_failed": "The key could not be saved. Try again in a minute.",
+    "not_configured": "Saving is not set up on this server.",
     "deadline": "That took too long to answer. Try a shorter or simpler question.",
 }
 
@@ -46,6 +57,9 @@ def message_for(error: ApiError) -> str:
 
 
 PROBE_MESSAGES = {
+    "no_index": "No Pinecone index name is saved yet.",
+    "unknown_index": "Pinecone does not know that index name.",
+    "dimension_mismatch": "The index has a different dimension than the one saved here.",
     "no_key": "No API key is configured on the server, so the model cannot be tested.",
     "bad_key": "The provider rejected the configured API key.",
     "unknown_model": "The provider does not know this model name.",

@@ -511,7 +511,9 @@ langchain-neo4j==0.11.0 \
 langchain-openai==1.7.3 \
     --hash=sha256:0ab77cc4579b87c50823b7ccb5d8af48d6c6ae2084f156dcdc37151fcc0717e6 \
     --hash=sha256:c1d2d0fbd4f542ddcdf176c07abcf4d86c3b716513929250bbef04e3efc5e0b5
-    # via langchain-pinecone
+    # via
+    #   heritagevoice-ai
+    #   langchain-pinecone
 langchain-pinecone==0.2.13 \
     --hash=sha256:294a6da7e1a81d5805060e37639d3e4fb72cb239d651a34a4d1f81ba096f473a \
     --hash=sha256:2f9db3f9d8c634e8716eb8fb65a405458083c4d52810be76294665e2d75ad65a

@@ -13,11 +13,11 @@ import logging
 from collections.abc import Callable
 from typing import Any
 
-from langchain_anthropic import ChatAnthropic
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import Runnable
 from pydantic import BaseModel, SecretStr
 
+from app.adapters.chat_models import ChatOptions, chat_model, structured
 from app.errors import ProviderError
 from app.model_registry import ModelRegistry
 from app.models.llm import ModelRole, ModelSetting
@@ -31,15 +31,14 @@ def structured_chain(prompt: ChatPromptTemplate, schema: type[BaseModel]) -> Cha
     """A factory for `prompt | model -> schema` using the model and limits of one setting."""
 
     def build(setting: ModelSetting, key: SecretStr) -> Runnable[dict[str, Any], Any]:
-        options: dict[str, Any] = {
-            "model": setting.model,
-            "api_key": key,
-            "timeout": setting.timeout_s,
-            "max_retries": setting.max_retries,
-            "temperature": setting.temperature,
-        }
-        model = ChatAnthropic(**options)
-        return prompt | model.with_structured_output(schema, method="json_schema")
+        options = ChatOptions(
+            setting.provider,
+            setting.model,
+            setting.timeout_s,
+            setting.max_retries,
+            setting.temperature,
+        )
+        return prompt | structured(chat_model(options, key), schema, setting.provider)
 
     return build
 

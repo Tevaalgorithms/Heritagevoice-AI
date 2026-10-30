@@ -11,10 +11,10 @@ import logging
 from collections.abc import Callable
 from typing import Any
 
-from langchain_anthropic import ChatAnthropic
 from langchain_core.runnables import Runnable
 from pydantic import BaseModel, SecretStr
 
+from app.adapters.chat_models import ChatOptions, chat_model, structured
 from app.agents.prompts.translation import TRANSLATION_PROMPT
 from app.errors import ProviderError
 from app.model_registry import ModelRegistry
@@ -90,16 +90,15 @@ ChainFactory = Callable[[ModelSetting, SecretStr], Runnable[dict[str, str], Any]
 
 
 def build_chain(setting: ModelSetting, api_key: SecretStr) -> Runnable[dict[str, str], Any]:
-    options: dict[str, Any] = {
-        "model": setting.model,
-        "api_key": api_key,
-        "timeout": setting.timeout_s,
-        "max_retries": setting.max_retries,
-        "temperature": setting.temperature,
-    }
-    model = ChatAnthropic(**options)
-    structured = model.with_structured_output(TranslationBatch, method="json_schema")
-    return TRANSLATION_PROMPT | structured
+    options = ChatOptions(
+        setting.provider,
+        setting.model,
+        setting.timeout_s,
+        setting.max_retries,
+        setting.temperature,
+    )
+    model = chat_model(options, api_key)
+    return TRANSLATION_PROMPT | structured(model, TranslationBatch, setting.provider)
 
 
 class ConfiguredTranslator:
