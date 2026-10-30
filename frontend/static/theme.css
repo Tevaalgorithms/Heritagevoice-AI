@@ -65,7 +65,6 @@ input, textarea, [data-baseweb="select"] > div { border-radius: 10px !important;
   background: linear-gradient(180deg, #C25F31, #A94B24); border: 0; color: #fff; box-shadow: 0 8px 22px rgba(180,83,42,.35); }
 .st-key-hv-sign-in button:hover { background: linear-gradient(180deg, #CC673A, #B4532A); box-shadow: 0 12px 28px rgba(180,83,42,.45); }
 .st-key-hv-sign-in button:focus-visible { outline: 3px solid #D98A2B; outline-offset: 3px; }
-.hv-secure { margin-top: .6rem; font-size: .78rem; color: #5B6577; letter-spacing: .04em; }
 .st-key-hv-sign-out button { background: transparent; border: 1px solid rgba(255,255,255,.35); color: #F3E9D6; border-radius: 10px; }
 .st-key-hv-sign-out button:hover { background: rgba(255,255,255,.12); color: #fff; box-shadow: none; }
 .hv-passage { font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif; font-size: 1.18rem;
