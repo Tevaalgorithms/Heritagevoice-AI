@@ -151,3 +151,11 @@ by the `infra` workflow (`cognito` stack). Cognito's classic page only accepts t
 in that stylesheet and ignores anything else; the wording ("Sign in with your email and password")
 and layout cannot be changed with this version. A fully custom page needs Cognito's newer managed
 login. To change the colours or logo, edit those two files and run the `infra` workflow again.
+## Signing out
+
+The Sign out button ends the app session and the Cognito session, then returns to the home page.
+Streamlit sends the browser to Cognito's `/logout` address with the standard OpenID parameters,
+but Cognito requires `logout_uri` and otherwise shows "Required parameters missing". The Caddyfile
+adds `logout_uri` (this site's home page) to that one redirect. The home page must be in the app
+client's allowed sign-out URLs (the `logout_urls` setting of `infra/cognito`, already
+`https://<domain>/`). If sign-out ever shows a Cognito error again, check that value first.
