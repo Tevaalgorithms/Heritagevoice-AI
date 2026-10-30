@@ -23,6 +23,7 @@ from app.models.job import Job, JobStatus
 from app.models.llm import ModelParams, ModelRole, ModelSetting, Provider
 from app.models.records import (
     Consent,
+    HeritageKind,
     Recording,
     RecordingStatus,
     ReviewDecision,
@@ -238,6 +239,7 @@ def _to_recording(row: RecordingRow) -> Recording:
         uploader_id=row.uploader_id,
         language=row.language,
         consent_id=row.consent_id,
+        heritage_kind=HeritageKind(row.heritage_kind),
         status=RecordingStatus(row.status),
         audio_key=row.audio_key,
         content_type=row.content_type,

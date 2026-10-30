@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 
 from app.audio import AudioInfo, AudioRules, UploadError, check_language, validate_audio
 from app.db.repositories import ConsentRepository, JobRepository, RecordingRepository
-from app.models.records import Recording, Right
+from app.models.records import HeritageKind, Recording, Right
 from app.ports import AudioStore
 from app.security.consent import ConsentDeniedError, require_right
 from app.security.permissions import Principal, Resource, authorize
@@ -44,6 +44,7 @@ class UploadRequest:
     consent_id: str
     idempotency_key: str
     data: bytes
+    heritage_kind: HeritageKind = HeritageKind.STORY
 
 
 @dataclass(frozen=True)
@@ -88,6 +89,7 @@ def _new_recording(request: UploadRequest, info: AudioInfo, key: str) -> Recordi
         uploader_id=request.principal.user_id,
         language=request.language,
         consent_id=request.consent_id,
+        heritage_kind=request.heritage_kind,
         audio_key=key,
         content_type=info.content_type,
         size_bytes=info.size_bytes,

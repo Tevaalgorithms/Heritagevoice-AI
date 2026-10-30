@@ -15,13 +15,15 @@ from frontend.api_client import (
     VersionView,
 )
 from frontend.format import changed_edits, editor_rows
+from frontend.kinds import label_for
 from frontend.messages import message_for
 
 REVIEWABLE = {"review", "published"}
 
 
 def _label(recording: RecordingSummary) -> str:
-    return f"{recording.id[:8]} · {recording.language} · {recording.status}"
+    kind = label_for(recording.heritage_kind)
+    return f"{kind} · {recording.id[:8]} · {recording.language} · {recording.status}"
 
 
 def _act(action: object, success: str) -> None:
@@ -89,6 +91,7 @@ def render(client: ApiClient) -> None:
     theme.page_header(
         "Review",
         "Check each transcript and translation. Only approved work becomes part of the collection.",
+        "review",
     )
     recordings = _load_recordings(client)
     if not recordings:

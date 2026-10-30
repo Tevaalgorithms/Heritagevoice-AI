@@ -50,6 +50,7 @@ class UploadSpec(BaseModel):
     language: str
     community_id: str
     consent_id: str
+    heritage_kind: str = "story"
 
 
 class UploadResult(BaseModel):
@@ -83,6 +84,7 @@ class RecordingView(BaseModel):
     id: str
     community_id: str
     language: str
+    heritage_kind: str = "story"
     status: str
     duration_s: float | None = None
     transcript: VersionView | None = None
@@ -93,6 +95,7 @@ class RecordingSummary(BaseModel):
     id: str
     community_id: str
     language: str
+    heritage_kind: str = "story"
     status: str
     duration_s: float | None = None
 
@@ -179,6 +182,7 @@ class ApiClient:
             "language": spec.language,
             "community_id": spec.community_id,
             "consent_id": spec.consent_id,
+            "heritage_kind": spec.heritage_kind,
         }
         response = self._send(
             "POST",

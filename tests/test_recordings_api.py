@@ -211,3 +211,22 @@ def test_recording_detail_has_no_transcript_until_ingestion_finishes(client):
     body = client.get(f"/v1/recordings/{recording_id}").json()
     assert (body["status"], body["transcript"], body["translation"]) == ("draft", None, None)
     assert "audio_key" not in body
+
+
+@pytest.mark.parametrize("kind", ["story", "song", "lesson", "practice", "remedy"])
+def test_the_kind_of_heritage_is_stored_and_returned(client, engine, kind):
+    recording_id = upload(client, heritage_kind=kind).json()["recording_id"]
+    assert client.get(f"/v1/recordings/{recording_id}").json()["heritage_kind"] == kind
+    with Session(engine) as session:
+        assert RecordingRepository(session).get(recording_id).heritage_kind == kind
+
+
+def test_a_recording_without_a_kind_is_a_story(client):
+    recording_id = upload(client).json()["recording_id"]
+    assert client.get(f"/v1/recordings/{recording_id}").json()["heritage_kind"] == "story"
+
+
+def test_an_unknown_kind_is_rejected_before_anything_is_stored(client, engine, store):
+    assert upload(client, heritage_kind="gossip").status_code == 422
+    assert store.objects == {}
+    assert count(engine, RecordingRow) == 0

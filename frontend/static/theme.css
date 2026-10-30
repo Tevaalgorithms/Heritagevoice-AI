@@ -44,3 +44,9 @@ input, textarea, [data-baseweb="select"] > div { border-radius: 10px !important;
 .hv-lead { display: block; }
 .stButton > button { white-space: normal; height: auto; min-height: 2.6rem; line-height: 1.35; }
 .stButton > button p, .stButton > button div { white-space: normal !important; overflow: visible !important; text-overflow: clip !important; }
+.hv-pageicon { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #D98A2B, #B4532A); box-shadow: 0 6px 16px rgba(180,83,42,.3); margin-bottom: .4rem; }
+.hv-chips { text-align: center; margin: .4rem 0 1.2rem; }
+.hv-chips-title { font-size: .78rem; letter-spacing: .1em; text-transform: uppercase; color: #5B6577; margin-bottom: .6rem; }
+.hv-chip { display: inline-block; margin: .25rem .3rem; padding: .4rem 1rem; border-radius: 999px; background: #FFFDF8;
+  border: 1px solid #E4D6BC; color: #14284B; font-size: .95rem; box-shadow: 0 1px 3px rgba(20,40,75,.06); }

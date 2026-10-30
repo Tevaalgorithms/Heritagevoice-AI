@@ -11,6 +11,7 @@ import streamlit as st
 from frontend import theme
 from frontend.api_client import ApiClient, ApiError, RecordingView, UploadSpec
 from frontend.format import failure_message, progress_for, segment_rows
+from frontend.kinds import BY_KEY, KINDS, REMEDY_NOTICE
 from frontend.messages import message_for
 
 AUDIO_TYPES = ["wav", "mp3", "flac", "ogg", "m4a"]
@@ -63,12 +64,27 @@ def submit(client: ApiClient, spec: UploadSpec) -> None:
         st.error(message_for(error))
 
 
+def _choose_kind() -> str:
+    key = st.selectbox(
+        "What is this recording?",
+        [kind.key for kind in KINDS],
+        format_func=lambda k: f"{BY_KEY[k].icon} {BY_KEY[k].label}",
+        help="Songs, lessons, practices and remedies are welcome as well as stories.",
+    )
+    if key == "remedy":
+        st.info(REMEDY_NOTICE)
+    return str(key)
+
+
 def render(client: ApiClient) -> None:
     theme.page_header(
         "Upload a recording",
-        "Share a story. It is transcribed, then reviewed by people before anyone can search it.",
+        "Share a song, story, lesson or practice. It is transcribed, then reviewed by people "
+        "before anyone can search it.",
+        "upload",
     )
     file = st.file_uploader("Audio file", type=AUDIO_TYPES)
+    kind = _choose_kind()
     language = LANGUAGES[st.selectbox("Language spoken", list(LANGUAGES))]
     community = st.text_input("Community ID")
     consent = st.text_input("Consent reference")
@@ -76,6 +92,10 @@ def render(client: ApiClient) -> None:
         submit(
             client,
             UploadSpec(
-                data=file.getvalue(), language=language, community_id=community, consent_id=consent
+                data=file.getvalue(),
+                language=language,
+                community_id=community,
+                consent_id=consent,
+                heritage_kind=kind,
             ),
         )
