@@ -142,3 +142,12 @@ all green and accepts only refs made of letters, digits and `. _ / -`.
 - Not yet verified against real AWS: the Transcribe and S3 adapters, the Cognito admin adapter,
   the Streamlit Cognito login, the DLM snapshot policy with the customer key, and the first-boot
   script on a real instance.
+
+## Signing out
+
+The Sign out button ends the app session and the Cognito session, then returns to the home page.
+Streamlit sends the browser to Cognito's `/logout` address with the standard OpenID parameters,
+but Cognito requires `logout_uri` and otherwise shows "Required parameters missing". The Caddyfile
+adds `logout_uri` (this site's home page) to that one redirect. The home page must be in the app
+client's allowed sign-out URLs (the `logout_urls` setting of `infra/cognito`, already
+`https://<domain>/`). If sign-out ever shows a Cognito error again, check that value first.

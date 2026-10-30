@@ -19,6 +19,12 @@
 	}
 
 	handle {
-		reverse_proxy ui:8501
+		reverse_proxy ui:8501 {
+			# Sign-out: Streamlit sends the browser to Cognito's /logout with the standard OIDC
+			# parameters, but Cognito insists on `logout_uri` and answers "Required parameters
+			# missing". Add it, pointing back at this site, so signing out ends the Cognito session
+			# and lands on the home page. Only redirects to Cognito's logout address are touched.
+			header_down Location "^(https://[^/]+\.amazoncognito\.com/logout\?.*)$" "$1&logout_uri=https%3A%2F%2F{http.request.host}%2F"
+		}
 	}
 }
