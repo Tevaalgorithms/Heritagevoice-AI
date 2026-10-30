@@ -6,6 +6,8 @@ it inside the query, not after results are returned.
 
 from typing import Protocol, runtime_checkable
 
+from pydantic import SecretStr
+
 from app.models.evidence import Evidence
 from app.models.llm import ModelParams, ProbeResult
 from app.models.transcript import Segment
@@ -71,7 +73,7 @@ class AudioStore(Protocol):
 class ModelTester(Protocol):
     """Checks that a model setting works with the configured key. Never returns the key."""
 
-    def check(self, params: ModelParams) -> ProbeResult: ...
+    def check(self, params: ModelParams, api_key: SecretStr | None) -> ProbeResult: ...
 
 
 @runtime_checkable

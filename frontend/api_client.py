@@ -125,6 +125,21 @@ class ModelParamsSpec(BaseModel):
     temperature: float = 0.0
     timeout_s: float = 30.0
     max_retries: int = 2
+    fallbacks: list[str] = []
+
+
+class CatalogView(BaseModel):
+    model_id: str
+    provider: str
+    key_name: str
+    status: str
+    key_configured: bool
+
+
+class NewModelSpec(BaseModel):
+    model_id: str
+    provider: str
+    key_name: str
 
 
 class ModelView(BaseModel):
@@ -135,12 +150,11 @@ class ModelView(BaseModel):
     timeout_s: float
     max_retries: int
     source: str
+    fallbacks: list[str] = []
 
 
 class ModelsOverview(BaseModel):
-    key_configured: bool
-    key_name: str
-    allowed: dict[str, list[str]]
+    catalog: list[CatalogView]
     roles: list[ModelView]
 
 
@@ -231,6 +245,16 @@ class ApiClient:
 
     def model_settings(self) -> ModelsOverview:
         return ModelsOverview.model_validate(self._send("GET", "/admin/models", auth=True).json())
+
+    def add_model(self, spec: NewModelSpec) -> CatalogView:
+        response = self._send("POST", "/admin/models/catalog", auth=True, json=spec.model_dump())
+        return CatalogView.model_validate(response.json())
+
+    def set_model_status(self, model_id: str, status: str) -> CatalogView:
+        response = self._send(
+            "PUT", f"/admin/models/catalog/{model_id}", auth=True, json={"status": status}
+        )
+        return CatalogView.model_validate(response.json())
 
     def save_model_setting(self, role: str, params: ModelParamsSpec) -> ModelView:
         response = self._send("PUT", f"/admin/models/{role}", auth=True, json=params.model_dump())

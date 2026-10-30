@@ -21,6 +21,7 @@ from app.models.job import Job, Outcome
 from app.models.transcript import Segment
 from app.ports import Transcriber, VectorStore
 from app.retrieval.evidence_store import hydrate
+from app.secrets import secrets_for
 from app.security.permissions import Principal
 from app.uploads import INGEST_KIND
 
@@ -70,7 +71,7 @@ def _ingest_handlers(settings: Settings, engine: Engine) -> dict[str, Handler]:
         logger.warning("No speech service configured; ingestion jobs will fail with no_handler")
         return {}
     registry = ModelRegistry(lambda: session_scope(engine), settings)
-    translator = build_translator(settings, registry)
+    translator = build_translator(registry, secrets_for(settings))
     deps = IngestDeps(lambda: session_scope(engine), transcriber, translator)
     return {INGEST_KIND: ingest_handler(deps)}
 

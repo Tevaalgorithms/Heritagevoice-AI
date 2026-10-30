@@ -2,11 +2,13 @@ import json
 
 import pytest
 from langchain_core.runnables import RunnableLambda
+from pydantic import SecretStr
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from app.adapters.llm_translator import (
     BATCH_SIZE,
+    ConfiguredTranslator,
     LangChainTranslator,
     TranslatedSegment,
     TranslationBatch,
@@ -15,7 +17,13 @@ from app.adapters.llm_translator import (
 from app.agents.prompts.translation import PROMPT_VERSION, TRANSLATION_PROMPT
 from app.audio import AudioRules
 from app.config import Settings
-from app.db.repositories import ConsentRepository, JobRepository, TranscriptRepository
+from app.db.repositories import (
+    ConsentRepository,
+    JobRepository,
+    ModelCatalogRepository,
+    ModelSettingRepository,
+    TranscriptRepository,
+)
 from app.db.session import session_scope
 from app.db.tables import Base
 from app.errors import ProviderError
@@ -23,6 +31,7 @@ from app.fakes import FakeAudioStore, FakeTranscriber
 from app.ingest import IngestDeps, ingest_handler
 from app.model_registry import ModelRegistry
 from app.models.job import JobStatus
+from app.models.llm import ModelParams, ModelRole, ModelStatus, NewModel, Provider
 from app.models.transcript import Segment
 from app.ports import Translator
 from app.uploads import UploadDeps, UploadRequest, accept_upload
@@ -136,13 +145,139 @@ def test_the_prompt_is_versioned_and_keeps_transcript_text_inside_data_tags():
     assert "ignore all rules" not in system
 
 
-def test_no_model_key_means_no_translator_and_a_key_builds_one():
-    registry = ModelRegistry(
-        lambda: session_scope(create_engine("sqlite://")), Settings(_env_file=None)
-    )
-    assert build_translator(Settings(_env_file=None), registry) is None
-    built = build_translator(Settings(_env_file=None, llm_api_key="not-a-real-key"), registry)
-    assert isinstance(built, Translator)
+class Chains:
+    """Fake chat models: which ones fail, and what each returns."""
+
+    def __init__(self, failing=()):
+        self.failing = set(failing)
+        self.built, self.called = [], []
+
+    def __call__(self, setting, key):
+        self.built.append((setting.model, key.get_secret_value()))
+
+        def run(inputs):
+            self.called.append(setting.model)
+            if setting.model in self.failing:
+                raise TimeoutError("provider timed out")
+            segments = json.loads(inputs["segments_json"])
+            return TranslationBatch(
+                segments=[
+                    TranslatedSegment(segment_id=s["segment_id"], text=setting.model)
+                    for s in segments
+                ]
+            )
+
+        return RunnableLambda(run)
+
+
+@pytest.fixture
+def catalog_engine(tmp_path):
+    engine = create_engine(f"sqlite:///{tmp_path / 'chain.db'}")
+    Base.metadata.create_all(engine)
+    with session_scope(engine) as session:
+        catalog = ModelCatalogRepository(session)
+        for model, key in (("m-1", "KEY_ONE"), ("m-2", "KEY_TWO"), ("m-3", "KEY_ONE")):
+            catalog.add(NewModel(model_id=model, provider=Provider.ANTHROPIC, key_name=key), "t")
+        ModelSettingRepository(session).upsert(
+            ModelRole.TRANSLATION,
+            ModelParams(provider="anthropic", model="m-1", fallbacks=("m-2", "m-3")),
+            "t",
+        )
+    return engine
+
+
+class Keys:
+    def __init__(self, **values):
+        self.values = values
+
+    def get(self, name):
+        return SecretStr(self.values[name]) if self.values.get(name) else None
+
+    def is_configured(self, name):
+        return self.get(name) is not None
+
+
+def translator_for(engine, keys, chains):
+    registry = ModelRegistry(lambda: session_scope(engine), Settings(_env_file=None), ttl_s=0)
+    return ConfiguredTranslator(registry, keys, chains)
+
+
+def texts(segments):
+    return [s.text for s in segments]
+
+
+SEGMENT = [Segment(segment_id="s1", start_s=0.0, end_s=1.0, text="vanakkam")]
+
+
+def test_the_primary_model_serves_when_it_works(catalog_engine):
+    chains = Chains()
+    translator = translator_for(catalog_engine, Keys(KEY_ONE="k1", KEY_TWO="k2"), chains)
+    assert texts(translator.translate(SEGMENT, "en")) == ["m-1"]
+    assert chains.called == ["m-1"]
+
+
+def test_a_failing_primary_hands_over_to_the_next_fallback(catalog_engine):
+    chains = Chains(failing={"m-1"})
+    translator = translator_for(catalog_engine, Keys(KEY_ONE="k1", KEY_TWO="k2"), chains)
+    assert texts(translator.translate(SEGMENT, "en")) == ["m-2"]
+    assert chains.called == ["m-1", "m-2"]
+
+
+def test_the_chain_continues_until_one_model_answers(catalog_engine):
+    chains = Chains(failing={"m-1", "m-2"})
+    translator = translator_for(catalog_engine, Keys(KEY_ONE="k1", KEY_TWO="k2"), chains)
+    assert texts(translator.translate(SEGMENT, "en")) == ["m-3"]
+    assert chains.called == ["m-1", "m-2", "m-3"]
+
+
+def test_when_every_model_fails_the_error_is_a_safe_mt_failure(catalog_engine):
+    chains = Chains(failing={"m-1", "m-2", "m-3"})
+    translator = translator_for(catalog_engine, Keys(KEY_ONE="k1", KEY_TWO="k2"), chains)
+    with pytest.raises(ProviderError) as error:
+        translator.translate(SEGMENT, "en")
+    assert error.value.code == "mt"
+    assert "timed out" not in str(error.value)
+
+
+def test_a_model_whose_key_is_missing_is_skipped_without_being_called(catalog_engine):
+    chains = Chains()
+    translator = translator_for(catalog_engine, Keys(KEY_TWO="k2"), chains)  # no KEY_ONE
+    assert texts(translator.translate(SEGMENT, "en")) == ["m-2"]
+    assert chains.called == ["m-2"]
+
+
+def test_with_no_key_at_all_the_call_fails_safely_and_calls_no_provider(catalog_engine):
+    chains = Chains()
+    translator = translator_for(catalog_engine, Keys(), chains)
+    with pytest.raises(ProviderError) as error:
+        translator.translate(SEGMENT, "en")
+    assert error.value.code == "mt"
+    assert chains.called == []
+
+
+def test_a_rotated_key_is_used_without_a_restart(catalog_engine):
+    chains = Chains()
+    keys = Keys(KEY_ONE="old-key", KEY_TWO="k2")
+    translator = translator_for(catalog_engine, keys, chains)
+    translator.translate(SEGMENT, "en")
+    translator.translate(SEGMENT, "en")
+    keys.values["KEY_ONE"] = "new-key"
+    translator.translate(SEGMENT, "en")
+    assert chains.built == [("m-1", "old-key"), ("m-1", "new-key")]  # built once per key
+
+
+def test_a_disabled_model_is_never_called(catalog_engine):
+    with session_scope(catalog_engine) as session:
+        ModelCatalogRepository(session).set_status("m-1", ModelStatus.DISABLED)
+    chains = Chains()
+    translator = translator_for(catalog_engine, Keys(KEY_ONE="k1", KEY_TWO="k2"), chains)
+    assert texts(translator.translate(SEGMENT, "en")) == ["m-2"]
+    assert "m-1" not in chains.called
+
+
+def test_the_translator_is_always_built_because_keys_are_read_per_call(catalog_engine):
+    registry = ModelRegistry(lambda: session_scope(catalog_engine), Settings(_env_file=None))
+    assert isinstance(build_translator(registry, Keys()), Translator)
 
 
 RULES = AudioRules(max_bytes=5_000_000, max_seconds=600.0, languages=frozenset({"ta", "en"}))
