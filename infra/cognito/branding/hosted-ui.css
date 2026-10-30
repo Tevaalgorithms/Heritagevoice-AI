@@ -1,0 +1,17 @@
+/* HeritageVoice sign-in page: parchment, deep navy and sunset terracotta, as in the app.
+   Cognito applies only the classes and properties below, and the file must stay under 3 KB. */
+.background-customizable { background-color: #FBF5E9; }
+.banner-customizable { padding: 28px 0px 28px 0px; background-color: #14284B; }
+.logo-customizable { max-width: 100%; max-height: 100%; }
+.textDescription-customizable { padding-top: 10px; padding-bottom: 10px; display: block; font-size: 17px; color: #14284B; }
+.label-customizable { font-weight: 600; color: #14284B; }
+.legalText-customizable { color: #5B6577; font-size: 12px; }
+.redirect-customizable { text-align: center; }
+.inputField-customizable { width: 100%; height: 42px; color: #1B2A41; background-color: #FFFDF8; border: 1px solid #C9B88F; }
+.inputField-customizable:focus { color: #1B2A41; background-color: #FFFFFF; border: 1px solid #D98A2B; }
+.submitButton-customizable { font-size: 15px; font-weight: bold; margin: 20px 0px 10px 0px; height: 46px; width: 100%; color: #FFFFFF; background-color: #B4532A; }
+.submitButton-customizable:hover { color: #FFFFFF; background-color: #9A4522; }
+.errorMessage-customizable { padding: 8px; font-size: 14px; width: 100%; background: #FBEDE8; border: 2px solid #B4532A; color: #7A2E12; }
+.passwordCheck-notValid-customizable { color: #B4532A; }
+.passwordCheck-valid-customizable { color: #2E7D4F; }
+.idpButton-customizable { height: 44px; width: 100%; text-align: center; margin-bottom: 5px; color: #14284B; background-color: #FFFDF8; border: 1px solid #C9B88F; }

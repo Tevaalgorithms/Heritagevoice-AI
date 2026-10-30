@@ -74,3 +74,14 @@ resource "aws_cognito_user_pool_domain" "this" {
   domain       = var.domain_prefix
   user_pool_id = aws_cognito_user_pool.this.id
 }
+
+# The hosted sign-in page, styled like the app. The logo must be under 100 KB and the stylesheet
+# under 3 KB. Omitting `client_id` applies it to every app client in the pool. It needs the domain
+# to exist first.
+resource "aws_cognito_user_pool_ui_customization" "branding" {
+  user_pool_id = aws_cognito_user_pool.this.id
+  css          = file("${path.module}/branding/hosted-ui.css")
+  image_file   = filebase64("${path.module}/branding/logo.png")
+
+  depends_on = [aws_cognito_user_pool_domain.this]
+}
