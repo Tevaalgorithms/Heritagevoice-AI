@@ -48,7 +48,6 @@ def _account_card(sign_in: Callable[[], None]) -> None:
             on_click=sign_in,
             key="hv-create-account",
         )
-        st.caption("Administrators sign in here too.")
 
 
 def render(client: ApiClient, sign_in: Callable[[], None]) -> None:
