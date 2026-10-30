@@ -7,3 +7,7 @@ backgroundColor = "#FBF5E9"
 secondaryBackgroundColor = "#F1E6D0"
 textColor = "#1B2A41"
 font = "sans serif"
+
+# Hide the developer toolbar (menu, Deploy) from visitors.
+[client]
+toolbarMode = "minimal"

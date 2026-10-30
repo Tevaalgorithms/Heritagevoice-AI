@@ -71,3 +71,8 @@ input, textarea, [data-baseweb="select"] > div { border-radius: 10px !important;
 .hv-passage { font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif; font-size: 1.18rem;
   line-height: 1.7; color: #1B2A41; border-left: 3px solid #D98A2B; padding: .2rem 0 .2rem 1rem; margin: .4rem 0 .6rem;
   overflow-wrap: anywhere; }
+/* The developer toolbar (the three-dot menu, Deploy) is not for visitors. The sidebar toggle stays. */
+[data-testid="stToolbar"], [data-testid="stMainMenu"], [data-testid="stDecoration"], [data-testid="stStatusWidget"] { display: none !important; }
+[data-testid="stHeader"] { height: 2.5rem; background: transparent; }
+/* The link icon Streamlit adds beside every heading. */
+[data-testid="stHeaderActionElements"] { display: none !important; }
