@@ -35,7 +35,7 @@ from app.db.repositories import (
     TranscriptRepository,
 )
 from app.models.job import Job
-from app.models.records import Recording
+from app.models.records import HeritageKind, Recording
 from app.models.transcript import Segment
 from app.ports import AudioStore
 from app.revocation import revoke_recording
@@ -103,6 +103,7 @@ class UploadForm(BaseModel):
     language: Annotated[str, Field(pattern=r"^[a-z]{2,8}$")]
     community_id: Annotated[str, ID]
     consent_id: Annotated[str, ID]
+    heritage_kind: HeritageKind = HeritageKind.STORY
 
 
 class UploadResponse(BaseModel):
@@ -140,6 +141,7 @@ class RecordingResponse(BaseModel):
     id: str
     community_id: str
     language: str
+    heritage_kind: str
     status: str
     duration_s: float | None
     transcript: VersionView | None
@@ -162,7 +164,13 @@ async def upload_recording(
 ) -> UploadResponse:
     data = await form.file.read(ctx.deps.rules.max_bytes + 1)
     request = UploadRequest(
-        ctx.principal, form.community_id, form.language, form.consent_id, ctx.idempotency_key, data
+        ctx.principal,
+        form.community_id,
+        form.language,
+        form.consent_id,
+        ctx.idempotency_key,
+        data,
+        form.heritage_kind,
     )
     try:
         accepted = await run_in_threadpool(accept_upload, request, ctx.deps)
@@ -241,6 +249,7 @@ def get_recording(
             id=recording.id,
             community_id=recording.community_id,
             language=recording.language,
+            heritage_kind=recording.heritage_kind,
             status=recording.status,
             duration_s=recording.duration_s,
             transcript=None if transcript is None else VersionView(**transcript.model_dump()),

@@ -91,6 +91,7 @@ def render(client: ApiClient) -> None:
     theme.page_header(
         "Model settings",
         "Choose which model does each job. API keys stay in the server's secret store.",
+        "settings",
     )
     overview = _load(client)
     if overview is None:

@@ -60,6 +60,7 @@ class RecordingRow(Base):
     uploader_id: Mapped[str] = mapped_column(String(64))
     language: Mapped[str] = mapped_column(String(16))
     consent_id: Mapped[str] = mapped_column(ForeignKey("consent.id"))
+    heritage_kind: Mapped[str] = mapped_column(String(16), default="story", server_default="story")
     status: Mapped[str] = mapped_column(String(16), index=True)
     audio_key: Mapped[str | None] = mapped_column(String(256), default=None)
     content_type: Mapped[str | None] = mapped_column(String(64), default=None)

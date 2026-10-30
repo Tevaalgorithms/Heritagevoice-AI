@@ -62,6 +62,7 @@ class RecordingSummary(BaseModel):
     id: str
     community_id: str
     language: str
+    heritage_kind: str
     status: str
     duration_s: float | None
 
@@ -100,6 +101,7 @@ def list_recordings(principal: Principal_, factory: Factory) -> list[RecordingSu
             id=r.id,
             community_id=r.community_id,
             language=r.language,
+            heritage_kind=r.heritage_kind,
             status=r.status,
             duration_s=r.duration_s,
         )

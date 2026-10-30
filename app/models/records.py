@@ -37,6 +37,16 @@ class RecordingStatus(StrEnum):
     REVOKED = "revoked"
 
 
+class HeritageKind(StrEnum):
+    """What a recording holds. Remedies are health-related: never present them as advice."""
+
+    STORY = "story"
+    SONG = "song"
+    LESSON = "lesson"
+    PRACTICE = "practice"
+    REMEDY = "remedy"
+
+
 class Recording(BaseModel):
     model_config = ConfigDict(frozen=True)
     id: str
@@ -44,6 +54,7 @@ class Recording(BaseModel):
     uploader_id: str
     language: str
     consent_id: str
+    heritage_kind: HeritageKind = HeritageKind.STORY
     status: RecordingStatus = RecordingStatus.DRAFT
     audio_key: str | None = None
     content_type: str | None = None
