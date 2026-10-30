@@ -1,6 +1,8 @@
-"""The legal pages: Terms of Use, Privacy Notice, Cookie Notice, Acceptable Use, Accessibility and
-Contact. Their text is in `frontend/legal/*.md`; the organisation's name, contact address and
-governing law are filled in where the text has {{operator}}, {{contact}} and {{jurisdiction}}.
+"""The legal pages: Terms of Use, Privacy Notice (which covers cookies), Acceptable Use,
+Accessibility and Contact.
+
+Their text is in `frontend/legal/*.md`. The organisation's name, contact address and governing law
+are filled in where the text has {{operator}}, {{contact}} and {{jurisdiction}}.
 
 These texts describe what the service actually does, but they are a starting point: have a lawyer
 who knows the places you operate review them before launch, and set the organisation details.
@@ -31,7 +33,6 @@ class LegalPage:
 PAGES = (
     LegalPage("terms", "Terms of Use", "terms.md", ":material/gavel:"),
     LegalPage("privacy", "Privacy Notice", "privacy.md", ":material/shield:"),
-    LegalPage("cookies", "Cookie Notice", "cookies.md", ":material/cookie:"),
     LegalPage("acceptable-use", "Acceptable Use", "acceptable-use.md", ":material/rule:"),
     LegalPage("accessibility", "Accessibility", "accessibility.md", ":material/accessibility_new:"),
     LegalPage("contact", "Contact and takedown", "contact.md", ":material/mail:"),

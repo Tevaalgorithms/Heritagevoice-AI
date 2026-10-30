@@ -13,30 +13,42 @@ from frontend import theme
 from frontend.api_client import ApiClient
 from frontend.views import library
 
-SIGN_IN_LABEL = "Sign in or create an account"
+SIGN_IN_LABEL = "Contributor sign in"
+ADMIN_LABEL = "Administrator sign in"
 ACCOUNT_NOTE = (
-    "Accounts are for people who contribute recordings and for administrators. "
-    "Searching and reading what communities have shared publicly is open to everyone."
+    "Sign in to add recordings. Searching and reading what communities have shared publicly "
+    "is open to everyone and needs no account."
+)
+ADMIN_NOTE = "Administrators review recordings and manage settings."
+INVITE_NOTE = (
+    "New contributor accounts are created by an administrator. "
+    "Ask yours to invite you, then sign in with the email they used."
 )
 
 
 def _account_card(sign_in: Callable[[], None]) -> None:
-    """Where contributors and administrators start."""
+    """Where contributors and administrators start. Both use the same secure sign-in; the
+    account's role decides which sections they see afterwards."""
     with st.container(border=True):
         st.markdown("#### Contribute or manage")
         st.caption(ACCOUNT_NOTE)
         st.button(
             SIGN_IN_LABEL,
-            icon=":material/login:",
+            icon=":material/mic:",
             type="primary",
             use_container_width=True,
             on_click=sign_in,
             key="hv-sign-in",
         )
-        st.caption(
-            "Sign-in uses a password and a second step. New accounts are approved by an "
-            "administrator before they can add recordings."
+        st.caption(ADMIN_NOTE)
+        st.button(
+            ADMIN_LABEL,
+            icon=":material/admin_panel_settings:",
+            use_container_width=True,
+            on_click=sign_in,
+            key="hv-admin-sign-in",
         )
+        st.caption(INVITE_NOTE)
 
 
 def render(client: ApiClient, sign_in: Callable[[], None]) -> None:
