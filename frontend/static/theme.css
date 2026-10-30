@@ -68,3 +68,6 @@ input, textarea, [data-baseweb="select"] > div { border-radius: 10px !important;
 .hv-secure { margin-top: .6rem; font-size: .78rem; color: #5B6577; letter-spacing: .04em; }
 .st-key-hv-sign-out button { background: transparent; border: 1px solid rgba(255,255,255,.35); color: #F3E9D6; border-radius: 10px; }
 .st-key-hv-sign-out button:hover { background: rgba(255,255,255,.12); color: #fff; box-shadow: none; }
+.hv-passage { font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif; font-size: 1.18rem;
+  line-height: 1.7; color: #1B2A41; border-left: 3px solid #D98A2B; padding: .2rem 0 .2rem 1rem; margin: .4rem 0 .6rem;
+  overflow-wrap: anywhere; }

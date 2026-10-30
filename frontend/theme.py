@@ -45,11 +45,17 @@ ICONS = {
     "upload": "<path d='M12 3v12'/><path d='M8 7l4-4 4 4'/><path d='M5 15v4h14v-4'/>",
     "review": "<path d='M5 12l4 4 10-10'/><path d='M4 4h16v16H4z'/>",
     "ask": "<path d='M4 5h16v11H9l-5 4z'/><path d='M8 9h8M8 12h5'/>",
+    "library": "<path d='M4 5h5v14H4z'/><path d='M10 5h5v14h-5z'/><path d='M16 6l4 1-3 12-4-1'/>",
     "settings": (
         "<path d='M4 7h10M18 7h2M4 17h2M10 17h10'/>"
         "<circle cx='16' cy='7' r='2'/><circle cx='8' cy='17' r='2'/>"
     ),
 }
+
+
+def passage_html(text: str) -> str:
+    """A passage as safe, styled HTML. The text is escaped, so it can never add markup or links."""
+    return f"<div class='hv-passage'>{escape(text)}</div>"
 
 
 def apply() -> None:

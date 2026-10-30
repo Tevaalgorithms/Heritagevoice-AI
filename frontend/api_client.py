@@ -19,6 +19,9 @@ from frontend.api_models import (
     CatalogView,
     Health,
     JobView,
+    LibraryItem,
+    LibraryResult,
+    LibrarySpec,
     MeView,
     ModelParamsSpec,
     ModelsOverview,
@@ -35,10 +38,15 @@ from frontend.api_models import (
     UploadSpec,
     VersionResult,
     VersionView,
+    VisibilityResult,
 )
 
 __all__ = [
     "ApiClient",
+    "LibraryItem",
+    "LibraryResult",
+    "LibrarySpec",
+    "VisibilityResult",
     "ApiError",
     "ApiNotConfiguredError",
     "ApiNotReadyError",
@@ -102,6 +110,7 @@ class ApiClient:
             "community_id": spec.community_id,
             "consent_id": spec.consent_id,
             "heritage_kind": spec.heritage_kind,
+            "visibility": spec.visibility,
         }
         response = self._send(
             "POST",
@@ -140,6 +149,21 @@ class ApiClient:
             "POST", f"/v1/recordings/{recording_id}/review", auth=True, json=spec.model_dump()
         )
         return VersionResult.model_validate(response.json())
+
+    def library(self, spec: LibrarySpec) -> LibraryResult:
+        """Browse, or search when `q` is set. Empty filters are not sent."""
+        params = {k: v for k, v in spec.model_dump().items() if v not in ("", None)}
+        response = self._send("GET", "/v1/library", auth=True, params=params)
+        return LibraryResult.model_validate(response.json())
+
+    def set_visibility(self, recording_id: str, visibility: str) -> VisibilityResult:
+        response = self._send(
+            "PUT",
+            f"/v1/recordings/{recording_id}/visibility",
+            auth=True,
+            json={"visibility": visibility},
+        )
+        return VisibilityResult.model_validate(response.json())
 
     def publish(self, recording_id: str) -> str:
         response = self._send("POST", f"/v1/recordings/{recording_id}/publish", auth=True)
