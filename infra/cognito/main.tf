@@ -18,7 +18,9 @@ resource "aws_cognito_user_pool" "this" {
   }
 
   admin_create_user_config {
-    allow_admin_create_user_only = true # self-sign-up is off
+    # Anyone may create an account (email verified, MFA on), but the app denies every request
+    # from an account until an admin approves it: see docs/runbooks/accounts.md.
+    allow_admin_create_user_only = false
   }
 
   password_policy {

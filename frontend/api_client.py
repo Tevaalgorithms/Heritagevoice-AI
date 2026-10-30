@@ -38,6 +38,7 @@ from frontend.api_models import (
     RecordingView,
     ReviewSpec,
     SegmentView,
+    SignupView,
     UploadResult,
     UploadSpec,
     VersionResult,
@@ -75,6 +76,7 @@ __all__ = [
     "RecordingView",
     "ReviewSpec",
     "SegmentView",
+    "SignupView",
     "UploadResult",
     "UploadSpec",
     "VersionResult",
@@ -185,6 +187,24 @@ class ApiClient:
 
     def me(self) -> MeView:
         return MeView.model_validate(self._send("GET", "/v1/me", auth=True).json())
+
+    def signups(self) -> list[SignupView]:
+        """People who created an account and wait for approval (admins only)."""
+        response = self._send("GET", "/admin/signups", auth=True)
+        return [SignupView.model_validate(item) for item in response.json()]
+
+    def approve_signup(self, sub: str, communities: list[str]) -> None:
+        self._send(
+            "POST", f"/admin/signups/{sub}/approve", auth=True, json={"communities": communities}
+        )
+
+    def decline_signup(self, sub: str) -> None:
+        self._send("POST", f"/admin/signups/{sub}/decline", auth=True)
+
+    def invite_user(self, email: str, role: str, communities: list[str]) -> None:
+        """Invite a person by email with a role. This is the only way an admin is created."""
+        body = {"email": email, "role": role, "communities": communities}
+        self._send("POST", "/admin/users", auth=True, json=body)
 
     def model_settings(self) -> ModelsOverview:
         return ModelsOverview.model_validate(self._send("GET", "/admin/models", auth=True).json())

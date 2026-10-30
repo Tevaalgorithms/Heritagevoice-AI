@@ -88,6 +88,7 @@ data "aws_iam_policy_document" "app" {
       "cognito-idp:AdminListGroupsForUser",
       "cognito-idp:AdminDisableUser",
       "cognito-idp:AdminUserGlobalSignOut",
+      "cognito-idp:ListUsers",
     ]
     resources = [local.user_pool_arn]
   }

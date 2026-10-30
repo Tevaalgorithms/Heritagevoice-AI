@@ -6,12 +6,12 @@ import streamlit as st
 
 from app.config import Settings
 from frontend import theme
-from frontend.account import current_role, show_account
+from frontend.account import AwaitingApprovalError, current_role, show_account
 from frontend.api_client import ApiClient, ApiError
 from frontend.auth import COGNITO_PROVIDER, cognito_enabled, resolve_token
 from frontend.legal import PAGES, OrganisationFacts
 from frontend.messages import message_for
-from frontend.views import ask, library, review, upload
+from frontend.views import ask, library, people, review, upload
 from frontend.views import home as home_view
 from frontend.views import legal as legal_view
 from frontend.views import settings as settings_page
@@ -80,6 +80,9 @@ def _member_sections(client: ApiClient, role: str | None) -> dict[str, list[obje
                 url_path="review",
             ),
             _page(
+                people.render, client, title="People", icon=":material/group:", url_path="people"
+            ),
+            _page(
                 settings_page.render,
                 client,
                 title="Settings",
@@ -104,6 +107,19 @@ def _run_for_visitors(settings: Settings, facts: OrganisationFacts) -> None:
     st.navigation({"Explore": [home], "Legal": _legal_pages(facts)}).run()
 
 
+def _run_awaiting_approval(settings: Settings, facts: OrganisationFacts) -> None:
+    """Signed in, but not approved yet: say so plainly, with sign-out and the legal pages."""
+    show_account(None, settings)
+    page = st.Page(
+        home_view.render_waiting,
+        title="Account",
+        icon=":material/hourglass_top:",
+        url_path="account",
+        default=True,
+    )
+    st.navigation({"Your account": [page], "Legal": _legal_pages(facts)}).run()
+
+
 def main() -> None:
     theme.apply()
     settings = Settings()
@@ -115,7 +131,11 @@ def main() -> None:
     client = ApiClient(settings.api_url, token)
     theme.brand()
     show_status(client)
-    role = current_role(client)
+    try:
+        role = current_role(client)
+    except AwaitingApprovalError:
+        _run_awaiting_approval(settings, facts)
+        return
     show_account(role, settings)
     sections = _member_sections(client, role)
     st.navigation({**sections, "Legal": _legal_pages(facts)}).run()

@@ -1,4 +1,5 @@
 import time
+from datetime import UTC, datetime
 
 import boto3
 import jwt
@@ -18,7 +19,7 @@ from app.db.repositories import UserRepository
 from app.db.session import session_scope
 from app.db.tables import AuditLogRow, Base
 from app.fakes import FakeIdentityProvider
-from app.models.users import UserStatus
+from app.models.users import Signup, UserStatus
 from app.ports import IdentityProvider
 from app.security.jwt import CognitoConfig
 from app.security.roles import Role
@@ -252,4 +253,149 @@ def test_cognito_disable_also_signs_the_user_out(cognito_stub):
     stubber.add_response("admin_disable_user", {}, pool)
     stubber.add_response("admin_user_global_sign_out", {}, pool)
     provider.disable_user("abc-123")
+    stubber.assert_no_pending_responses()
+
+
+# --- people who create an account themselves, waiting for approval ---------------------------
+
+WAITING = Signup(sub="new-1", email="new@example.org", created="2026-10-30")
+
+
+def test_the_waiting_list_shows_only_people_not_yet_approved(client, idp):
+    idp.signups = [WAITING, Signup(sub="member-1", email="m@example.org", created="2026-10-01")]
+    response = client.get("/admin/signups", headers=ADMIN)
+    assert response.status_code == 200
+    assert response.json() == [
+        {"sub": "new-1", "email": "new@example.org", "created": "2026-10-30"}
+    ]
+
+
+def test_approving_makes_a_contributor_with_their_community_and_audits_it(client, engine, idp):
+    idp.signups = [WAITING]
+    response = client.post(
+        "/admin/signups/new-1/approve", json={"communities": ["c1", "c2"]}, headers=ADMIN
+    )
+    assert response.status_code == 201
+    assert idp.calls == [("set_role", "new-1", "member")]
+    user = stored(engine, "new-1")
+    assert (user.role, user.communities) == (Role.MEMBER, frozenset({"c1", "c2"}))
+    with Session(engine) as session:
+        entry = session.scalars(select(AuditLogRow)).one()
+    assert (entry.action, entry.target) == ("signup:approve", "user:new-1")
+
+
+def test_approval_never_makes_an_admin_or_reviewer(client, engine, idp):
+    idp.signups = [WAITING]
+    client.post(
+        "/admin/signups/new-1/approve",
+        json={"communities": ["c1"], "role": "admin"},
+        headers=ADMIN,
+    )
+    assert stored(engine, "new-1") is None  # unknown field refused, nothing created
+    client.post("/admin/signups/new-1/approve", json={"communities": ["c1"]}, headers=ADMIN)
+    assert stored(engine, "new-1").role == Role.MEMBER
+
+
+@pytest.mark.parametrize(
+    "body", [{}, {"communities": []}, {"communities": ["bad id!"]}, {"communities": ["c"] * 21}]
+)
+def test_approval_needs_valid_communities(client, engine, idp, body):
+    idp.signups = [WAITING]
+    assert client.post("/admin/signups/new-1/approve", json=body, headers=ADMIN).status_code == 422
+    assert stored(engine, "new-1") is None
+    assert idp.calls == []
+
+
+def test_only_a_real_waiting_account_can_be_approved_or_declined(client, engine, idp):
+    body = {"communities": ["c1"]}
+    assert client.post("/admin/signups/ghost/approve", json=body, headers=ADMIN).status_code == 404
+    assert client.post("/admin/signups/ghost/decline", headers=ADMIN).status_code == 404
+    idp.signups = [Signup(sub="member-1", email="m@example.org", created="2026-10-01")]
+    assert (
+        client.post("/admin/signups/member-1/approve", json=body, headers=ADMIN).status_code == 404
+    )
+    assert idp.calls == []
+
+
+def test_declining_disables_the_account_and_creates_no_record(client, engine, idp):
+    idp.signups = [WAITING]
+    response = client.post("/admin/signups/new-1/decline", headers=ADMIN)
+    assert response.status_code == 200
+    assert idp.calls == [("disable", "new-1")]
+    assert stored(engine, "new-1") is None
+
+
+def test_a_failed_identity_call_grants_nothing(client, engine):
+    class Broken(FakeIdentityProvider):
+        def set_role(self, sub, role):
+            raise RuntimeError("identity service down")
+
+    broken = Broken()
+    broken.signups = [WAITING]
+    app.dependency_overrides[get_identity_provider] = lambda: broken
+    response = client.post(
+        "/admin/signups/new-1/approve", json={"communities": ["c1"]}, headers=ADMIN
+    )
+    assert response.status_code == 500
+    assert stored(engine, "new-1") is None
+
+
+@pytest.mark.parametrize("who", ["member-1", "reviewer-1"])
+def test_only_admins_see_or_decide_the_waiting_list(client, idp, who):
+    idp.signups = [WAITING]
+    headers = auth(who, "member" if who == "member-1" else "reviewer")
+    assert client.get("/admin/signups", headers=headers).status_code == 403
+    body = {"communities": ["c1"]}
+    assert (
+        client.post("/admin/signups/new-1/approve", json=body, headers=headers).status_code == 403
+    )
+    assert client.post("/admin/signups/new-1/decline", headers=headers).status_code == 403
+
+
+def test_an_account_with_no_record_is_denied_everywhere(client):
+    stranger = auth("stranger-1", "member")
+    assert client.get("/v1/me", headers=stranger).status_code == 403
+    assert client.get("/v1/library", headers=stranger).status_code == 403
+
+
+def user_record(email, status="CONFIRMED", verified="true", enabled=True):
+    return {
+        "Username": "x",
+        "UserStatus": status,
+        "Enabled": enabled,
+        "UserCreateDate": datetime(2026, 10, 30, tzinfo=UTC),
+        "Attributes": [
+            {"Name": "sub", "Value": f"sub-{email}"},
+            {"Name": "email", "Value": email},
+            {"Name": "email_verified", "Value": verified},
+        ],
+    }
+
+
+def test_cognito_lists_only_confirmed_verified_enabled_accounts(cognito_stub):
+    provider, stubber = cognito_stub
+    users = [
+        user_record("ok@example.org"),
+        user_record("unconfirmed@example.org", status="UNCONFIRMED"),
+        user_record("unverified@example.org", verified="false"),
+        user_record("disabled@example.org", enabled=False),
+    ]
+    stubber.add_response(
+        "list_users", {"Users": users}, {"UserPoolId": "eu-west-2_TESTPOOL", "Limit": 60}
+    )
+    assert provider.list_signups() == [
+        Signup(sub="sub-ok@example.org", email="ok@example.org", created="2026-10-30")
+    ]
+
+
+def test_cognito_listing_follows_pages_and_stops(cognito_stub):
+    provider, stubber = cognito_stub
+    base = {"UserPoolId": "eu-west-2_TESTPOOL", "Limit": 60}
+    stubber.add_response(
+        "list_users", {"Users": [user_record("a@example.org")], "PaginationToken": "t1"}, base
+    )
+    stubber.add_response(
+        "list_users", {"Users": [user_record("b@example.org")]}, {**base, "PaginationToken": "t1"}
+    )
+    assert [s.email for s in provider.list_signups()] == ["a@example.org", "b@example.org"]
     stubber.assert_no_pending_responses()

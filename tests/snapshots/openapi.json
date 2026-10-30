@@ -1,6 +1,27 @@
 {
   "components": {
     "schemas": {
+      "ApproveRequest": {
+        "additionalProperties": false,
+        "description": "Request body to approve a sign-up: the communities they may add recordings to.",
+        "properties": {
+          "communities": {
+            "items": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "type": "string"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Communities",
+            "type": "array"
+          }
+        },
+        "required": [
+          "communities"
+        ],
+        "title": "ApproveRequest",
+        "type": "object"
+      },
       "CatalogView": {
         "description": "A catalogue model as shown to admins, with whether its key is configured.",
         "properties": {
@@ -1168,6 +1189,30 @@
         "title": "SegmentEdit",
         "type": "object"
       },
+      "SignupView": {
+        "description": "Someone waiting for approval. Email is shown only to admins.",
+        "properties": {
+          "created": {
+            "title": "Created",
+            "type": "string"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "sub": {
+            "title": "Sub",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sub",
+          "email",
+          "created"
+        ],
+        "title": "SignupView",
+        "type": "object"
+      },
       "StatusChange": {
         "additionalProperties": false,
         "description": "Request body to change a catalogue model's status.",
@@ -1973,6 +2018,154 @@
           }
         ],
         "summary": "Test",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/signups": {
+      "get": {
+        "operationId": "list_signups_admin_signups_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SignupView"
+                  },
+                  "title": "Response List Signups Admin Signups Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Signups",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/signups/{sub}/approve": {
+      "post": {
+        "description": "Approve as a contributor (member role). Admins are only ever created by an invitation.",
+        "operationId": "approve_signup_admin_signups__sub__approve_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sub",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9-]{1,64}$",
+              "title": "Sub",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "title": "Response Approve Signup Admin Signups  Sub  Approve Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Approve Signup",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/signups/{sub}/decline": {
+      "post": {
+        "operationId": "decline_signup_admin_signups__sub__decline_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sub",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9-]{1,64}$",
+              "title": "Sub",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Decline Signup Admin Signups  Sub  Decline Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Decline Signup",
         "tags": [
           "admin"
         ]

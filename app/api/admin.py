@@ -18,7 +18,7 @@ from app.api.auth import SessionFactory, get_session_factory, require_action
 from app.api.tracing import current_trace_id
 from app.config import Settings
 from app.db.repositories import AuditEntry, AuditRepository, UserRepository
-from app.models.users import UserStatus
+from app.models.users import Signup, UserStatus
 from app.ports import IdentityProvider
 from app.security.permissions import Principal
 from app.security.roles import Action, Role
@@ -143,4 +143,59 @@ def disable_user(sub: Annotated[str, SUB], ctx: Ctx, identity: Identity) -> dict
         _update(session, sub, lambda users: users.set_status(sub, UserStatus.DISABLED))
         _audit(session, ctx, "user:disable", sub)
     identity.disable_user(sub)
+    return {"sub": sub, "status": UserStatus.DISABLED}
+
+
+class ApproveRequest(BaseModel):
+    """Request body to approve a sign-up: the communities they may add recordings to."""
+
+    model_config = ConfigDict(extra="forbid")
+    communities: list[Annotated[str, COMMUNITY_ID]] = Field(min_length=1, max_length=20)
+
+
+class SignupView(BaseModel):
+    """Someone waiting for approval. Email is shown only to admins."""
+
+    sub: str
+    email: str
+    created: str
+
+
+def _waiting(ctx: AdminContext, identity: IdentityProvider) -> list[Signup]:
+    """Self-created accounts that have no record here yet, oldest first."""
+    signups = identity.list_signups()
+    with ctx.factory() as session:
+        known = UserRepository(session).known([s.sub for s in signups])
+    return sorted((s for s in signups if s.sub not in known), key=lambda s: s.created)
+
+
+@router.get("/signups")
+def list_signups(ctx: Ctx, identity: Identity) -> list[SignupView]:
+    return [SignupView(**s.model_dump()) for s in _waiting(ctx, identity)]
+
+
+def _pending(ctx: AdminContext, identity: IdentityProvider, sub: str) -> None:
+    if sub not in {s.sub for s in _waiting(ctx, identity)}:
+        raise HTTPException(status_code=404, detail="No such request")
+
+
+@router.post("/signups/{sub}/approve", status_code=201)
+def approve_signup(
+    sub: Annotated[str, SUB], body: ApproveRequest, ctx: Ctx, identity: Identity
+) -> dict[str, list[str]]:
+    """Approve as a contributor (member role). Admins are only ever created by an invitation."""
+    _pending(ctx, identity, sub)
+    identity.set_role(sub, Role.MEMBER)  # first: if this fails, nothing has been granted
+    with ctx.factory() as session:
+        UserRepository(session).create(sub, Role.MEMBER, frozenset(body.communities))
+        _audit(session, ctx, "signup:approve", sub)
+    return {"communities": sorted(body.communities)}
+
+
+@router.post("/signups/{sub}/decline")
+def decline_signup(sub: Annotated[str, SUB], ctx: Ctx, identity: Identity) -> dict[str, str]:
+    _pending(ctx, identity, sub)
+    identity.disable_user(sub)
+    with ctx.factory() as session:
+        _audit(session, ctx, "signup:decline", sub)
     return {"sub": sub, "status": UserStatus.DISABLED}

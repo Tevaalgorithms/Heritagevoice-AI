@@ -128,6 +128,14 @@ class VersionResult(BaseModel):
     status: str
 
 
+class SignupView(BaseModel):
+    """Someone who created an account and is waiting for an administrator."""
+
+    sub: str
+    email: str
+    created: str
+
+
 class MeView(BaseModel):
     """The signed-in user."""
 

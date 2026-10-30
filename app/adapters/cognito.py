@@ -3,13 +3,16 @@
 The pool uses email as the sign-in name, so a user's Cognito username is their subject ID.
 """
 
+from collections.abc import Iterator
 from typing import Any
 
 import boto3
 
+from app.models.users import Signup
 from app.security.roles import Role
 
 ROLE_GROUPS = {role.value for role in Role}
+MAX_PAGES = 10  # 600 accounts: enough to show who is waiting; the rest appear as these are handled
 
 
 class CognitoIdentityProvider:
@@ -48,6 +51,33 @@ class CognitoIdentityProvider:
     def disable_user(self, sub: str) -> None:
         self._client.admin_disable_user(UserPoolId=self._pool, Username=sub)
         self._client.admin_user_global_sign_out(UserPoolId=self._pool, Username=sub)
+
+    def list_signups(self) -> list[Signup]:
+        users = (user for page in self._pages() for user in page["Users"])
+        return [signup for user in users if (signup := _signup(user)) is not None]
+
+    def _pages(self) -> Iterator[dict[str, Any]]:
+        token: str | None = None
+        for _ in range(MAX_PAGES):
+            extra = {"PaginationToken": token} if token else {}
+            page = self._client.list_users(UserPoolId=self._pool, Limit=60, **extra)
+            yield page
+            token = page.get("PaginationToken")
+            if not token:
+                return
+
+
+def _signup(user: dict[str, Any]) -> Signup | None:
+    """Only confirmed, enabled accounts whose email was verified."""
+    attributes = user.get("Attributes", [])
+    verified = {a["Name"]: a["Value"] for a in attributes}.get("email_verified")
+    if user.get("UserStatus") != "CONFIRMED" or not user.get("Enabled") or verified != "true":
+        return None
+    return Signup(
+        sub=_attribute(attributes, "sub"),
+        email=_attribute(attributes, "email"),
+        created=user["UserCreateDate"].date().isoformat(),
+    )
 
 
 def _attribute(attributes: list[dict[str, str]], name: str) -> str:

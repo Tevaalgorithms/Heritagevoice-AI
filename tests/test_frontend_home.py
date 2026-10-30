@@ -6,7 +6,7 @@ import httpx
 from streamlit.testing.v1 import AppTest
 
 from frontend.api_client import ApiClient, LibrarySpec
-from frontend.views.home import ACCOUNT_NOTE, SIGN_IN_LABEL
+from frontend.views.home import CREATE_LABEL, OPEN_NOTE, SIGN_IN_LABEL
 
 APP = Path(__file__).resolve().parents[1] / "frontend" / "streamlit_app.py"
 ITEM = {
@@ -68,8 +68,10 @@ def test_a_visitor_sees_the_search_and_the_sign_in_choice_without_an_error(monke
     assert not app.exception
     text = " ".join(m.value for m in app.markdown)
     assert "Search the shared heritage" in text
-    assert SIGN_IN_LABEL in [b.label for b in app.button]
-    assert any(ACCOUNT_NOTE in c.value for c in app.caption)
+    labels = [b.label for b in app.button]
+    assert SIGN_IN_LABEL in labels
+    assert CREATE_LABEL in labels
+    assert any(OPEN_NOTE in c.value for c in app.caption)
 
 
 def test_a_visitor_is_never_shown_the_signed_in_sections(monkeypatch):
@@ -78,3 +80,43 @@ def test_a_visitor_is_never_shown_the_signed_in_sections(monkeypatch):
     for private in ("Add a recording", "Settings", "Review", "Sign out"):
         assert private not in [b.label for b in app.button]
         assert f"**{private}**" not in page_text
+
+
+def test_a_signed_in_account_the_server_does_not_know_sees_the_waiting_screen(monkeypatch):
+    """403 from /v1/me means: signed in, but not approved yet."""
+    from frontend.account import AwaitingApprovalError, current_role  # noqa: PLC0415
+    from frontend.api_errors import ApiRequestError  # noqa: PLC0415
+
+    class Client:
+        def __init__(self, status):
+            self.status = status
+
+        def me(self):
+            raise ApiRequestError(self.status)
+
+    import pytest  # noqa: PLC0415
+
+    with pytest.raises(AwaitingApprovalError):
+        current_role(Client(403))
+    assert current_role(Client(500)) is None
+
+
+def test_the_admin_people_calls_go_to_the_admin_endpoints_with_the_token():
+    seen = []
+
+    def handler(request):
+        seen.append((request.method, request.url.path, request.headers.get("authorization")))
+        body = [{"sub": "s1", "email": "a@example.org", "created": "2026-10-30"}]
+        return httpx.Response(200, json=body if request.method == "GET" else {})
+
+    client = ApiClient("http://api.test", "tok", transport=httpx.MockTransport(handler))
+    assert client.signups()[0].email == "a@example.org"
+    client.approve_signup("s1", ["c1"])
+    client.decline_signup("s1")
+    client.invite_user("n@example.org", "admin", ["c1"])
+    assert seen == [
+        ("GET", "/admin/signups", "Bearer tok"),
+        ("POST", "/admin/signups/s1/approve", "Bearer tok"),
+        ("POST", "/admin/signups/s1/decline", "Bearer tok"),
+        ("POST", "/admin/users", "Bearer tok"),
+    ]
