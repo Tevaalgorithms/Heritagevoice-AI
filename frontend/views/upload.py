@@ -8,6 +8,7 @@ from uuid import uuid4
 
 import streamlit as st
 
+from frontend import theme
 from frontend.api_client import ApiClient, ApiError, RecordingView, UploadSpec
 from frontend.format import failure_message, progress_for, segment_rows
 from frontend.messages import message_for
@@ -63,7 +64,10 @@ def submit(client: ApiClient, spec: UploadSpec) -> None:
 
 
 def render(client: ApiClient) -> None:
-    st.header("Upload a recording")
+    theme.page_header(
+        "Upload a recording",
+        "Share a story. It is transcribed, then reviewed by people before anyone can search it.",
+    )
     file = st.file_uploader("Audio file", type=AUDIO_TYPES)
     language = LANGUAGES[st.selectbox("Language spoken", list(LANGUAGES))]
     community = st.text_input("Community ID")

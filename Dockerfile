@@ -19,6 +19,7 @@ COPY alembic.ini ./
 COPY migrations ./migrations
 COPY app ./app
 COPY frontend ./frontend
+COPY .streamlit/config.toml ./.streamlit/config.toml
 USER hv
 EXPOSE 8000 8501
 # API by default. The UI and worker override the command in compose.

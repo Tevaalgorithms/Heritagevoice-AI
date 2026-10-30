@@ -1,0 +1,9 @@
+# Base theme, taken from the README banner: parchment paper, deep navy ink, sunset terracotta.
+# Finer styling (serif headings, cards, sidebar) lives in frontend/theme.py.
+[theme]
+base = "light"
+primaryColor = "#B4532A"
+backgroundColor = "#FBF5E9"
+secondaryBackgroundColor = "#F1E6D0"
+textColor = "#1B2A41"
+font = "sans serif"

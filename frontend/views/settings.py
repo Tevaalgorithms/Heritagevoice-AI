@@ -6,6 +6,7 @@ reach the app as environment variables; this page only shows whether a key is co
 
 import streamlit as st
 
+from frontend import theme
 from frontend.api_client import (
     ApiClient,
     ApiError,
@@ -87,7 +88,10 @@ def _role_panel(client: ApiClient, overview: ModelsOverview, row: ModelView) -> 
 
 
 def render(client: ApiClient) -> None:
-    st.header("Model settings")
+    theme.page_header(
+        "Model settings",
+        "Choose which model does each job. API keys stay in the server's secret store.",
+    )
     overview = _load(client)
     if overview is None:
         return

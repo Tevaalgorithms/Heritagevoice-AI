@@ -1,0 +1,46 @@
+/* Palette from the README banner. Static; never built from user input. */
+.stApp { background: linear-gradient(180deg, #FBF5E9 0%, #F7EEDC 100%); color: #1B2A41; }
+.block-container { max-width: 1080px; padding-top: 2.2rem; padding-bottom: 4rem; }
+h1, h2, h3, h4, h1 *, h2 *, h3 * { font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif !important; color: #14284B; letter-spacing: -0.01em; font-weight: 600 !important; }
+h2 { border-bottom: 2px solid #E4D6BC; padding-bottom: .4rem; margin-bottom: 1rem; }
+[data-testid="stHeader"] { background: transparent; }
+
+[data-testid="stSidebar"] { background: linear-gradient(180deg, #14284B 0%, #0E1D38 100%); }
+[data-testid="stSidebar"] * { color: #F3E9D6; }
+[data-testid="stSidebar"] a { border-radius: 10px; }
+[data-testid="stSidebarNav"] a[aria-current="page"] { background: rgba(217,138,43,.22); }
+[data-testid="stSidebar"] [data-testid="stAlert"] { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18); }
+.hv-brand { font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif; font-size: 1.55rem; font-weight: 600; color: #FFF7E6; line-height: 1.1; }
+.hv-brand span { color: #D98A2B; }
+.hv-tag { font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; color: #C9BFA9; margin: .2rem 0 1rem; }
+
+.stButton > button, .stDownloadButton > button { border-radius: 999px; border: 1px solid #B4532A;
+  color: #B4532A; background: #FFFDF8; font-weight: 600; padding: .45rem 1.3rem; transition: all .15s ease; }
+.stButton > button:hover { background: #B4532A; color: #fff; border-color: #B4532A; box-shadow: 0 4px 14px rgba(180,83,42,.28); }
+.stButton > button[kind="primary"] { background: #B4532A; color: #fff; }
+
+[data-testid="stChatMessage"] { background: #FFFDF8; border: 1px solid #E4D6BC; border-radius: 16px;
+  padding: 1rem 1.2rem; box-shadow: 0 1px 2px rgba(20,40,75,.06); }
+[data-testid="stChatInput"] { border-radius: 18px; border: 1px solid #E4D6BC; box-shadow: 0 6px 24px rgba(20,40,75,.10); }
+[data-testid="stAlert"] { border-radius: 12px; }
+[data-testid="stFileUploaderDropzone"] { background: #FFFDF8; border: 2px dashed #D98A2B; border-radius: 16px; }
+input, textarea, [data-baseweb="select"] > div { border-radius: 10px !important; }
+[data-testid="stForm"], [data-testid="stExpander"] { background: #FFFDF8; border: 1px solid #E4D6BC; border-radius: 16px; }
+
+.hv-hero { border-radius: 22px; overflow: hidden; box-shadow: 0 18px 48px rgba(20,40,75,.22); margin-bottom: 1.4rem; }
+.hv-lead { width: 100%; font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif; font-size: 1.35rem; line-height: 1.5; color: #14284B; text-align: center;
+  max-width: 760px; margin: .4rem auto 1.6rem; }
+.hv-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1rem 0 1.8rem; }
+.hv-card { background: #FFFDF8; border: 1px solid #E4D6BC; border-top: 4px solid #D98A2B; border-radius: 16px;
+  padding: 1.1rem 1.2rem; box-shadow: 0 2px 10px rgba(20,40,75,.06); }
+.hv-card b { font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif; color: #14284B; font-size: 1.1rem; display: block; margin-bottom: .3rem; }
+.hv-card p { margin: 0; color: #5B6577; font-size: .93rem; line-height: 1.5; }
+.hv-sub { color: #5B6577; margin: -.4rem 0 1.4rem; font-size: 1.02rem; }
+.hv-empty { text-align: center; padding: 2rem 1rem 1rem; }
+.hv-empty h3 { border: 0; }
+.hv-foot { text-align: center; color: #5B6577; font-size: .85rem; margin-top: 2.5rem; font-style: italic; }
+@media (max-width: 760px) { .hv-cards { grid-template-columns: 1fr; } }
+[data-testid="stColumn"] .stButton { display: flex; justify-content: center; }
+.hv-lead { display: block; }
+.stButton > button { white-space: normal; height: auto; min-height: 2.6rem; line-height: 1.35; }
+.stButton > button p, .stButton > button div { white-space: normal !important; overflow: visible !important; text-overflow: clip !important; }
