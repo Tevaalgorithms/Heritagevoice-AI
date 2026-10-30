@@ -17,7 +17,7 @@ from frontend.kinds import KINDS, label_for
 from frontend.messages import message_for
 
 ANY = "Any"
-VIEWS = {"The original language": "original", "English translation": "translation"}
+VIEWS = {"Original language": "original", "English translation": "translation"}
 
 
 def _language_options() -> dict[str, str]:
