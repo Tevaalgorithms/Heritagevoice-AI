@@ -159,3 +159,24 @@ def test_the_eligibility_gate_on_postgres_hides_public_chunks_once_consent_is_re
         ConsentRepository(session).revoke("consent-1")
     with Session(engine) as session:
         assert lexical_evidence(session, outsider, "தண்ணீர்") == []
+
+
+def test_the_retrieval_node_works_on_postgres_including_spelling_variants_and_public_content(
+    engine,
+):
+    from app.agents.hybrid_rag import HybridRetriever  # noqa: PLC0415
+    from app.models.records import Visibility  # noqa: PLC0415
+
+    index_published(engine, "r-mine", "c1", consent_id="consent-1")
+    index_published(engine, "r-public", "c2", consent_id="consent-2", visibility=Visibility.PUBLIC)
+    index_published(engine, "r-private", "c3", consent_id="consent-3")
+    retriever = HybridRetriever(lambda: session_scope(engine))
+
+    def found(question, communities):
+        reader = person(communities=communities)
+        update = retriever({"question": question}, reader)
+        return {e.document_id for e in update["hybrid_evidence"]}
+
+    assert found("தண்ணீர்", ("c1",)) == {"r-mine", "r-public"}  # own + public, never c3's
+    assert found("தண்‍ணீர்", ("c1",)) == {"r-mine", "r-public"}  # hidden joiner variant
+    assert found("தண்ணீர்", ()) == {"r-public"}  # a reader with no community

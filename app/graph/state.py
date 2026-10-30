@@ -22,6 +22,7 @@ class WorkflowState(TypedDict, total=False):
     claims: list[Claim]
     answer: str
     citations: list[Evidence]
+    warnings: list[str]
     status: str
 
 
