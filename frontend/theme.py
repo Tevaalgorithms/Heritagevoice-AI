@@ -40,7 +40,6 @@ CLOSING = (
     "our elders, kept in their own voices for the generations still to come."
 )
 PROMISE = "Preserving human heritage, with consent and with care."
-SECURE_NOTE = "Protected by multi-factor authentication"
 ICONS = {
     "upload": "<path d='M12 3v12'/><path d='M8 7l4-4 4 4'/><path d='M5 15v4h14v-4'/>",
     "review": "<path d='M5 12l4 4 10-10'/><path d='M4 4h16v16H4z'/>",
@@ -94,7 +93,7 @@ def landing_top() -> None:
 
 
 def sign_in_button(on_click: Callable[[], None]) -> None:
-    """A single, centered call to action with a note on how sign-in is protected."""
+    """A single, centered call to action."""
     _, middle, _ = st.columns([3, 2, 3])
     middle.button(
         "Sign in securely",
@@ -103,10 +102,6 @@ def sign_in_button(on_click: Callable[[], None]) -> None:
         use_container_width=True,
         on_click=on_click,
         key="hv-sign-in",
-    )
-    middle.markdown(
-        f"<div class='hv-secure' style='text-align:center'>{SECURE_NOTE}</div>",
-        unsafe_allow_html=True,
     )
 
 
