@@ -164,6 +164,12 @@ class ApiClient:
         response = self._send("GET", "/v1/library", auth=True, params=params)
         return LibraryResult.model_validate(response.json())
 
+    def public_library(self, spec: LibrarySpec) -> LibraryResult:
+        """Search the public recordings. Needs no sign-in, so no token is sent."""
+        params = {k: v for k, v in spec.model_dump().items() if v not in ("", None)}
+        response = self._send("GET", "/v1/public/library", auth=False, params=params)
+        return LibraryResult.model_validate(response.json())
+
     def set_visibility(self, recording_id: str, visibility: str) -> VisibilityResult:
         response = self._send(
             "PUT",

@@ -5,11 +5,13 @@ what each person may see; this page only asks and displays. Remedies arrive with
 is always shown next to the passage.
 """
 
+from collections.abc import Callable
+
 import streamlit as st
 
 from app.languages import BY_CODE, LANGUAGES
 from frontend import theme
-from frontend.api_client import ApiClient, ApiError, LibraryItem, LibrarySpec
+from frontend.api_client import ApiClient, ApiError, LibraryItem, LibraryResult, LibrarySpec
 from frontend.format import format_time
 from frontend.kinds import KINDS, label_for
 from frontend.messages import message_for
@@ -77,17 +79,12 @@ def _empty(spec: LibrarySpec) -> None:
     )
 
 
-def render(client: ApiClient) -> None:
-    """The Library page."""
-    theme.page_header(
-        "Library",
-        "Songs, stories, lessons and living knowledge shared by communities. "
-        "Choose a language, or search for what you want to find.",
-        "library",
-    )
+def search_and_show(fetch: Callable[[LibrarySpec], LibraryResult]) -> None:
+    """The search form and its results. `fetch` decides who is asking: a signed-in reader or an
+    open visitor, so the same page serves both and the server applies the right limits."""
     spec = _filters()
     try:
-        items = client.library(spec).items
+        items = fetch(spec).items
     except ApiError as error:
         st.error(message_for(error))
         return
@@ -97,4 +94,15 @@ def render(client: ApiClient) -> None:
     st.caption(f"{len(items)} shown")
     for item in items:
         _card(item)
+
+
+def render(client: ApiClient) -> None:
+    """The Library page for signed-in readers."""
+    theme.page_header(
+        "Library",
+        "Songs, stories, lessons and living knowledge shared by communities. "
+        "Choose a language, or search for what you want to find.",
+        "library",
+    )
+    search_and_show(client.library)
     theme.footer()

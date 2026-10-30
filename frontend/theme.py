@@ -45,6 +45,8 @@ ICONS = {
     "review": "<path d='M5 12l4 4 10-10'/><path d='M4 4h16v16H4z'/>",
     "ask": "<path d='M4 5h16v11H9l-5 4z'/><path d='M8 9h8M8 12h5'/>",
     "library": "<path d='M4 5h5v14H4z'/><path d='M10 5h5v14h-5z'/><path d='M16 6l4 1-3 12-4-1'/>",
+    "legal": "<path d='M6 3h9l3 3v15H6z'/><path d='M9 9h6M9 13h6M9 17h4'/>",
+    "home": "<path d='M4 11l8-7 8 7'/><path d='M6 10v10h12V10'/>",
     "settings": (
         "<path d='M4 7h10M18 7h2M4 17h2M10 17h10'/>"
         "<circle cx='16' cy='7' r='2'/><circle cx='8' cy='17' r='2'/>"
@@ -97,11 +99,11 @@ def landing_top() -> None:
     )
 
 
-def sign_in_button(on_click: Callable[[], None]) -> None:
+def sign_in_button(on_click: Callable[[], None], label: str = "Sign in securely") -> None:
     """A single, centered call to action."""
     _, middle, _ = st.columns([3, 2, 3])
     middle.button(
-        "Sign in securely",
+        label,
         icon=":material/lock:",
         type="primary",
         use_container_width=True,
