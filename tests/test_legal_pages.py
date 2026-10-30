@@ -13,7 +13,7 @@ from frontend.legal import (
     legal_text,
 )
 
-FACTS = OrganisationFacts("Example Heritage Trust", "legal@example.org", "England and Wales")
+FACTS = OrganisationFacts("Example Heritage Trust", "legal@example.org")
 SLUGS = {page.slug for page in PAGES}
 
 
@@ -51,7 +51,6 @@ def test_the_terms_cover_what_a_heritage_platform_must_say():
         "withdraw",
         "train",
         "consent record",
-        "governed by the law of **England and Wales**",
     ):
         assert required in text
 
@@ -92,12 +91,7 @@ def test_the_organisation_details_can_be_set_from_the_environment():
         {
             "HERITAGEVOICE_OPERATOR_NAME": " Example Trust ",
             "HERITAGEVOICE_CONTACT_EMAIL": "hello@example.org",
-            "HERITAGEVOICE_JURISDICTION": "England and Wales",
         }
     )
-    assert (facts.operator, facts.contact, facts.jurisdiction) == (
-        "Example Trust",
-        "hello@example.org",
-        "England and Wales",
-    )
+    assert (facts.operator, facts.contact) == ("Example Trust", "hello@example.org")
     assert OrganisationFacts.from_environment({}).operator == "HeritageVoice Collective"

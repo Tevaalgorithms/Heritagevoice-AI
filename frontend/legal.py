@@ -1,8 +1,8 @@
 """The legal pages: Terms of Use, Privacy Notice (which covers cookies), Acceptable Use,
 Accessibility and Contact.
 
-Their text is in `frontend/legal/*.md`. The organisation's name, contact address and governing law
-are filled in where the text has {{operator}}, {{contact}} and {{jurisdiction}}.
+Their text is in `frontend/legal/*.md`. The organisation's name and contact address are filled in
+where the text has {{operator}} and {{contact}}.
 
 These texts describe what the service actually does, but they are a starting point: have a lawyer
 who knows the places you operate review them before launch, and set the organisation details.
@@ -18,7 +18,6 @@ OPERATOR = "HeritageVoice Collective"
 UNSET = {
     "operator": "[Organisation name]",
     "contact": "[contact email]",
-    "jurisdiction": "[country or state]",
 }
 
 
@@ -47,23 +46,19 @@ class OrganisationFacts:
 
     operator: str = OPERATOR
     contact: str = ""
-    jurisdiction: str = ""
 
     @classmethod
     def from_environment(cls, env: Mapping[str, str]) -> "OrganisationFacts":
-        """The defaults, overridden by the HERITAGEVOICE_OPERATOR_NAME, _CONTACT_EMAIL and
-        _JURISDICTION environment settings."""
+        """The defaults, overridden by HERITAGEVOICE_OPERATOR_NAME and _CONTACT_EMAIL."""
         return cls(
             env.get("HERITAGEVOICE_OPERATOR_NAME", "").strip() or OPERATOR,
             env.get("HERITAGEVOICE_CONTACT_EMAIL", "").strip(),
-            env.get("HERITAGEVOICE_JURISDICTION", "").strip(),
         )
 
     def values(self) -> dict[str, str]:
         return {
             "operator": self.operator or UNSET["operator"],
             "contact": self.contact or UNSET["contact"],
-            "jurisdiction": self.jurisdiction or UNSET["jurisdiction"],
             "updated": LEGAL_VERSION,
         }
 

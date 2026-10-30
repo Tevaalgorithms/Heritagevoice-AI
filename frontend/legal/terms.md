@@ -86,11 +86,6 @@ The service is provided "as is". To the extent the law allows, we are not respon
 caused by relying on content, by the service being unavailable, or by contributions from others. Nothing
 here limits responsibility that the law does not allow to be limited.
 
-## 12. Governing law
-
-These terms are governed by the law of **{{jurisdiction}}**, and its courts have jurisdiction, unless
-the law where you live gives you rights that cannot be changed by agreement.
-
-## 13. Contact
+## 12. Contact
 
 **{{operator}}** · {{contact}}
