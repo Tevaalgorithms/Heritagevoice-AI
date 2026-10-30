@@ -34,7 +34,7 @@ def _account_card(sign_in: Callable[[], None]) -> None:
         st.caption(ACCOUNT_NOTE)
         st.button(
             SIGN_IN_LABEL,
-            icon=":material/mic:",
+            icon=":material/login:",
             type="primary",
             use_container_width=True,
             on_click=sign_in,

@@ -25,6 +25,10 @@ h2 { border-bottom: 2px solid #E4D6BC; padding-bottom: .4rem; margin-bottom: 1re
 [data-testid="stAlert"] { border-radius: 12px; }
 [data-testid="stFileUploaderDropzone"] { background: #FFFDF8; border: 2px dashed #D98A2B; border-radius: 16px; }
 input, textarea, [data-baseweb="select"] > div { border-radius: 10px !important; }
+/* The search box: a white field with a clear border, not a tan bar that melts into the card. */
+[data-testid="stTextInput"] [data-baseweb="base-input"], [data-testid="stTextInput"] [data-baseweb="input"] { background: #FFFFFF !important; }
+[data-testid="stTextInput"] [data-baseweb="input"] { border: 1px solid #C9B88F !important; }
+[data-testid="stTextInput"] [data-baseweb="input"]:focus-within { border-color: #D98A2B !important; box-shadow: 0 0 0 2px rgba(217,138,43,.25); }
 [data-testid="stForm"], [data-testid="stExpander"] { background: #FFFDF8; border: 1px solid #E4D6BC; border-radius: 16px; }
 
 .hv-hero { border-radius: 22px; overflow: hidden; box-shadow: 0 18px 48px rgba(20,40,75,.22); margin-bottom: 1.4rem; }
