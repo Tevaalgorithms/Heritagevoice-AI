@@ -69,7 +69,7 @@ printed or passed through Terraform.
 
 > **No approval gate.** Required reviewers on environments need a paid GitHub plan for private
 > repositories, and this project uses the free plan. Instead, applies and secrets
-> are manual and need a typed confirmation; a deploy starts from pushing a `v*` tag on a commit on main (or a typed manual run), and only
+> are manual and need a typed confirmation; every merge to `main` that passes CI deploys automatically (a pushed `v*` tag or a typed manual run also deploy), and only
 > people with write access can start one: keep the repository's collaborators to the people who
 > may change production. Read the `Plan` step of an `infra` run before relying on it; it cannot
 > stop the apply that follows. Moving to a paid plan later means adding required reviewers.
@@ -85,7 +85,7 @@ printed or passed through Terraform.
    they are not in state or plans.
 4. Add the provider keys yourself in the Parameter Store console as `SecureString` under
    `/heritagevoice/prod/` (LLM key, `PINECONE_API_KEY`, `PINECONE_INDEX`).
-5. Release: `git tag v0.1.0 && git push origin v0.1.0` (or Actions, deploy, Run workflow, type `deploy`).
+5. The first deploy happens when the CI checks pass on `main` (or push a `v*` tag, or run `deploy` and type `deploy`).
 6. Check `https://<domain>/health` and `/ready`.
 
 Values in Parameter Store may use letters, digits and `. _ ~ + / = : @ , -` only.

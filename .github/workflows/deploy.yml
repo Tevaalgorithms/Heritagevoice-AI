@@ -1,4 +1,5 @@
-# Deploys a Git tag (or branch) to the instance. CI packs the code into a tarball, uploads it to a
+# Deploys to the instance on every merge to main (once the CI checks workflow has passed on that
+# commit), when a v* tag is pushed, or from a typed manual run. CI packs the code into a tarball, uploads it to a
 # private S3 bucket and runs the deploy script on the instance through AWS Systems Manager. The
 # instance pulls with its own role, so it never needs GitHub credentials (the repository is private).
 # Authentication is OpenID Connect: no AWS keys are stored in GitHub.
@@ -20,7 +21,11 @@ on:
         description: Type deploy to confirm
         required: true
   push:
-    tags: ["v*"] # a release: git tag v0.1.0 && git push origin v0.1.0
+    tags: ["v*"] # a named release; also creates the GitHub Release
+  workflow_run:
+    workflows: [checks]
+    types: [completed]
+    branches: [main] # continuous deployment: every merge to main that passes CI
 
 concurrency:
   group: deploy-prod
@@ -31,8 +36,12 @@ permissions:
 
 jobs:
   deploy:
-    # A pushed tag is a deliberate release; a manual run must be confirmed by typing deploy.
-    if: github.event_name == 'push' || inputs.confirm == 'deploy'
+    # Tags and green merges to main deploy by themselves; a manual run must be confirmed.
+    if: >
+      github.event_name == 'push' || inputs.confirm == 'deploy' ||
+      (github.event_name == 'workflow_run' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push')
     runs-on: ubuntu-latest
     environment: prod
     permissions:
@@ -41,11 +50,12 @@ jobs:
       checks: read
     env:
       INPUT_REF: ${{ inputs.ref }}
+      RUN_SHA: ${{ github.event.workflow_run.head_sha }}
     steps:
       - name: Validate the ref
         id: ref
         run: |
-          ref="${INPUT_REF:-$GITHUB_REF_NAME}"
+          ref="${INPUT_REF:-${RUN_SHA:-$GITHUB_REF_NAME}}"
           [[ "$ref" =~ ^[A-Za-z0-9._/-]{1,100}$ ]] || { echo "Invalid ref" >&2; exit 1; }
           echo "ref=$ref" >> "$GITHUB_OUTPUT"
 
