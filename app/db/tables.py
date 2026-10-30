@@ -69,6 +69,9 @@ class RecordingRow(Base):
     language: Mapped[str] = mapped_column(String(16))
     consent_id: Mapped[str] = mapped_column(ForeignKey("consent.id"))
     heritage_kind: Mapped[str] = mapped_column(String(16), default="story", server_default="story")
+    visibility: Mapped[str] = mapped_column(
+        String(16), default="community", server_default="community", index=True
+    )
     status: Mapped[str] = mapped_column(String(16), index=True)
     audio_key: Mapped[str | None] = mapped_column(String(256), default=None)
     content_type: Mapped[str | None] = mapped_column(String(64), default=None)
@@ -224,3 +227,6 @@ class EvidenceChunkRow(Base):
     end_s: Mapped[float] = mapped_column(Float)
     segment_ids: Mapped[list[str]] = mapped_column(JSON)
     speaker: Mapped[str | None] = mapped_column(String(64), default=None)
+    visibility: Mapped[str] = mapped_column(
+        String(16), default="community", server_default="community", index=True
+    )

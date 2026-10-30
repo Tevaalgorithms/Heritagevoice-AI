@@ -20,6 +20,8 @@ class Action(StrEnum):
     MEDIA_PLAY = "media:play"
     DRAFT_EDIT = "draft:edit"
     REVIEW_APPROVE = "review:approve"
+    LIBRARY_VIEW = "library:view"
+    VISIBILITY_MANAGE = "visibility:manage"
     RECORDING_REVOKE = "recording:revoke"
     CONSENT_MANAGE = "consent:manage"
     MODEL_MANAGE = "model:manage"
@@ -36,12 +38,15 @@ class Rank(IntEnum):
 
 
 ROLE_PERMISSIONS: dict[Action, frozenset[Role]] = {
-    Action.RECORDING_UPLOAD: frozenset({Role.MEMBER, Role.REVIEWER}),
-    Action.RECORDING_VIEW: frozenset({Role.MEMBER, Role.REVIEWER}),
+    Action.RECORDING_UPLOAD: frozenset({Role.MEMBER, Role.REVIEWER, Role.ADMIN}),
+    Action.RECORDING_VIEW: frozenset({Role.MEMBER, Role.REVIEWER, Role.ADMIN}),
     Action.QUERY_ASK: frozenset({Role.MEMBER, Role.REVIEWER, Role.ADMIN}),
     Action.MEDIA_PLAY: frozenset({Role.MEMBER, Role.REVIEWER, Role.ADMIN}),
-    Action.DRAFT_EDIT: frozenset({Role.MEMBER, Role.REVIEWER}),
-    Action.REVIEW_APPROVE: frozenset({Role.REVIEWER}),
+    Action.DRAFT_EDIT: frozenset({Role.MEMBER, Role.REVIEWER, Role.ADMIN}),
+    # Only admins review. The reviewer role stays for compatibility but carries no review right.
+    Action.REVIEW_APPROVE: frozenset({Role.ADMIN}),
+    Action.LIBRARY_VIEW: frozenset({Role.MEMBER, Role.REVIEWER, Role.ADMIN}),
+    Action.VISIBILITY_MANAGE: frozenset({Role.ADMIN}),
     Action.RECORDING_REVOKE: frozenset({Role.ADMIN}),
     Action.CONSENT_MANAGE: frozenset({Role.ADMIN}),
     Action.MODEL_MANAGE: frozenset({Role.ADMIN}),
@@ -57,6 +62,10 @@ COMMUNITY_SCOPED = frozenset(
         Action.DRAFT_EDIT,
         Action.REVIEW_APPROVE,
     }
+)
+# Admins review and edit across every community, so these actions need no membership for them.
+ADMIN_ACROSS_COMMUNITIES = frozenset(
+    {Action.RECORDING_VIEW, Action.DRAFT_EDIT, Action.REVIEW_APPROVE, Action.MEDIA_PLAY}
 )
 # Members act only on their own items; reviewers act across their communities.
 OWNED_ONLY = frozenset({Action.DRAFT_EDIT, Action.RECORDING_VIEW})

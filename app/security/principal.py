@@ -15,7 +15,9 @@ def _groups(communities: Iterable[str]) -> frozenset[str]:
     return frozenset({"public"} | {community_label(c) for c in communities})
 
 
-def build_principal(user: StoredUser | None, token_groups: frozenset[str]) -> Principal | None:
+def build_principal(
+    user: StoredUser | None, token_groups: frozenset[str], self_review: bool = False
+) -> Principal | None:
     """None means deny: unknown user, disabled user, or no role both token and database agree on."""
     if user is None or user.status is not UserStatus.ACTIVE:
         return None
@@ -28,6 +30,7 @@ def build_principal(user: StoredUser | None, token_groups: frozenset[str]) -> Pr
         policy_version=POLICY_VERSION,
         role=role,
         communities=user.communities,
+        self_review=self_review,
     )
 
 
@@ -39,4 +42,5 @@ def dev_principal(settings: Settings) -> Principal:
         policy_version=POLICY_VERSION,
         role=settings.dev_role,
         communities=frozenset({DEV_COMMUNITY}),
+        self_review=settings.allow_self_review,
     )

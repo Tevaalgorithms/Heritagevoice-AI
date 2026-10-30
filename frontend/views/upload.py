@@ -15,7 +15,7 @@ from frontend.kinds import BY_KEY, KINDS, REMEDY_NOTICE
 from frontend.messages import message_for
 from frontend.upload_input import idempotency_key, pick_audio
 
-AUDIO_TYPES = ["wav", "mp3", "flac", "ogg", "m4a"]
+AUDIO_TYPES = ["wav", "mp3", "flac", "ogg", "m4a", "mp4"]
 LANGUAGES = {f"{lang.name} · {lang.native_name}": lang.code for lang in ALL_LANGUAGES}
 POLL_SECONDS = 2.0
 MAX_POLLS = 150
@@ -83,8 +83,34 @@ def _record_or_upload() -> bytes | None:
         )
         recorded = st.audio_input("Record", label_visibility="collapsed", key="hv-recording")
     with file_tab:
-        file = st.file_uploader("Audio file", type=AUDIO_TYPES)
+        file = st.file_uploader("Audio or video file", type=AUDIO_TYPES)
+        st.caption("Video must be MP4. Its sound is transcribed; the picture is not used yet.")
     return pick_audio(recorded, file)
+
+
+VISIBILITY_CHOICES = {
+    "Only my community": "community",
+    "All signed-in users (needs your community's public-sharing consent)": "public",
+}
+REMEDY_PUBLIC_NOTICE = "Not medically validated. Shared from the traditional notes of elders."
+PUBLIC_NOTE = (
+    "An admin reviews everything before it is shared. Public sharing also needs a consent record "
+    "that includes public sharing, or the upload is refused."
+)
+
+
+def _choose_visibility(kind: str) -> str:
+    label = st.radio(
+        "Who may read this once it is approved?",
+        list(VISIBILITY_CHOICES),
+        help="You can start with your community and widen it later; an admin makes the change.",
+    )
+    visibility = VISIBILITY_CHOICES[str(label)]
+    if visibility == "public":
+        st.caption(PUBLIC_NOTE)
+        if kind == "remedy":
+            st.info(f"Readers will see: {REMEDY_PUBLIC_NOTICE}")
+    return visibility
 
 
 def _choose_language() -> str:
@@ -107,6 +133,7 @@ def render(client: ApiClient) -> None:
     audio = _record_or_upload()
     kind = _choose_kind()
     language = _choose_language()
+    visibility = _choose_visibility(kind)
     community = st.text_input("Community ID")
     consent = st.text_input("Consent reference")
     if st.button("Send for review", disabled=not (audio and community and consent)):
@@ -118,5 +145,6 @@ def render(client: ApiClient) -> None:
                 community_id=community,
                 consent_id=consent,
                 heritage_kind=kind,
+                visibility=visibility,
             ),
         )

@@ -44,6 +44,13 @@ def bearer(token):
     return {"Authorization": f"Bearer {token}"}
 
 
+def allow_or_403(principal, action, resource):
+    decision = authorize(principal, action, resource)
+    if not decision.allowed:
+        raise HTTPException(status_code=403, detail=decision.reason)
+    return {"allowed": True}
+
+
 @pytest.fixture
 def engine(tmp_path):
     engine = create_engine(f"sqlite:///{tmp_path / 'auth.db'}")
@@ -67,10 +74,12 @@ def api(engine, monkeypatch):
     def approve(
         community: str, owner: str, principal: Annotated[Principal, Depends(current_principal)]
     ):
-        decision = authorize(principal, Action.REVIEW_APPROVE, Resource(community, owner))
-        if not decision.allowed:
-            raise HTTPException(status_code=403, detail=decision.reason)
-        return {"approved": True}
+        return allow_or_403(principal, Action.REVIEW_APPROVE, Resource(community, owner))
+
+    @app.post("/upload/{community}")
+    def upload(community: str, principal: Annotated[Principal, Depends(current_principal)]):
+        resource = Resource(community, principal.user_id)
+        return allow_or_403(principal, Action.RECORDING_UPLOAD, resource)
 
     app.dependency_overrides[get_key_resolver] = StaticKeys
     app.dependency_overrides[get_session_factory] = lambda: lambda: session_scope(engine)
@@ -106,16 +115,24 @@ def test_role_claims_in_headers_or_body_are_ignored(api, engine):
     assert api.get("/me?role=admin", headers=headers).json()["role"] == "member"
 
 
-def test_cross_community_approval_is_denied_even_for_a_reviewer(api, engine):
-    add_user(engine, "u1", Role.REVIEWER, ("c1",))
-    headers = bearer(token_for("u1", ["reviewer"]))
+def test_only_admins_approve_and_they_may_do_so_in_any_community(api, engine):
+    add_user(engine, "admin-1", Role.ADMIN, ())  # a member of no community at all
+    headers = bearer(token_for("admin-1", ["admin"]))
     assert api.post("/approve/c1/someone", headers=headers).status_code == 200
-    assert api.post("/approve/c2/someone", headers=headers).status_code == 403
+    assert api.post("/approve/c2/someone", headers=headers).status_code == 200
 
 
-def test_a_reviewer_cannot_approve_their_own_upload(api, engine):
-    add_user(engine, "u1", Role.REVIEWER)
-    response = api.post("/approve/c1/u1", headers=bearer(token_for("u1", ["reviewer"])))
+def test_the_old_reviewer_role_and_members_cannot_approve_anywhere(api, engine):
+    add_user(engine, "rev", Role.REVIEWER, ("c1",))
+    add_user(engine, "mem", Role.MEMBER, ("c1",))
+    for sub, group in (("rev", "reviewer"), ("mem", "member")):
+        headers = bearer(token_for(sub, [group]))
+        assert api.post("/approve/c1/someone", headers=headers).status_code == 403
+
+
+def test_an_admin_cannot_approve_their_own_upload(api, engine):
+    add_user(engine, "u1", Role.ADMIN)
+    response = api.post("/approve/c1/u1", headers=bearer(token_for("u1", ["admin"])))
     assert response.status_code == 403
     assert response.json()["detail"] == "cannot_approve_own_upload"
 
@@ -138,12 +155,12 @@ def test_a_token_with_no_known_group_is_denied(api, engine):
 
 
 def test_membership_changes_apply_on_the_next_request(api, engine):
-    add_user(engine, "u1", Role.REVIEWER, ("c1",))
-    headers = bearer(token_for("u1", ["reviewer"]))
-    assert api.post("/approve/c2/x", headers=headers).status_code == 403
+    add_user(engine, "u1", Role.MEMBER, ("c1",))
+    headers = bearer(token_for("u1", ["member"]))
+    assert api.post("/upload/c2", headers=headers).status_code == 403
     with session_scope(engine) as session:
         UserRepository(session).set_communities("u1", frozenset({"c1", "c2"}))
-    assert api.post("/approve/c2/x", headers=headers).status_code == 200
+    assert api.post("/upload/c2", headers=headers).status_code == 200
 
 
 @pytest.mark.parametrize(

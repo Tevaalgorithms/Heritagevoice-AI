@@ -7,8 +7,19 @@ from sqlalchemy.orm import Session
 from app.db.repositories import ChunkRepository
 from app.models.evidence import Evidence
 from app.models.index import ChunkRecord
+from app.models.records import Visibility
 from app.retrieval.eligibility import eligible_chunks
 from app.security.permissions import Principal, can_read, community_label
+
+PUBLIC_LABEL = "public"
+
+
+def _labels(chunk: ChunkRecord) -> frozenset[str]:
+    """Its community, plus `public` when the chunk is shared with every signed-in user."""
+    labels = {community_label(chunk.community_id)}
+    if chunk.visibility is Visibility.PUBLIC:
+        labels.add(PUBLIC_LABEL)
+    return frozenset(labels)
 
 
 def to_evidence(chunk: ChunkRecord, method: str) -> Evidence:
@@ -21,7 +32,7 @@ def to_evidence(chunk: ChunkRecord, method: str) -> Evidence:
         locator=f"audio:{chunk.recording_id}?t={chunk.start_s}-{chunk.end_s}",
         passage=chunk.text,
         passage_hash=hashlib.sha256(chunk.text.encode()).hexdigest(),
-        access_groups=frozenset({community_label(chunk.community_id)}),
+        access_groups=_labels(chunk),
         retrieval_methods=frozenset({method}),
     )
 

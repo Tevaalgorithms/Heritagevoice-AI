@@ -63,6 +63,19 @@ def _version_panel(client: ApiClient, recording: RecordingView, kind: str) -> No
         _act(lambda: client.review(recording.id, rejection), "Rejected.")
 
 
+VISIBILITIES = {"Only the community": "community", "All signed-in users": "public"}
+
+
+def _visibility_panel(client: ApiClient, recording: RecordingView) -> None:
+    """Who may read this once it is published. Going public needs the public-sharing consent."""
+    st.subheader("Who may read it")
+    labels = list(VISIBILITIES)
+    current = next(i for i, v in enumerate(VISIBILITIES.values()) if v == recording.visibility)
+    choice = st.radio("Visibility", labels, current, key=f"{recording.id}-visibility")
+    if st.button("Save visibility", disabled=VISIBILITIES[str(choice)] == recording.visibility):
+        _act(lambda: client.set_visibility(recording.id, VISIBILITIES[str(choice)]), "Saved.")
+
+
 def _review_recording(client: ApiClient, recording_id: str) -> None:
     try:
         recording = client.get_recording(recording_id)
@@ -77,6 +90,7 @@ def _review_recording(client: ApiClient, recording_id: str) -> None:
         _version_panel(client, recording, "translation")
     if st.button("Publish approved transcript", disabled=recording.status != "review"):
         _act(lambda: client.publish(recording.id), "Published.")
+    _visibility_panel(client, recording)
 
 
 def _load_recordings(client: ApiClient) -> list[RecordingSummary] | None:

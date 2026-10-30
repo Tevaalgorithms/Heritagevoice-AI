@@ -35,7 +35,7 @@ from app.db.repositories import (
     TranscriptRepository,
 )
 from app.models.job import Job
-from app.models.records import HeritageKind, Recording
+from app.models.records import HeritageKind, Recording, Visibility
 from app.models.transcript import Segment
 from app.ports import AudioStore
 from app.revocation import revoke_recording
@@ -108,6 +108,7 @@ class UploadForm(BaseModel):
     community_id: Annotated[str, ID]
     consent_id: Annotated[str, ID]
     heritage_kind: HeritageKind = HeritageKind.STORY
+    visibility: Visibility = Visibility.COMMUNITY
 
 
 class UploadResponse(BaseModel):
@@ -158,6 +159,7 @@ class RecordingResponse(BaseModel):
     community_id: str
     language: str
     heritage_kind: str
+    visibility: str
     status: str
     duration_s: float | None
     transcript: VersionView | None
@@ -187,6 +189,7 @@ async def upload_recording(
         ctx.idempotency_key,
         data,
         form.heritage_kind,
+        form.visibility,
     )
     try:
         accepted = await run_in_threadpool(accept_upload, request, ctx.deps)
@@ -266,6 +269,7 @@ def get_recording(
             community_id=recording.community_id,
             language=recording.language,
             heritage_kind=recording.heritage_kind,
+            visibility=recording.visibility,
             status=recording.status,
             duration_s=recording.duration_s,
             transcript=None if transcript is None else VersionView(**transcript.model_dump()),

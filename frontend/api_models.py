@@ -33,6 +33,7 @@ class UploadSpec(BaseModel):
     community_id: str
     consent_id: str
     heritage_kind: str = "story"
+    visibility: str = "community"
 
 
 class UploadResult(BaseModel):
@@ -77,6 +78,7 @@ class RecordingView(BaseModel):
     community_id: str
     language: str
     heritage_kind: str = "story"
+    visibility: str = "community"
     status: str
     duration_s: float | None = None
     transcript: VersionView | None = None
@@ -90,6 +92,7 @@ class RecordingSummary(BaseModel):
     community_id: str
     language: str
     heritage_kind: str = "story"
+    visibility: str = "community"
     status: str
     duration_s: float | None = None
 
@@ -173,3 +176,41 @@ class ProbeView(BaseModel):
 
     ok: bool
     code: str | None = None
+
+
+class LibrarySpec(BaseModel):
+    """What the Library page asks for. Empty fields mean "any"."""
+
+    q: str = ""
+    language: str = ""
+    kind: str = ""
+    view: str = "original"
+    limit: int = 20
+
+
+class LibraryItem(BaseModel):
+    """One passage from the Library, with the notices that must be shown with it."""
+
+    evidence_id: str
+    recording_id: str
+    heritage_kind: str
+    language: str
+    view: str
+    passage: str
+    start_s: float
+    end_s: float
+    notices: list[str] = []
+    community: str | None = None
+
+
+class LibraryResult(BaseModel):
+    """The passages that matched."""
+
+    items: list[LibraryItem]
+
+
+class VisibilityResult(BaseModel):
+    """A recording's visibility after an admin changed it."""
+
+    recording_id: str
+    visibility: str

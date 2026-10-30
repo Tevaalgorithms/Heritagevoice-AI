@@ -1,4 +1,6 @@
-"""Shell with navigation (Upload, Review, Ask). The API token stays on the Streamlit server."""
+"""Shell with navigation by role. The API token stays on the Streamlit server."""
+
+from collections.abc import Callable
 
 import streamlit as st
 
@@ -8,7 +10,7 @@ from frontend.account import current_role, show_account
 from frontend.api_client import ApiClient, ApiError
 from frontend.auth import COGNITO_PROVIDER, cognito_enabled, resolve_token
 from frontend.messages import message_for
-from frontend.views import ask, review, upload
+from frontend.views import ask, library, review, upload
 from frontend.views import settings as settings_page
 
 st.set_page_config(page_title="HeritageVoice AI", page_icon="🪔", layout="wide")
@@ -34,6 +36,48 @@ def show_status(client: ApiClient) -> None:
     (st.sidebar.success if report.ready else st.sidebar.warning)(label)
 
 
+def _page(render: Callable[[ApiClient], None], client: ApiClient, **options: object) -> object:
+    return st.Page(lambda: render(client), **options)  # type: ignore[arg-type]
+
+
+def _pages(client: ApiClient, role: str | None) -> list[object]:
+    """Everyone reads the Library and can add a recording; reviewing and settings are admin-only."""
+    pages = [
+        _page(
+            library.render,
+            client,
+            title="Library",
+            icon=":material/menu_book:",
+            url_path="library",
+            default=True,
+        ),
+        _page(ask.render, client, title="Ask", icon=":material/forum:", url_path="ask"),
+        _page(
+            upload.render, client, title="Add a recording", icon=":material/mic:", url_path="upload"
+        ),
+    ]
+    if role == "admin":
+        pages.append(
+            _page(
+                review.render,
+                client,
+                title="Review",
+                icon=":material/fact_check:",
+                url_path="review",
+            )
+        )
+        pages.append(
+            _page(
+                settings_page.render,
+                client,
+                title="Settings",
+                icon=":material/tune:",
+                url_path="settings",
+            )
+        )
+    return pages
+
+
 def main() -> None:
     theme.apply()
     settings = Settings()
@@ -44,37 +88,7 @@ def main() -> None:
     show_status(client)
     role = current_role(client)
     show_account(role, settings)
-    pages = [
-        st.Page(
-            lambda: upload.render(client),
-            title="Upload",
-            icon=":material/graphic_eq:",
-            url_path="upload",
-        ),
-        st.Page(
-            lambda: review.render(client),
-            title="Review",
-            icon=":material/fact_check:",
-            url_path="review",
-        ),
-        st.Page(
-            lambda: ask.render(client),
-            title="Ask",
-            icon=":material/forum:",
-            url_path="ask",
-            default=True,
-        ),
-    ]
-    if role == "admin":
-        pages.append(
-            st.Page(
-                lambda: settings_page.render(client),
-                title="Settings",
-                icon=":material/tune:",
-                url_path="settings",
-            )
-        )
-    st.navigation(pages).run()
+    st.navigation(_pages(client, role)).run()
 
 
 main()

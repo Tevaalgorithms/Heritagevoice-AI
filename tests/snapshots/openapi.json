@@ -72,7 +72,7 @@
             "items": {
               "$ref": "#/components/schemas/Right"
             },
-            "maxItems": 6,
+            "maxItems": 7,
             "minItems": 1,
             "title": "Rights",
             "type": "array"
@@ -308,6 +308,101 @@
         ],
         "title": "JobResponse",
         "type": "object"
+      },
+      "LibraryItem": {
+        "description": "One passage with its context. `notices` must be shown with it.",
+        "properties": {
+          "community": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Community"
+          },
+          "end_s": {
+            "title": "End S",
+            "type": "number"
+          },
+          "evidence_id": {
+            "title": "Evidence Id",
+            "type": "string"
+          },
+          "heritage_kind": {
+            "title": "Heritage Kind",
+            "type": "string"
+          },
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "notices": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notices",
+            "type": "array"
+          },
+          "passage": {
+            "title": "Passage",
+            "type": "string"
+          },
+          "recording_id": {
+            "title": "Recording Id",
+            "type": "string"
+          },
+          "start_s": {
+            "title": "Start S",
+            "type": "number"
+          },
+          "view": {
+            "title": "View",
+            "type": "string"
+          }
+        },
+        "required": [
+          "evidence_id",
+          "recording_id",
+          "heritage_kind",
+          "language",
+          "view",
+          "passage",
+          "start_s",
+          "end_s",
+          "notices",
+          "community"
+        ],
+        "title": "LibraryItem",
+        "type": "object"
+      },
+      "LibraryResponse": {
+        "description": "The matching passages, best or newest first.",
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/LibraryItem"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "LibraryResponse",
+        "type": "object"
+      },
+      "LibraryView": {
+        "description": "Which text to read: what was said in its own language, or the English translation.",
+        "enum": [
+          "original",
+          "translation"
+        ],
+        "title": "LibraryView",
+        "type": "string"
       },
       "Me": {
         "description": "The signed-in user as the server knows them: ID, role and communities.",
@@ -644,6 +739,10 @@
                 "type": "null"
               }
             ]
+          },
+          "visibility": {
+            "title": "Visibility",
+            "type": "string"
           }
         },
         "required": [
@@ -651,6 +750,7 @@
           "community_id",
           "language",
           "heritage_kind",
+          "visibility",
           "status",
           "duration_s",
           "transcript",
@@ -692,6 +792,10 @@
           "status": {
             "title": "Status",
             "type": "string"
+          },
+          "visibility": {
+            "title": "Visibility",
+            "type": "string"
           }
         },
         "required": [
@@ -699,6 +803,7 @@
           "community_id",
           "language",
           "heritage_kind",
+          "visibility",
           "status",
           "duration_s"
         ],
@@ -736,7 +841,8 @@
           "translation",
           "indexing",
           "summarization",
-          "attribution"
+          "attribution",
+          "public_sharing"
         ],
         "title": "Right",
         "type": "string"
@@ -873,6 +979,10 @@
             "pattern": "^[a-z]{2,8}$",
             "title": "Language",
             "type": "string"
+          },
+          "visibility": {
+            "$ref": "#/components/schemas/Visibility",
+            "default": "community"
           }
         },
         "required": [
@@ -992,6 +1102,48 @@
           "segments"
         ],
         "title": "VersionView",
+        "type": "object"
+      },
+      "Visibility": {
+        "description": "Who may read a published recording. Public is never the default: it needs the community's\n`public_sharing` consent and an admin's approval, and it reaches signed-in users only.",
+        "enum": [
+          "community",
+          "public"
+        ],
+        "title": "Visibility",
+        "type": "string"
+      },
+      "VisibilityRequest": {
+        "additionalProperties": false,
+        "description": "Request body to change who may read a recording.",
+        "properties": {
+          "visibility": {
+            "$ref": "#/components/schemas/Visibility"
+          }
+        },
+        "required": [
+          "visibility"
+        ],
+        "title": "VisibilityRequest",
+        "type": "object"
+      },
+      "VisibilityResult": {
+        "description": "The recording's visibility after the change.",
+        "properties": {
+          "recording_id": {
+            "title": "Recording Id",
+            "type": "string"
+          },
+          "visibility": {
+            "title": "Visibility",
+            "type": "string"
+          }
+        },
+        "required": [
+          "recording_id",
+          "visibility"
+        ],
+        "title": "VisibilityResult",
         "type": "object"
       },
       "app__api__consents__RevokeResponse": {
@@ -1844,6 +1996,116 @@
         ]
       }
     },
+    "/v1/library": {
+      "get": {
+        "description": "Search by words when `q` is given, otherwise browse the newest recordings.",
+        "operationId": "library_v1_library_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^[a-z]{2,8}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Language"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/HeritageKind"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          },
+          {
+            "in": "query",
+            "name": "view",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/LibraryView",
+              "default": "original"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LibraryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Library",
+        "tags": [
+          "library"
+        ]
+      }
+    },
     "/v1/me": {
       "get": {
         "operationId": "me_v1_me_get",
@@ -1872,7 +2134,7 @@
     },
     "/v1/recordings": {
       "get": {
-        "description": "Members see their own recordings, reviewers those of their communities, admins none.",
+        "description": "Members see their own recordings, reviewers those of their communities, admins every one.",
         "operationId": "list_recordings_v1_recordings_get",
         "responses": {
           "200": {
@@ -2225,6 +2487,65 @@
         "summary": "Revoke Recording Endpoint",
         "tags": [
           "recordings"
+        ]
+      }
+    },
+    "/v1/recordings/{recording_id}/visibility": {
+      "put": {
+        "description": "Admin only. Public needs the community's public-sharing consent; the change is audited.",
+        "operationId": "set_visibility_endpoint_v1_recordings__recording_id__visibility_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recording_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "title": "Recording Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VisibilityRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VisibilityResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Set Visibility Endpoint",
+        "tags": [
+          "review"
         ]
       }
     }

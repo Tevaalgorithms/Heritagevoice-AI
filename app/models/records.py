@@ -16,6 +16,7 @@ class Right(StrEnum):
     INDEXING = "indexing"
     SUMMARIZATION = "summarization"
     ATTRIBUTION = "attribution"
+    PUBLIC_SHARING = "public_sharing"
 
 
 class Consent(BaseModel):
@@ -51,6 +52,17 @@ class HeritageKind(StrEnum):
     REMEDY = "remedy"
 
 
+class Visibility(StrEnum):
+    """Who may read a published recording. Public is never the default: it needs the community's
+    `public_sharing` consent and an admin's approval, and it reaches signed-in users only."""
+
+    COMMUNITY = "community"
+    PUBLIC = "public"
+
+
+REMEDY_NOTICE = "Not medically validated. Shared from the traditional notes of elders."
+
+
 class Recording(BaseModel):
     """A recorded piece of heritage and its processing state."""
 
@@ -61,6 +73,7 @@ class Recording(BaseModel):
     language: str
     consent_id: str
     heritage_kind: HeritageKind = HeritageKind.STORY
+    visibility: Visibility = Visibility.COMMUNITY
     status: RecordingStatus = RecordingStatus.DRAFT
     audio_key: str | None = None
     content_type: str | None = None

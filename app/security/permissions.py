@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict
 
 from app.models.evidence import Evidence
 from app.security.roles import (
+    ADMIN_ACROSS_COMMUNITIES,
     ANY_COMMUNITY,
     COMMUNITY_SCOPED,
     OWNED_ONLY,
@@ -26,6 +27,7 @@ class Principal(BaseModel):
     policy_version: str
     role: Role = Role.MEMBER
     communities: frozenset[str] = frozenset()
+    self_review: bool = False  # set only by deployment configuration, never by a request
 
 
 KNOWN_GROUPS = frozenset({"public", "researcher"})
@@ -84,17 +86,24 @@ def _role_rule(principal: Principal, action: Action, resource: Resource) -> Reas
     return None if principal.role in ROLE_PERMISSIONS[action] else Reason.ROLE
 
 
+def _exempt_from_membership(principal: Principal, action: Action) -> bool:
+    """Actions that do not depend on belonging to the resource's community."""
+    admin_wide = principal.role is Role.ADMIN and action in ADMIN_ACROSS_COMMUNITIES
+    return admin_wide or action not in COMMUNITY_SCOPED
+
+
 def _community_rule(principal: Principal, action: Action, resource: Resource) -> Reason | None:
     if action in ANY_COMMUNITY:
         return None if principal.communities else Reason.COMMUNITY
-    if action not in COMMUNITY_SCOPED:
+    if _exempt_from_membership(principal, action):
         return None
     return None if resource.community_id in principal.communities else Reason.COMMUNITY
 
 
 def _self_approval_rule(principal: Principal, action: Action, resource: Resource) -> Reason | None:
     own = resource.owner_id == principal.user_id
-    return Reason.SELF_APPROVAL if action is Action.REVIEW_APPROVE and own else None
+    forbidden = action is Action.REVIEW_APPROVE and own and not principal.self_review
+    return Reason.SELF_APPROVAL if forbidden else None
 
 
 def _ownership_rule(principal: Principal, action: Action, resource: Resource) -> Reason | None:

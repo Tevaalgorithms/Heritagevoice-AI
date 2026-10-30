@@ -1,6 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
 from app.api.auth import current_principal, get_session_factory
@@ -14,7 +14,7 @@ from app.db.repositories import (
     VersionRepository,
 )
 from app.db.session import session_scope
-from app.db.tables import Base
+from app.db.tables import AuditLogRow, Base, ConsentRow, JobRow
 from app.fakes import FakeAudioStore, FakeTranscriber, FakeTranslator
 from app.ingest import IngestDeps, ingest_handler
 from app.models.records import RecordingStatus, Right, Subject, VersionStatus
@@ -30,7 +30,9 @@ SEGMENTS = [
     Segment(segment_id="s2", start_s=0.5, end_s=0.9, text="nandri"),
 ]
 OWNER = person(Role.MEMBER, user_id="owner")
-REVIEWER = person(Role.REVIEWER, user_id="rev")
+# Only admins review. REVIEWER is an admin who happens to belong to the recording's community;
+# OTHER_REVIEWER holds the old reviewer role, which now carries no review right.
+REVIEWER = person(Role.ADMIN, user_id="rev", communities=("c1",))
 OTHER_REVIEWER = person(Role.REVIEWER, user_id="rev2", communities=("c2",))
 OTHER_MEMBER = person(Role.MEMBER, user_id="stranger")
 ADMIN = person(Role.ADMIN, user_id="admin", communities=())
@@ -97,7 +99,7 @@ def status(engine, recording_id):
 
 def test_each_user_sees_only_the_recordings_they_may(client, engine):
     reviewable(engine)
-    expected = {OWNER: 1, REVIEWER: 1, OTHER_MEMBER: 0, OTHER_REVIEWER: 0, ADMIN: 0}
+    expected = {OWNER: 1, REVIEWER: 1, OTHER_MEMBER: 0, OTHER_REVIEWER: 0, ADMIN: 1}
     for principal, count in expected.items():
         act_as(principal)
         assert len(client.get("/v1/recordings").json()) == count
@@ -160,7 +162,7 @@ def test_editing_an_unknown_segment_is_422_and_changes_nothing(client, engine):
 def test_hidden_recordings_cannot_be_edited_reviewed_or_published(client, engine):
     recording_id = reviewable(engine)
     missing = client.patch(url("nope", "draft"), json=edit())
-    for principal in (OTHER_MEMBER, OTHER_REVIEWER, ADMIN):
+    for principal in (OTHER_MEMBER, OTHER_REVIEWER):
         act_as(principal)
         for response in (
             client.patch(url(recording_id, "draft"), json=edit()),
@@ -179,8 +181,8 @@ def test_members_cannot_approve_and_forged_reviewer_fields_are_ignored(client, e
     assert version(engine, recording_id, Subject.TRANSCRIPT).status == VersionStatus.DRAFT
 
 
-def test_a_reviewer_cannot_approve_their_own_upload(client, engine):
-    recording_id = reviewable(engine, uploader=person(Role.REVIEWER, user_id="rev"))
+def test_an_admin_cannot_approve_their_own_upload(client, engine):
+    recording_id = reviewable(engine, uploader=person(Role.ADMIN, user_id="rev"))
     act_as(REVIEWER)
     response = client.post(url(recording_id, "review"), json=decision())
     assert response.status_code == 403
@@ -298,3 +300,102 @@ def test_recordings_still_in_ingestion_cannot_be_reviewed(client, engine):
     recording_id = accept_upload(request, deps).recording_id
     response = client.post(url(recording_id, "review"), json=decision())
     assert (response.status_code, response.json()["detail"]["code"]) == (409, "not_reviewable")
+
+
+def test_an_admin_can_review_any_community_without_belonging_to_it(client, engine):
+    recording_id = reviewable(engine)  # in community c1; ADMIN belongs to no community
+    act_as(ADMIN)
+    assert client.post(url(recording_id, "review"), json=decision()).status_code == 200
+    assert client.post(url(recording_id, "publish")).status_code == 200
+    assert status(engine, recording_id) == RecordingStatus.PUBLISHED
+
+
+def test_the_old_reviewer_role_can_no_longer_approve_or_publish(client, engine):
+    recording_id = reviewable(engine)
+    act_as(person(Role.REVIEWER, user_id="legacy", communities=("c1",)))
+    assert client.post(url(recording_id, "review"), json=decision()).status_code == 403
+    assert client.post(url(recording_id, "publish")).status_code == 403
+    assert version(engine, recording_id, Subject.TRANSCRIPT).status == VersionStatus.DRAFT
+
+
+def test_a_deployment_with_one_admin_can_allow_self_review(client, engine):
+    uploader = person(Role.ADMIN, user_id="solo", communities=("c1",))
+    recording_id = reviewable(engine, uploader=uploader)
+    act_as(uploader.model_copy(update={"self_review": True}))
+    assert client.post(url(recording_id, "review"), json=decision()).status_code == 200
+
+
+def publish_ready(client, engine):
+    """A published recording owned by OWNER, with nothing indexed yet."""
+    recording_id = reviewable(engine)
+    act_as(REVIEWER)
+    client.post(url(recording_id, "review"), json=decision())
+    assert client.post(url(recording_id, "publish")).status_code == 200
+    return recording_id
+
+
+def set_visibility(client, recording_id, visibility):
+    return client.put(url(recording_id, "visibility"), json={"visibility": visibility})
+
+
+def test_only_admins_change_visibility(client, engine):
+    recording_id = publish_ready(client, engine)
+    for principal in (OWNER, OTHER_MEMBER, person(Role.REVIEWER, user_id="legacy")):
+        act_as(principal)
+        assert set_visibility(client, recording_id, "public").status_code in {403, 404}
+    with Session(engine) as session:
+        assert RecordingRepository(session).get(recording_id).visibility == "community"
+
+
+def test_an_admin_makes_a_recording_public_with_consent_and_it_is_audited_and_reindexed(
+    client, engine
+):
+    recording_id = publish_ready(client, engine)
+    act_as(ADMIN)
+    response = set_visibility(client, recording_id, "public")
+    assert response.json() == {"recording_id": recording_id, "visibility": "public"}
+    with Session(engine) as session:
+        assert RecordingRepository(session).get(recording_id).visibility == "public"
+        entry = session.scalars(
+            select(AuditLogRow).where(AuditLogRow.action == "recording:visibility")
+        ).one()
+        jobs = session.scalars(select(JobRow).where(JobRow.kind == "index_recording")).all()
+    assert (entry.actor_sub, entry.target, entry.detail) == (
+        "admin",
+        f"recording:{recording_id}",
+        "public",
+    )
+    assert len(jobs) >= 1
+
+
+def test_public_is_refused_when_the_consent_lacks_public_sharing(client, engine):
+    recording_id = publish_ready(client, engine)
+    with session_scope(engine) as session:
+        row = session.get(ConsentRow, "consent-1")
+        row.rights = [r for r in row.rights if r != Right.PUBLIC_SHARING.value]
+    act_as(ADMIN)
+    response = set_visibility(client, recording_id, "public")
+    assert (response.status_code, response.json()["detail"]["code"]) == (403, "consent_denied")
+    with Session(engine) as session:
+        assert RecordingRepository(session).get(recording_id).visibility == "community"
+
+
+def test_visibility_can_always_be_narrowed_back_to_the_community(client, engine):
+    recording_id = publish_ready(client, engine)
+    act_as(ADMIN)
+    set_visibility(client, recording_id, "public")
+    assert set_visibility(client, recording_id, "community").status_code == 200
+    with Session(engine) as session:
+        assert RecordingRepository(session).get(recording_id).visibility == "community"
+
+
+@pytest.mark.parametrize("body", [{"visibility": "everyone"}, {}, {"visibility": "public", "x": 1}])
+def test_a_bad_visibility_body_is_rejected(client, engine, body):
+    recording_id = publish_ready(client, engine)
+    act_as(ADMIN)
+    assert client.put(url(recording_id, "visibility"), json=body).status_code == 422
+
+
+def test_changing_the_visibility_of_a_missing_recording_is_404(client):
+    act_as(ADMIN)
+    assert set_visibility(client, "nope", "public").status_code == 404

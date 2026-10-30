@@ -90,5 +90,5 @@ def test_the_app_renders_navigation_and_an_unavailable_status(monkeypatch):
     monkeypatch.delenv("HERITAGEVOICE_DEV_API_TOKEN", raising=False)
     app = AppTest.from_file(str(APP), default_timeout=20).run()
     assert not app.exception
-    assert [h.value for h in app.header] == ["Ask"]
+    assert [h.value for h in app.header] == ["Library"]
     assert any("unavailable" in e.value for e in app.sidebar.error)

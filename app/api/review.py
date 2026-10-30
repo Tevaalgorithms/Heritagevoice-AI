@@ -13,12 +13,14 @@ from sqlalchemy.orm import Session
 
 from app.api.auth import SessionFactory, current_principal, get_session_factory
 from app.api.recordings import PathId, viewable
-from app.db.repositories import RecordingRepository
-from app.models.records import Recording, Subject
+from app.api.tracing import current_trace_id
+from app.db.repositories import AuditEntry, AuditRepository, RecordingRepository
+from app.models.records import Recording, Subject, Visibility
 from app.review import DecisionInput, EditInput, ReviewError, decide, edit_draft, publish
 from app.security.consent import ConsentDeniedError
 from app.security.permissions import Principal, Resource, authorize
 from app.security.roles import Action, Role
+from app.sharing import change_visibility
 
 router = APIRouter(prefix="/v1", tags=["review"])
 Kind = Literal["transcript", "translation"]
@@ -75,6 +77,7 @@ class RecordingSummary(BaseModel):
     community_id: str
     language: str
     heritage_kind: str
+    visibility: str
     status: str
     duration_s: float | None
 
@@ -102,18 +105,21 @@ Factory = Annotated[SessionFactory, Depends(get_session_factory)]
 
 @router.get("/recordings")
 def list_recordings(principal: Principal_, factory: Factory) -> list[RecordingSummary]:
-    """Members see their own recordings, reviewers those of their communities, admins none."""
-    if principal.role is Role.ADMIN:
-        return []
+    """Members see their own recordings, reviewers those of their communities, admins every one."""
     owner = principal.user_id if principal.role is Role.MEMBER else None
     with factory() as session:
-        found = RecordingRepository(session).list_for(principal.communities, owner)
+        repository = RecordingRepository(session)
+        if principal.role is Role.ADMIN:
+            found = repository.list_all()
+        else:
+            found = repository.list_for(principal.communities, owner)
     return [
         RecordingSummary(
             id=r.id,
             community_id=r.community_id,
             language=r.language,
             heritage_kind=r.heritage_kind,
+            visibility=r.visibility,
             status=r.status,
             duration_s=r.duration_s,
         )
@@ -164,3 +170,42 @@ def publish_recording_endpoint(
         except (ReviewError, ConsentDeniedError) as error:
             raise _error(error) from error
     return PublishResult(recording_id=recording_id, status=status)
+
+
+class VisibilityRequest(BaseModel):
+    """Request body to change who may read a recording."""
+
+    model_config = ConfigDict(extra="forbid")
+    visibility: Visibility
+
+
+class VisibilityResult(BaseModel):
+    """The recording's visibility after the change."""
+
+    recording_id: str
+    visibility: str
+
+
+@router.put("/recordings/{recording_id}/visibility")
+def set_visibility_endpoint(
+    recording_id: Annotated[str, PathId],
+    body: VisibilityRequest,
+    principal: Principal_,
+    factory: Factory,
+) -> VisibilityResult:
+    """Admin only. Public needs the community's public-sharing consent; the change is audited."""
+    with factory() as session:
+        recording = _allowed_recording(session, principal, recording_id, Action.VISIBILITY_MANAGE)
+        try:
+            change_visibility(session, recording, body.visibility)
+        except ConsentDeniedError as error:
+            raise _error(error) from error
+        entry = AuditEntry(
+            principal.user_id,
+            "recording:visibility",
+            f"recording:{recording_id}",
+            current_trace_id(),
+            body.visibility.value,
+        )
+        AuditRepository(session).record(entry)
+    return VisibilityResult(recording_id=recording_id, visibility=body.visibility)

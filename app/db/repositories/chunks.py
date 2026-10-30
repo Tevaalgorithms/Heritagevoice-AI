@@ -1,12 +1,13 @@
 """Searchable chunks of approved content, kept in step with what is published."""
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, or_, select
 from sqlalchemy.orm import Session
 
 from app.db.tables import (
     EvidenceChunkRow,
 )
 from app.models.index import ChunkKind, ChunkRecord
+from app.models.records import Visibility
 
 
 def _to_chunk(row: EvidenceChunkRow) -> ChunkRecord:
@@ -24,6 +25,7 @@ def _to_chunk(row: EvidenceChunkRow) -> ChunkRecord:
         end_s=row.end_s,
         segment_ids=tuple(row.segment_ids),
         speaker=row.speaker,
+        visibility=Visibility(row.visibility),
     )
 
 
@@ -62,6 +64,32 @@ class ChunkRepository:
             .limit(limit)
         )
         return [_to_chunk(r) for r in self._session.scalars(query)]
+
+    def visible_to(self, communities: frozenset[str], limit: int = 5000) -> list[ChunkRecord]:
+        """Chunks in these communities, plus every public chunk."""
+        query = (
+            select(EvidenceChunkRow)
+            .where(
+                or_(
+                    EvidenceChunkRow.community_id.in_(communities),
+                    EvidenceChunkRow.visibility == Visibility.PUBLIC,
+                )
+            )
+            .order_by(EvidenceChunkRow.evidence_id)
+            .limit(limit)
+        )
+        return [_to_chunk(r) for r in self._session.scalars(query)]
+
+    def openings(self, recording_ids: list[str], kind: ChunkKind) -> dict[str, ChunkRecord]:
+        """The first chunk of each recording's transcript or translation, for browsing."""
+        if not recording_ids:
+            return {}
+        query = select(EvidenceChunkRow).where(
+            EvidenceChunkRow.recording_id.in_(recording_ids),
+            EvidenceChunkRow.kind == kind,
+            EvidenceChunkRow.chunk_index == 0,
+        )
+        return {row.recording_id: _to_chunk(row) for row in self._session.scalars(query)}
 
     def recording_ids(self) -> list[str]:
         """Recordings that currently have indexed chunks."""

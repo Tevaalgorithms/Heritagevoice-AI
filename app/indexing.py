@@ -21,7 +21,14 @@ from app.db.repositories import (
 )
 from app.models.index import ChunkKind, ChunkRecord
 from app.models.job import Job, JobStatus, Outcome
-from app.models.records import Recording, RecordingStatus, Right, Subject, VersionRef
+from app.models.records import (
+    Recording,
+    RecordingStatus,
+    Right,
+    Subject,
+    VersionRef,
+    Visibility,
+)
 from app.ports import VectorStore
 from app.retrieval.chunker import chunk_segments
 from app.retrieval.evidence_store import to_evidence
@@ -52,6 +59,7 @@ class IndexDeps:
 def _records(
     recording: Recording, version: VersionRef, kind: ChunkKind, language: str
 ) -> list[ChunkRecord]:
+    """Chunks of one version; they carry the recording's (already consent-checked) visibility."""
     records = []
     for chunk in chunk_segments(version.segments):
         records.append(
@@ -69,13 +77,23 @@ def _records(
                 end_s=chunk.end_s,
                 segment_ids=chunk.segment_ids,
                 speaker=chunk.speaker,
+                visibility=recording.visibility,
             )
         )
     return records
 
 
-def build_records(session: Session, recording: Recording) -> list[ChunkRecord]:
+def _consented(session: Session, recording: Recording) -> Recording:
+    """The recording as it may be indexed: public only if the consent allows public sharing."""
+    consent = ConsentRepository(session).get(recording.consent_id)
+    if consent is not None and consent.permits(Right.PUBLIC_SHARING):
+        return recording
+    return recording.model_copy(update={"visibility": Visibility.COMMUNITY})
+
+
+def build_records(session: Session, original: Recording) -> list[ChunkRecord]:
     """Chunks of the approved transcript, plus the approved translation if it matches it."""
+    recording = _consented(session, original)
     versions = VersionRepository(session)
     transcript = versions.approved(recording.id, Subject.TRANSCRIPT)
     if transcript is None:
