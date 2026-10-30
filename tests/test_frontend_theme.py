@@ -11,3 +11,10 @@ def test_the_footer_lists_every_supported_language_in_its_own_script():
 
 def test_the_footer_line_is_static_text_only():
     assert "<script" not in supported_languages_html().lower()
+
+
+def test_the_sign_in_button_style_targets_the_buttons_key():
+    from pathlib import Path  # noqa: PLC0415
+
+    css = (Path(__file__).parent.parent / "frontend" / "static" / "theme.css").read_text()
+    assert ".st-key-hv-sign-in button" in css

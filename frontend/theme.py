@@ -1,6 +1,7 @@
 """Look and feel: the colours and mood of the README banner (a sunset story circle that turns
 into a web of preserved knowledge). Static markup only; nothing a user typed is ever inserted."""
 
+from collections.abc import Callable
 from html import escape
 from pathlib import Path
 
@@ -39,6 +40,7 @@ CLOSING = (
     "our elders, kept in their own voices for the generations still to come."
 )
 PROMISE = "Preserving human heritage, with consent and with care."
+SECURE_NOTE = "Protected by multi-factor authentication"
 ICONS = {
     "upload": "<path d='M12 3v12'/><path d='M8 7l4-4 4 4'/><path d='M5 15v4h14v-4'/>",
     "review": "<path d='M5 12l4 4 10-10'/><path d='M4 4h16v16H4z'/>",
@@ -75,14 +77,35 @@ def _languages() -> str:
     )
 
 
-def landing() -> None:
-    """Hero shown above the sign-in button."""
+def landing_top() -> None:
+    """The banner and the one-line purpose; the sign-in button follows."""
     st.image(str(BANNER), use_container_width=True)
     st.markdown(
-        "<div class='hv-lead' style='text-align:center;margin:.4rem auto 1.6rem;max-width:760px'>"
+        "<div class='hv-lead' style='text-align:center;margin:.4rem auto 1.2rem;max-width:760px'>"
         f"{LEAD}</div>",
         unsafe_allow_html=True,
     )
+
+
+def sign_in_button(on_click: Callable[[], None]) -> None:
+    """A single, centered call to action with a note on how sign-in is protected."""
+    _, middle, _ = st.columns([3, 2, 3])
+    middle.button(
+        "Sign in securely",
+        icon=":material/lock:",
+        type="primary",
+        use_container_width=True,
+        on_click=on_click,
+        key="hv-sign-in",
+    )
+    middle.markdown(
+        f"<div class='hv-secure' style='text-align:center'>{SECURE_NOTE}</div>",
+        unsafe_allow_html=True,
+    )
+
+
+def landing_details() -> None:
+    """What the project stands for, shown below the sign-in button."""
     st.markdown(_cards(), unsafe_allow_html=True)
     st.markdown(_kind_chips(), unsafe_allow_html=True)
     st.markdown(_languages(), unsafe_allow_html=True)

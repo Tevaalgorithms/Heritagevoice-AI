@@ -16,11 +16,9 @@ st.set_page_config(page_title="HeritageVoice AI", page_icon="🪔", layout="wide
 def require_sign_in(settings: Settings, token: str | None) -> None:
     """Without a token and with Cognito configured, offer sign-in and stop rendering."""
     if token is None and cognito_enabled(settings):
-        theme.landing()
-        _, middle, _ = st.columns([1, 1, 1])
-        middle.button(
-            "Sign in to continue", on_click=st.login, args=[COGNITO_PROVIDER], type="primary"
-        )
+        theme.landing_top()
+        theme.sign_in_button(lambda: st.login(COGNITO_PROVIDER))
+        theme.landing_details()
         theme.footer()
         st.stop()
 
