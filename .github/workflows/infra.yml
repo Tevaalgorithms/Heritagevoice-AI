@@ -52,21 +52,41 @@ jobs:
       matrix:
         stack: [cognito, single-instance]
     steps:
+      # single-instance needs the Cognito IDs; until `cognito` has been applied there is nothing
+      # to plan, so skip instead of failing.
+      - name: Check prerequisites
+        id: ready
+        env:
+          STACK: ${{ matrix.stack }}
+          POOL_ID: ${{ vars.COGNITO_USER_POOL_ID }}
+          CLIENT_ID: ${{ vars.COGNITO_APP_CLIENT_ID }}
+        run: |
+          if [[ "$STACK" == "single-instance" && ( -z "$POOL_ID" || -z "$CLIENT_ID" ) ]]; then
+            echo "Skipping: apply the cognito stack first and set COGNITO_USER_POOL_ID and COGNITO_APP_CLIENT_ID."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/checkout@v4
+        if: steps.ready.outputs.run == 'true'
       - uses: hashicorp/setup-terraform@v3
+        if: steps.ready.outputs.run == 'true'
         with:
           terraform_version: 1.9.8
       - uses: aws-actions/configure-aws-credentials@v4
+        if: steps.ready.outputs.run == 'true'
         with:
           role-to-assume: ${{ vars.AWS_TF_PLAN_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
           role-session-name: heritagevoice-plan
       - name: Init
+        if: steps.ready.outputs.run == 'true'
         run: >
           terraform -chdir=infra/${{ matrix.stack }} init -input=false
           -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}"
           -backend-config="region=${{ vars.AWS_REGION }}"
       - name: Plan (read-only, no state lock)
+        if: steps.ready.outputs.run == 'true'
         run: terraform -chdir=infra/${{ matrix.stack }} plan -input=false -lock=false -no-color
 
   apply:

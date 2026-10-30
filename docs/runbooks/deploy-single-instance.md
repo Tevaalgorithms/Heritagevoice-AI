@@ -49,7 +49,9 @@ printed or passed through Terraform.
    terraform apply -var region=us-west-2 -var environment=prod \
      -var github_repo=Tevaalgorithms/Heritagevoice-AI -var instance_id=<see below> \
      -var releases_bucket=heritagevoice-prod-releases-<account> -var state_bucket=<state bucket> \
-     -var create_oidc_provider=false   # the account already has the GitHub OIDC provider
+     -var create_oidc_provider=false \
+     -var github_subject_prefix="$(gh api repos/Tevaalgorithms/Heritagevoice-AI/actions/oidc/customization/sub --jq .sub_claim_prefix)"
+   # create_oidc_provider=false: the account already has the GitHub OIDC provider
    ```
 
    `instance_id` does not exist before the first `infra` run. Apply this stack twice: first with

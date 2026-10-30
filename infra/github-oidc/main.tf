@@ -47,7 +47,7 @@ data "aws_iam_policy_document" "trust" {
     condition {
       test     = "StringEquals"
       variable = "${local.oidc_url}:sub"
-      values   = ["repo:${var.github_repo}:environment:${var.environment}"]
+      values   = ["${local.repo_subject}:environment:${var.environment}"]
     }
   }
 }
@@ -91,7 +91,9 @@ resource "aws_iam_role_policy" "deploy" {
 # --- Terraform from CI -----------------------------------------------------------------------
 
 locals {
-  repo_subject = "repo:${var.github_repo}"
+  # New repositories sign in with immutable IDs (repo:<owner>@<id>/<name>@<id>); pass that prefix
+  # so the trust survives a rename or transfer. Falls back to the plain name for older repos.
+  repo_subject = var.github_subject_prefix != "" ? var.github_subject_prefix : "repo:${var.github_repo}"
   state_arn    = "arn:aws:s3:::${var.state_bucket}"
 }
 
