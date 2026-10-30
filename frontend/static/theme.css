@@ -92,3 +92,17 @@ input, textarea, [data-baseweb="select"] > div { border-radius: 10px !important;
 /* An empty result is guidance, not a blue alert. */
 .hv-empty { background: #FFFDF8; border: 1px dashed #C9B88F; border-radius: 14px; padding: 1.4rem 1.6rem; color: #3A465B; }
 .hv-empty b { display: block; color: #14284B; font-size: 1.05rem; margin-bottom: .3rem; }
+/* Sidebar: the brand on top, then the menu. Streamlit puts our content below the menu, so reorder. */
+[data-testid="stSidebarContent"] { display: flex; flex-direction: column; }
+[data-testid="stSidebarHeader"] { order: 0; }
+[data-testid="stSidebarUserContent"] { order: 1; padding-top: 0; padding-bottom: .4rem; }
+[data-testid="stSidebarNav"] { order: 2; }
+[data-testid="stSidebarNavSeparator"] { display: none; }
+.hv-tag { margin-bottom: .4rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(243,233,214,.14); }
+/* Menu: quiet section labels, a clear current page. */
+[data-testid="stNavSectionHeader"] { font-size: .72rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+  color: #9FA9BD !important; padding-top: 1.1rem; }
+[data-testid="stSidebarNav"] a { padding: .5rem .75rem; font-size: .95rem; }
+[data-testid="stSidebarNav"] a:hover { background: rgba(255,255,255,.07); }
+[data-testid="stSidebarNav"] a[aria-current="page"] { background: rgba(217,138,43,.2); box-shadow: inset 3px 0 0 #D98A2B; }
+[data-testid="stSidebarNav"] a[aria-current="page"] * { color: #FFF7E6; font-weight: 600; }
