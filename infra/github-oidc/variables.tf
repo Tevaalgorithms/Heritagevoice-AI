@@ -8,6 +8,12 @@ variable "environment" {
   description = "Must match the GitHub environment name that is allowed to deploy (for example prod)."
 }
 
+variable "github_subject_prefix" {
+  type        = string
+  default     = ""
+  description = "Subject prefix GitHub puts in its tokens, e.g. repo:owner@123/name@456. Get it with: gh api repos/<owner>/<repo>/actions/oidc/customization/sub --jq .sub_claim_prefix. Empty uses repo:<github_repo>."
+}
+
 variable "github_repo" {
   type        = string
   description = "owner/name of the repository allowed to deploy."
