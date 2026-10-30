@@ -5,6 +5,7 @@ Playing the audio next to each segment arrives with segment 10 (media access).
 
 import streamlit as st
 
+from frontend import theme
 from frontend.api_client import (
     ApiClient,
     ApiError,
@@ -85,7 +86,10 @@ def _load_recordings(client: ApiClient) -> list[RecordingSummary] | None:
 
 
 def render(client: ApiClient) -> None:
-    st.header("Review")
+    theme.page_header(
+        "Review",
+        "Check each transcript and translation. Only approved work becomes part of the collection.",
+    )
     recordings = _load_recordings(client)
     if not recordings:
         if recordings is not None:
