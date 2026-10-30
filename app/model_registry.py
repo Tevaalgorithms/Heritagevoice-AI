@@ -17,7 +17,7 @@ from sqlalchemy.orm import Session
 from app.config import Settings
 from app.db.repositories import ModelCatalogRepository, ModelSettingRepository
 from app.models.llm import (
-    DEFAULT_KEY_NAME,
+    DEFAULT_KEY_NAMES,
     CatalogEntry,
     ModelRole,
     ModelSetting,
@@ -94,7 +94,7 @@ class ModelRegistry:
         if entry is None:
             # The primary may come from trusted environment configuration; it uses the default key.
             return (
-                _link_for(setting, model_id, setting.provider, DEFAULT_KEY_NAME)
+                _link_for(setting, model_id, setting.provider, DEFAULT_KEY_NAMES[setting.provider])
                 if (model_id == setting.model)
                 else None
             )

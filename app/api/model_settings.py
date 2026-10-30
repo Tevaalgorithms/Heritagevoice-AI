@@ -11,7 +11,7 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from app.adapters.model_tester import AnthropicModelTester
+from app.adapters.model_tester import ProviderModelTester
 from app.api.admin import AdminContext, context_for
 from app.config import Settings
 from app.db.repositories import AuditRepository, ModelCatalogRepository, ModelSettingRepository
@@ -35,7 +35,7 @@ Ctx = Annotated[AdminContext, Depends(context_for(Action.MODEL_MANAGE))]
 
 
 def get_model_tester() -> ModelTester:
-    return AnthropicModelTester()
+    return ProviderModelTester()
 
 
 def get_secrets() -> SecretReader:
@@ -125,7 +125,7 @@ def add_model(body: NewModel, ctx: Ctx, secrets: Secrets) -> CatalogView:
         entry = ModelCatalogRepository(session).add(body, ctx.admin.user_id)
         if entry is None:
             raise _problem("model_exists", 409)
-        detail = f"{body.provider.value}/{body.model_id} key={body.key_name}"
+        detail = f"{body.provider.value}/{body.model_id} key={body.resolved_key_name()}"
         AuditRepository(session).record(ctx.entry("model:add", f"model:{body.model_id}", detail))
     return _catalog_view(entry, secrets)
 

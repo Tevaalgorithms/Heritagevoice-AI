@@ -22,6 +22,7 @@ class Action(StrEnum):
     REVIEW_APPROVE = "review:approve"
     LIBRARY_VIEW = "library:view"
     VISIBILITY_MANAGE = "visibility:manage"
+    INTEGRATION_MANAGE = "integration:manage"
     RECORDING_REVOKE = "recording:revoke"
     CONSENT_MANAGE = "consent:manage"
     MODEL_MANAGE = "model:manage"
@@ -47,6 +48,7 @@ ROLE_PERMISSIONS: dict[Action, frozenset[Role]] = {
     Action.REVIEW_APPROVE: frozenset({Role.ADMIN}),
     Action.LIBRARY_VIEW: frozenset({Role.MEMBER, Role.REVIEWER, Role.ADMIN}),
     Action.VISIBILITY_MANAGE: frozenset({Role.ADMIN}),
+    Action.INTEGRATION_MANAGE: frozenset({Role.ADMIN}),
     Action.RECORDING_REVOKE: frozenset({Role.ADMIN}),
     Action.CONSENT_MANAGE: frozenset({Role.ADMIN}),
     Action.MODEL_MANAGE: frozenset({Role.ADMIN}),

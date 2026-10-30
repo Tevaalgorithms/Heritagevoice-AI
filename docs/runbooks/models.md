@@ -26,15 +26,16 @@ missing. The log says which model served a call when it was not the primary.
 
 ## Common tasks
 
-- **Add a key:** Parameter Store, Create parameter, name `/heritagevoice/prod/<KEY_NAME>`, type
-  SecureString, KMS key `alias/heritagevoice-prod`. Values may use letters, digits and
-  `. _ ~ + / = : @ , -` only. The Settings page shows *Configured* within a few minutes.
+- **Add a key:** Settings, Keys and services (see `integrations.md`), or the AWS console: Parameter
+  Store, Create parameter, name `/heritagevoice/prod/<KEY_NAME>`, type SecureString, KMS key
+  `alias/heritagevoice-prod`. Values may use letters, digits and `. _ ~ + / = : @ , -` only. The
+  Settings page shows *Configured* within a few minutes.
 - **Add a model:** Settings, *Add a model*: the model name exactly as the provider names it, the
   provider, and the key name. Then pick it as a primary or fall-back for a job and Save.
 - **Retire a model:** set it to *deprecated* (stops new choices) or *disabled* (stops serving).
 - **Use a second provider's key:** give that model its own key name, for example
-  `OTHER_PROVIDER_API_KEY`, and store that parameter. Only the providers listed in the code can be
-  chosen (today `anthropic`); a new provider needs a small adapter before it can serve calls.
+  `OTHER_PROVIDER_API_KEY`, and store that parameter. Providers are fixed in the code (today `anthropic` and
+  `openai`, with fixed addresses); a new provider needs a small adapter before it can serve calls.
 - **Rotate a key:** overwrite the parameter. Nothing else is needed.
 
 ## Limits and notes

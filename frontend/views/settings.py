@@ -18,8 +18,9 @@ from frontend.api_client import (
     NewModelSpec,
 )
 from frontend.messages import message_for, probe_message
+from frontend.views import integrations
 
-PROVIDERS = ("anthropic",)
+PROVIDERS = ("anthropic", "openai")
 STATUSES = ("active", "deprecated", "disabled")
 DEFAULT_KEY_NAME = "HERITAGEVOICE_LLM_API_KEY"
 NONE = "(none)"
@@ -177,12 +178,7 @@ def _role_panel(client: ApiClient, overview: ModelsOverview, row: ModelView) -> 
         _run(lambda: client.reset_model_setting(row.role), "Reset.")
 
 
-def render(client: ApiClient) -> None:
-    theme.page_header(
-        "Model settings",
-        "Choose each job's models, with fall-backs if one fails. Keys stay in the secret store.",
-        "settings",
-    )
+def _models_tab(client: ApiClient) -> None:
     overview = _load(client)
     if overview is None:
         return
@@ -190,3 +186,18 @@ def render(client: ApiClient) -> None:
     _manage_catalog(client, overview)
     for row in overview.roles:
         _role_panel(client, overview, row)
+
+
+def render(client: ApiClient) -> None:
+    """The Settings page: the model catalogue and jobs, and the keys of outside services."""
+    theme.page_header(
+        "Settings",
+        "Choose each job's models, with fall-backs if one fails, and manage the keys of the "
+        "services the platform uses.",
+        "settings",
+    )
+    models, keys = st.tabs([":material/tune: Models", ":material/key: Keys and services"])
+    with models:
+        _models_tab(client)
+    with keys:
+        integrations.render(client)

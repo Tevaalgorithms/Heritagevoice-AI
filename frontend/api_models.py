@@ -228,3 +228,29 @@ class VisibilityResult(BaseModel):
 
     recording_id: str
     visibility: str
+
+
+class IntegrationItem(BaseModel):
+    """One key or setting of an outside service. A secret is never sent back, only `configured`."""
+
+    name: str
+    label: str
+    kind: str
+    help: str
+    configured: bool
+    value: str | None = None
+    default: str | None = None
+    planned: bool = False
+
+
+class IntegrationGroup(BaseModel):
+    """The values of one outside service."""
+
+    label: str
+    items: list[IntegrationItem]
+
+
+class IntegrationsOverview(BaseModel):
+    """Every outside service the portal manages."""
+
+    groups: list[IntegrationGroup]

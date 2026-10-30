@@ -23,9 +23,11 @@ resource "aws_iam_role_policy_attachment" "ssm_core" {
 }
 
 locals {
-  ssm_path          = "/heritagevoice/${var.environment}"
-  user_pool_arn     = "arn:aws:cognito-idp:${var.region}:${data.aws_caller_identity.current.account_id}:userpool/${var.cognito_user_pool_id}"
-  ssm_parameter_arn = "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter${local.ssm_path}"
+  ssm_path      = "/heritagevoice/${var.environment}"
+  user_pool_arn = "arn:aws:cognito-idp:${var.region}:${data.aws_caller_identity.current.account_id}:userpool/${var.cognito_user_pool_id}"
+  # Names are matched as IAM wildcards. `*_API_KEY` lets a catalogue model use its own key.
+  writable_parameters = ["*_API_KEY", "PINECONE_*", "EMBEDDING_*", "LANGSMITH_*", "NEO4J_*"]
+  ssm_parameter_arn   = "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter${local.ssm_path}"
 }
 
 data "aws_iam_policy_document" "app" {
@@ -67,6 +69,14 @@ data "aws_iam_policy_document" "app" {
     sid       = "ReadOwnSecrets"
     actions   = ["ssm:GetParametersByPath", "ssm:GetParameters", "ssm:GetParameter"]
     resources = [local.ssm_parameter_arn, "${local.ssm_parameter_arn}/*"]
+  }
+
+  # The admin portal saves API keys and service settings here. Only these names can be written:
+  # never the database password, the cookie secret or the sign-in secret.
+  statement {
+    sid       = "WriteIntegrationSettings"
+    actions   = ["ssm:PutParameter"]
+    resources = [for name in local.writable_parameters : "${local.ssm_parameter_arn}/${name}"]
   }
 
   statement {

@@ -12,6 +12,7 @@ import threading
 import time
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
+from functools import lru_cache
 from typing import Any, Protocol
 
 import boto3
@@ -67,6 +68,11 @@ class ParameterStoreSecrets:
     def is_configured(self, name: str) -> bool:
         return self.get(name) is not None
 
+    def forget(self, name: str) -> None:
+        """Drop the cached value, so the next read sees what was just written."""
+        with self._lock:
+            self._cache.pop(name, None)
+
     def _from_environment(self, name: str) -> SecretStr | None:
         return _secret(self._config.environ.get(name))
 
@@ -99,5 +105,71 @@ def _code(error: Exception) -> str:
     return str(response.get("Error", {}).get("Code", ""))
 
 
+WRITE_DENIED = "write_denied"
+WRITE_FAILED = "write_failed"
+NOT_CONFIGURED = "not_configured"
+
+
+class SecretWriteError(Exception):
+    """A value could not be saved. `code` is a short, safe label; the message never leaves."""
+
+    def __init__(self, code: str) -> None:
+        super().__init__(code)
+        self.code = code
+
+
+class SecretWriter(Protocol):
+    """Saves a value by name. The value is never returned or logged."""
+
+    def put(self, name: str, value: str, secret: bool) -> None: ...
+
+
+class ParameterStoreWriter:
+    """Saves a value under the site's path. Secrets are encrypted with the site's key."""
+
+    def __init__(self, path: str | None, region: str | None = None, client: Any = None) -> None:
+        self._path = path.rstrip("/") if path else None
+        self._region = region
+        self._client = client
+
+    def put(self, name: str, value: str, secret: bool) -> None:
+        if self._path is None:
+            raise SecretWriteError(NOT_CONFIGURED)
+        try:
+            self._ssm().put_parameter(**self._arguments(self._path, name, value, secret))
+        except (ClientError, BotoCoreError) as error:
+            logger.warning("parameter store write failed: %s", type(error).__name__)
+            denied = _code(error) == "AccessDeniedException"
+            raise SecretWriteError(WRITE_DENIED if denied else WRITE_FAILED) from error
+
+    @staticmethod
+    def _arguments(path: str, name: str, value: str, secret: bool) -> dict[str, Any]:
+        """The request: secrets are encrypted with the site's key, plain settings are not."""
+        arguments: dict[str, Any] = {
+            "Name": f"{path}/{name}",
+            "Value": value,
+            "Type": "SecureString" if secret else "String",
+            "Overwrite": True,
+        }
+        if secret:
+            arguments["KeyId"] = f"alias/heritagevoice-{path.rsplit('/', 1)[-1]}"
+        return arguments
+
+    def _ssm(self) -> Any:
+        if self._client is None:
+            self._client = boto3.client("ssm", region_name=self._region)
+        return self._client
+
+
+@lru_cache(maxsize=4)
+def _shared_reader(path: str | None, region: str | None) -> ParameterStoreSecrets:
+    return ParameterStoreSecrets(SecretsConfig(path=path, region=region))
+
+
 def secrets_for(settings: Settings) -> ParameterStoreSecrets:
-    return ParameterStoreSecrets(SecretsConfig(path=settings.ssm_path, region=settings.aws_region))
+    """One reader per process, so its short cache is shared by every request."""
+    return _shared_reader(settings.ssm_path, settings.aws_region)
+
+
+def writer_for(settings: Settings) -> ParameterStoreWriter:
+    return ParameterStoreWriter(settings.ssm_path, settings.aws_region)

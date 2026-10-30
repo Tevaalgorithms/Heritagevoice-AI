@@ -9,7 +9,7 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
-from app.adapters.model_tester import AnthropicModelTester, _code_for
+from app.adapters.model_tester import ProviderModelTester, _code_for
 from app.api.auth import current_principal, get_session_factory
 from app.api.main import app
 from app.api.model_settings import get_model_tester, get_secrets
@@ -300,7 +300,7 @@ def test_adding_a_model_twice_is_a_conflict(client):
 @pytest.mark.parametrize(
     "overrides",
     [
-        {"provider": "openai"},
+        {"provider": "mistral"},
         {"model_id": ""},
         {"model_id": "has space"},
         {"key_name": "lower_case"},
@@ -369,7 +369,7 @@ def test_a_model_that_is_not_active_in_the_catalogue_cannot_be_chosen(client, en
     "overrides",
     [
         {"model": ""},
-        {"provider": "openai"},
+        {"provider": "mistral"},
         {"temperature": 1.5},
         {"timeout_s": 1},
         {"timeout_s": 1000},
@@ -472,7 +472,7 @@ def test_the_api_key_never_appears_in_any_response(client, api_key):
 
 
 def test_the_tester_without_a_key_does_not_call_the_provider():
-    tester = AnthropicModelTester()
+    tester = ProviderModelTester()
     result = tester.check(ModelParams(**PARAMS), None)
     assert (result.ok, result.code) == (False, "no_key")
     assert isinstance(tester, ModelTester)
@@ -494,3 +494,35 @@ def test_me_tells_the_ui_who_is_signed_in(client):
 def test_me_needs_authentication():
     app.dependency_overrides.clear()
     assert TestClient(app).get("/v1/me").status_code in {401, 503}
+
+
+# --- OpenAI as a second provider ------------------------------------------------------------
+
+
+def test_an_openai_model_defaults_to_its_own_key_name(client):
+    response = client.post(
+        "/admin/models/catalog", json={"model_id": "gpt-example-1", "provider": "openai"}
+    )
+    assert response.status_code == 201
+    assert response.json()["key_name"] == "OPENAI_API_KEY"
+    assert response.json()["provider"] == "openai"
+
+
+def test_an_anthropic_model_still_defaults_to_the_existing_key_name(client):
+    response = client.post(
+        "/admin/models/catalog", json={"model_id": "claude-example-1", "provider": "anthropic"}
+    )
+    assert response.json()["key_name"] == DEFAULT_KEY_NAME
+
+
+def test_a_chain_can_fail_over_from_one_provider_to_another(engine):
+    with session_scope(engine) as session:
+        ModelCatalogRepository(session).add(
+            NewModel(model_id="gpt-example-1", provider=Provider.OPENAI), "admin-1"
+        )
+    save(engine, model="claude-sonnet-5-5", fallbacks=("gpt-example-1",))
+    links = registry_for(engine).chain(ModelRole.TRANSLATION)
+    assert [(link.setting.provider, link.key_name) for link in links] == [
+        (Provider.ANTHROPIC, DEFAULT_KEY_NAME),
+        (Provider.OPENAI, "OPENAI_API_KEY"),
+    ]

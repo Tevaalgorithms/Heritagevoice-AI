@@ -15,13 +15,16 @@ class ModelRole(StrEnum):
     ANSWER = "answer"
 
 
+DEFAULT_KEY_NAME = "HERITAGEVOICE_LLM_API_KEY"  # the Anthropic key, kept for existing setups
+
+
 class Provider(StrEnum):
     """The model providers the code knows how to call."""
 
     ANTHROPIC = "anthropic"
+    OPENAI = "openai"
 
 
-DEFAULT_KEY_NAME = "HERITAGEVOICE_LLM_API_KEY"
 MAX_FALLBACKS = 3
 # The models present when the catalogue is first created (migration 0008). After that admins
 # manage the catalogue in the Settings page; this list only seeds it.
@@ -33,6 +36,9 @@ SEED_MODELS: dict[Provider, tuple[str, ...]] = {
         "claude-haiku-5-5",
     ),
 }
+
+
+DEFAULT_KEY_NAMES = {Provider.ANTHROPIC: DEFAULT_KEY_NAME, Provider.OPENAI: "OPENAI_API_KEY"}
 
 
 class ModelStatus(StrEnum):
@@ -51,7 +57,11 @@ class NewModel(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     model_id: Annotated[str, Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._:-]{1,63}$")]
     provider: Provider
-    key_name: Annotated[str, Field(pattern=r"^[A-Z][A-Z0-9_]{2,63}$")] = DEFAULT_KEY_NAME
+    key_name: Annotated[str | None, Field(pattern=r"^[A-Z][A-Z0-9_]{2,63}$")] = None
+
+    def resolved_key_name(self) -> str:
+        """The key name given, or the provider's usual one."""
+        return self.key_name or DEFAULT_KEY_NAMES[self.provider]
 
 
 class CatalogEntry(BaseModel):

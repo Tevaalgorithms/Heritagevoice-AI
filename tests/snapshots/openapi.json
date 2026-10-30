@@ -245,6 +245,28 @@
         "title": "EditRequest",
         "type": "object"
       },
+      "GroupView": {
+        "description": "The values of one outside service.",
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ItemView"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "items"
+        ],
+        "title": "GroupView",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -269,6 +291,23 @@
         ],
         "title": "HeritageKind",
         "type": "string"
+      },
+      "IntegrationsOverview": {
+        "description": "Every group, in a fixed order.",
+        "properties": {
+          "groups": {
+            "items": {
+              "$ref": "#/components/schemas/GroupView"
+            },
+            "title": "Groups",
+            "type": "array"
+          }
+        },
+        "required": [
+          "groups"
+        ],
+        "title": "IntegrationsOverview",
+        "type": "object"
       },
       "InviteRequest": {
         "additionalProperties": false,
@@ -298,6 +337,68 @@
           "email"
         ],
         "title": "InviteRequest",
+        "type": "object"
+      },
+      "ItemView": {
+        "description": "One value: whether it is set, and (for plain settings only) what it is.",
+        "properties": {
+          "configured": {
+            "title": "Configured",
+            "type": "boolean"
+          },
+          "default": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default"
+          },
+          "help": {
+            "title": "Help",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/Kind"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "planned": {
+            "title": "Planned",
+            "type": "boolean"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "name",
+          "label",
+          "kind",
+          "help",
+          "configured",
+          "value",
+          "default",
+          "planned"
+        ],
+        "title": "ItemView",
         "type": "object"
       },
       "JobResponse": {
@@ -354,6 +455,15 @@
         ],
         "title": "JobResponse",
         "type": "object"
+      },
+      "Kind": {
+        "description": "A secret is never shown again; a setting is shown.",
+        "enum": [
+          "secret",
+          "setting"
+        ],
+        "title": "Kind",
+        "type": "string"
       },
       "LibraryItem": {
         "description": "One passage with its context. `notices` must be shown with it.",
@@ -634,10 +744,16 @@
         "description": "An admin adds a model by name. The provider is picked from a fixed list, and the key is\nreferred to by its Parameter Store *name*, never by value.",
         "properties": {
           "key_name": {
-            "default": "HERITAGEVOICE_LLM_API_KEY",
-            "pattern": "^[A-Z][A-Z0-9_]{2,63}$",
-            "title": "Key Name",
-            "type": "string"
+            "anyOf": [
+              {
+                "pattern": "^[A-Z][A-Z0-9_]{2,63}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Name"
           },
           "model_id": {
             "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{1,63}$",
@@ -653,6 +769,21 @@
           "provider"
         ],
         "title": "NewModel",
+        "type": "object"
+      },
+      "NewValue": {
+        "additionalProperties": false,
+        "description": "The value to save. For a secret this is the only time it is sent.",
+        "properties": {
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "value"
+        ],
+        "title": "NewValue",
         "type": "object"
       },
       "ProbeResult": {
@@ -683,7 +814,8 @@
       "Provider": {
         "description": "The model providers the code knows how to call.",
         "enum": [
-          "anthropic"
+          "anthropic",
+          "openai"
         ],
         "title": "Provider",
         "type": "string"
@@ -1443,6 +1575,117 @@
           }
         ],
         "summary": "Revoke",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/integrations": {
+      "get": {
+        "operationId": "overview_admin_integrations_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationsOverview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Overview",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/integrations/pinecone/test": {
+      "post": {
+        "description": "Look the index up with the saved key. Writes nothing.",
+        "operationId": "test_pinecone_admin_integrations_pinecone_test_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProbeResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Test Pinecone",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/integrations/{name}": {
+      "put": {
+        "description": "Save a value. Secrets are encrypted at rest and never shown again.",
+        "operationId": "save_admin_integrations__name__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "title": "Name",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewValue"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Save",
         "tags": [
           "admin"
         ]

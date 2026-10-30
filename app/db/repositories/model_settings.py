@@ -57,7 +57,12 @@ class ModelCatalogRepository:
         """None when the model is already in the catalogue (deprecate it instead)."""
         if self._session.get(ModelCatalogRow, model.model_id) is not None:
             return None
-        row = ModelCatalogRow(**model.model_dump(mode="json"), created_by=created_by)
+        row = ModelCatalogRow(
+            model_id=model.model_id,
+            provider=model.provider.value,
+            key_name=model.resolved_key_name(),
+            created_by=created_by,
+        )
         self._session.add(row)
         self._session.flush()
         return _to_entry(row)
