@@ -5,6 +5,7 @@ is validated: the same segment IDs in the same order, never empty. Anything else
 failure (`mt`), so the worker can retry or fall back to a transcript-only draft.
 """
 
+import hashlib
 import json
 import logging
 from collections.abc import Callable
@@ -15,12 +16,12 @@ from langchain_core.runnables import Runnable
 from pydantic import BaseModel, SecretStr
 
 from app.agents.prompts.translation import TRANSLATION_PROMPT
-from app.config import Settings
 from app.errors import ProviderError
 from app.model_registry import ModelRegistry
 from app.models.llm import ModelRole, ModelSetting
 from app.models.transcript import Segment
 from app.ports import Translator
+from app.secrets import SecretReader
 
 logger = logging.getLogger("heritagevoice.translator")
 MT = "mt"
@@ -96,32 +97,58 @@ def build_chain(setting: ModelSetting, api_key: SecretStr) -> Runnable[dict[str,
 
 
 class ConfiguredTranslator:
-    """Follows the registry: each call uses the model setting in force at that moment."""
+    """Follows the registry: each call tries the primary model, then the fall-backs in order.
+
+    A model is skipped when its key is missing. It is abandoned for this call when the provider
+    fails (timeout, rate limit, overload, a bad key, or output that does not match). If every
+    model fails the call raises a safe `mt` error, and ingestion keeps the transcript.
+    """
 
     def __init__(
         self,
         registry: ModelRegistry,
-        api_key: SecretStr,
+        secrets: SecretReader,
         chain_factory: ChainFactory = build_chain,
     ) -> None:
         self._registry = registry
-        self._api_key = api_key
+        self._secrets = secrets
         self._chain_factory = chain_factory
-        self._built: dict[ModelSetting, LangChainTranslator] = {}
+        self._built: dict[tuple[ModelSetting, str], LangChainTranslator] = {}
 
     def translate(self, segments: list[Segment], target_language: str) -> list[Segment]:
-        return self._translator(self._registry.get(ModelRole.TRANSLATION)).translate(
-            segments, target_language
-        )
+        last_error: ProviderError | None = None
+        for position, link in enumerate(self._registry.chain(ModelRole.TRANSLATION)):
+            key = self._secrets.get(link.key_name)
+            if key is None:
+                logger.warning("model %s skipped: its key is not configured", link.setting.model)
+                continue
+            try:
+                result = self._translator(link.setting, key).translate(segments, target_language)
+            except ProviderError as error:
+                logger.warning("model %s failed (%s); trying the next", link.setting.model, error)
+                last_error = error
+                continue
+            _note_served(link.setting.model, position)
+            return result
+        raise ProviderError("no model could translate", code=MT) from last_error
 
-    def _translator(self, setting: ModelSetting) -> LangChainTranslator:
-        if setting not in self._built:
-            self._built[setting] = LangChainTranslator(self._chain_factory(setting, self._api_key))
-        return self._built[setting]
+    def _translator(self, setting: ModelSetting, key: SecretStr) -> LangChainTranslator:
+        cache_key = (setting, _fingerprint(key))
+        if cache_key not in self._built:
+            self._built[cache_key] = LangChainTranslator(self._chain_factory(setting, key))
+        return self._built[cache_key]
 
 
-def build_translator(settings: Settings, registry: ModelRegistry) -> Translator | None:
-    """None when no model key is configured: ingestion then stops at the draft transcript."""
-    if settings.llm_api_key is None:
-        return None
-    return ConfiguredTranslator(registry, settings.llm_api_key)
+def _fingerprint(key: SecretStr) -> str:
+    """Tells a rotated key from the old one without keeping the key around."""
+    return hashlib.sha256(key.get_secret_value().encode()).hexdigest()[:12]
+
+
+def _note_served(model: str, position: int) -> None:
+    if position > 0:
+        logger.warning("translation served by fall-back model %s (position %d)", model, position)
+
+
+def build_translator(registry: ModelRegistry, secrets: SecretReader) -> Translator:
+    """Always built: keys are read per call, so adding or rotating one needs no restart."""
+    return ConfiguredTranslator(registry, secrets)

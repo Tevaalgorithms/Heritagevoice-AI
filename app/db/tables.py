@@ -155,6 +155,19 @@ class AuditLogRow(Base):
     at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 
+class ModelCatalogRow(Base):
+    """The models admins have approved. Holds the *name* of the key, never its value."""
+
+    __tablename__ = "model_catalog"
+
+    model_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    provider: Mapped[str] = mapped_column(String(32))
+    key_name: Mapped[str] = mapped_column(String(64))
+    status: Mapped[str] = mapped_column(String(16), default="active", server_default="active")
+    created_by: Mapped[str] = mapped_column(String(64), default="system")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
 class ModelSettingRow(Base):
     """Admin-chosen model parameters per role. Never holds an API key."""
 
@@ -166,6 +179,7 @@ class ModelSettingRow(Base):
     temperature: Mapped[float] = mapped_column(Float)
     timeout_s: Mapped[float] = mapped_column(Float)
     max_retries: Mapped[int] = mapped_column(Integer)
+    fallbacks: Mapped[list[str]] = mapped_column(JSON, default=list, server_default="[]")
     updated_by: Mapped[str] = mapped_column(String(64))
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_now, onupdate=_now

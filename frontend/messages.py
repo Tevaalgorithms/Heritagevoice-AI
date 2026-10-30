@@ -29,6 +29,9 @@ CODE_MESSAGES = {
     "not_reviewable": "This item is not waiting for review (decided, revoked or processing).",
     "transcript_not_approved": "Approve the current transcript first, then its translation.",
     "unknown_segment": "One of the edited segments no longer exists. Reload and try again.",
+    "model_exists": "That model is already in the catalogue. Deprecate or disable it instead.",
+    "model_not_available": "Every model in the chain must be active, and each can appear once.",
+    "unknown_model": "That model is not in the catalogue.",
 }
 
 

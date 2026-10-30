@@ -1,7 +1,7 @@
 import httpx
 import pytest
 
-from frontend.api_client import ApiClient, ApiRequestError, ModelParamsSpec
+from frontend.api_client import ApiClient, ApiRequestError, ModelParamsSpec, NewModelSpec
 from frontend.messages import PROBE_MESSAGES, message_for, probe_message
 
 PARAMS = ModelParamsSpec(provider="anthropic", model="claude-haiku-5-5", temperature=0.2)
@@ -28,22 +28,59 @@ def test_me_tells_the_ui_the_role():
     assert client_for(handler).me().role == "admin"
 
 
+CATALOG = [
+    {
+        "model_id": "claude-haiku-5-5",
+        "provider": "anthropic",
+        "key_name": "HERITAGEVOICE_LLM_API_KEY",
+        "status": "active",
+        "key_configured": True,
+    }
+]
+
+
 def test_the_overview_is_parsed_and_carries_no_key_value():
     def handler(request):
         return httpx.Response(
             200,
-            json={
-                "key_configured": True,
-                "key_name": "HERITAGEVOICE_LLM_API_KEY",
-                "allowed": {"anthropic": ["claude-haiku-5-5", "claude-sonnet-5-5"]},
-                "roles": [{**VIEW, "source": "default"}],
-            },
+            json={"catalog": CATALOG, "roles": [{**VIEW, "source": "default", "fallbacks": []}]},
         )
 
     overview = client_for(handler).model_settings()
-    assert overview.key_configured is True
-    assert overview.allowed["anthropic"][0] == "claude-haiku-5-5"
+    assert overview.catalog[0].key_configured is True
+    assert overview.catalog[0].key_name == "HERITAGEVOICE_LLM_API_KEY"
     assert overview.roles[0].source == "default"
+    assert overview.roles[0].fallbacks == []
+
+
+def test_adding_a_model_and_changing_its_status_use_the_catalogue_endpoints():
+    seen = []
+
+    def handler(request):
+        seen.append((request.method, request.url.path, request.read()))
+        return httpx.Response(200, json=CATALOG[0])
+
+    client = client_for(handler)
+    client.add_model(NewModelSpec(model_id="m-1", provider="anthropic", key_name="SOME_KEY"))
+    client.set_model_status("m-1", "disabled")
+    assert [(m, p) for m, p, _ in seen] == [
+        ("POST", "/admin/models/catalog"),
+        ("PUT", "/admin/models/catalog/m-1"),
+    ]
+    assert b"SOME_KEY" in seen[0][2]
+    assert b'"disabled"' in seen[1][2]
+
+
+def test_saving_sends_the_fallbacks_in_order():
+    seen = {}
+
+    def handler(request):
+        seen["body"] = request.read()
+        return httpx.Response(200, json=VIEW)
+
+    params = ModelParamsSpec(provider="anthropic", model="a", fallbacks=["b", "c"])
+    client_for(handler).save_model_setting("translation", params)
+    assert b'"fallbacks":["b","c"]' in seen["body"].replace(b" ", b"")
 
 
 def test_saving_sends_only_model_parameters_never_a_key():

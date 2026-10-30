@@ -12,6 +12,7 @@ from app.db.tables import (
     ConsentRow,
     EvidenceChunkRow,
     JobRow,
+    ModelCatalogRow,
     ModelSettingRow,
     RecordingRow,
     ReviewDecisionRow,
@@ -20,7 +21,15 @@ from app.db.tables import (
 )
 from app.models.index import ChunkKind, ChunkRecord
 from app.models.job import Job, JobStatus
-from app.models.llm import ModelParams, ModelRole, ModelSetting, Provider
+from app.models.llm import (
+    CatalogEntry,
+    ModelParams,
+    ModelRole,
+    ModelSetting,
+    ModelStatus,
+    NewModel,
+    Provider,
+)
 from app.models.records import (
     Consent,
     HeritageKind,
@@ -528,7 +537,47 @@ def _to_setting(row: ModelSettingRow) -> ModelSetting:
         temperature=row.temperature,
         timeout_s=row.timeout_s,
         max_retries=row.max_retries,
+        fallbacks=tuple(row.fallbacks or ()),
     )
+
+
+def _to_entry(row: ModelCatalogRow) -> CatalogEntry:
+    return CatalogEntry(
+        model_id=row.model_id,
+        provider=Provider(row.provider),
+        key_name=row.key_name,
+        status=ModelStatus(row.status),
+    )
+
+
+class ModelCatalogRepository:
+    def __init__(self, session: Session) -> None:
+        self._session = session
+
+    def list_all(self) -> list[CatalogEntry]:
+        rows = self._session.scalars(select(ModelCatalogRow).order_by(ModelCatalogRow.model_id))
+        return [_to_entry(r) for r in rows]
+
+    def get(self, model_id: str) -> CatalogEntry | None:
+        row = self._session.get(ModelCatalogRow, model_id)
+        return None if row is None else _to_entry(row)
+
+    def add(self, model: NewModel, created_by: str) -> CatalogEntry | None:
+        """None when the model is already in the catalogue (deprecate it instead)."""
+        if self._session.get(ModelCatalogRow, model.model_id) is not None:
+            return None
+        row = ModelCatalogRow(**model.model_dump(mode="json"), created_by=created_by)
+        self._session.add(row)
+        self._session.flush()
+        return _to_entry(row)
+
+    def set_status(self, model_id: str, status: ModelStatus) -> CatalogEntry | None:
+        row = self._session.get(ModelCatalogRow, model_id)
+        if row is None:
+            return None
+        row.status = status.value
+        self._session.flush()
+        return _to_entry(row)
 
 
 class ModelSettingRepository:

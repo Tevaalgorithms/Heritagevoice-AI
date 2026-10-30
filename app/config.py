@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     max_audio_mb: int = Field(default=200, gt=0)
     max_audio_minutes: int = Field(default=120, gt=0)
     allowed_languages: str = DEFAULT_ALLOWED
+    ssm_path: str | None = Field(
+        default=None, validation_alias=AliasChoices("HV_SSM_PATH", "HERITAGEVOICE_SSM_PATH")
+    )
     asr_provider: Literal["transcribe", "fake"] = "transcribe"
     cognito_region: str | None = None
     cognito_user_pool_id: str | None = None

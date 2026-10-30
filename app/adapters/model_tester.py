@@ -26,15 +26,12 @@ def _code_for(error: Exception) -> str:
 
 
 class AnthropicModelTester:
-    def __init__(self, api_key: SecretStr | None) -> None:
-        self._api_key = api_key
-
-    def check(self, params: ModelParams) -> ProbeResult:
-        if self._api_key is None:
+    def check(self, params: ModelParams, api_key: SecretStr | None) -> ProbeResult:
+        if api_key is None:
             return ProbeResult(ok=False, code="no_key")
         options: dict[str, Any] = {
             "model": params.model,
-            "api_key": self._api_key,
+            "api_key": api_key,
             "timeout": params.timeout_s,
             "max_retries": 0,
             "temperature": params.temperature,
