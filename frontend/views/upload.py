@@ -8,6 +8,7 @@ from uuid import uuid4
 
 import streamlit as st
 
+from app.languages import LANGUAGES as ALL_LANGUAGES
 from frontend import theme
 from frontend.api_client import ApiClient, ApiError, RecordingView, UploadSpec
 from frontend.format import failure_message, progress_for, segment_rows
@@ -15,7 +16,7 @@ from frontend.kinds import BY_KEY, KINDS, REMEDY_NOTICE
 from frontend.messages import message_for
 
 AUDIO_TYPES = ["wav", "mp3", "flac", "ogg", "m4a"]
-LANGUAGES = {"Tamil": "ta", "English": "en"}
+LANGUAGES = {f"{lang.name} · {lang.native_name}": lang.code for lang in ALL_LANGUAGES}
 POLL_SECONDS = 2.0
 MAX_POLLS = 150
 DONE = {"review", "published", "failed"}
@@ -85,7 +86,13 @@ def render(client: ApiClient) -> None:
     )
     file = st.file_uploader("Audio file", type=AUDIO_TYPES)
     kind = _choose_kind()
-    language = LANGUAGES[st.selectbox("Language spoken", list(LANGUAGES))]
+    language = LANGUAGES[
+        st.selectbox(
+            "Language spoken",
+            list(LANGUAGES),
+            help="Speak in your own language. If yours is missing, ask an admin to add it.",
+        )
+    ]
     community = st.text_input("Community ID")
     consent = st.text_input("Consent reference")
     if st.button("Upload", disabled=not (file and community and consent)):

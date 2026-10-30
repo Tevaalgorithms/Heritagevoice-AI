@@ -5,6 +5,7 @@ from typing import Literal
 from pydantic import AliasChoices, Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.languages import DEFAULT_ALLOWED
 from app.security.roles import Role
 
 
@@ -21,7 +22,7 @@ class Settings(BaseSettings):
     audio_local_dir: str | None = None
     max_audio_mb: int = Field(default=200, gt=0)
     max_audio_minutes: int = Field(default=120, gt=0)
-    allowed_languages: str = "ta,en"
+    allowed_languages: str = DEFAULT_ALLOWED
     asr_provider: Literal["transcribe", "fake"] = "transcribe"
     cognito_region: str | None = None
     cognito_user_pool_id: str | None = None

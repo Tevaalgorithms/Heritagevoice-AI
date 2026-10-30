@@ -18,9 +18,10 @@ from botocore.config import Config
 from botocore.exceptions import BotoCoreError, ClientError
 
 from app.errors import ProviderError
+from app.languages import TRANSCRIBE_CODES
 from app.models.transcript import Segment
 
-LANGUAGE_CODES = {"ta": "ta-IN", "en": "en-US"}
+LANGUAGE_CODES = TRANSCRIBE_CODES
 SENTENCE_END = {".", "?", "!"}
 PAUSE_BREAK_S = 1.5
 MAX_WORDS = 40
