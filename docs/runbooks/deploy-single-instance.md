@@ -143,6 +143,15 @@ all green and accepts only refs made of letters, digits and `. _ / -`.
   the Streamlit Cognito login, the DLM snapshot policy with the customer key, and the first-boot
   script on a real instance.
 
+## The sign-in page
+
+The page where people type their email and password is hosted by Cognito, not by this app. Its look
+comes from `infra/cognito/branding/` (`logo.png` under 100 KB, `hosted-ui.css` under 3 KB), applied
+by the `infra` workflow (`cognito` stack). Cognito's classic page only accepts the classes already
+in that stylesheet and ignores anything else; the wording ("Sign in with your email and password")
+and layout cannot be changed with this version. A fully custom page needs Cognito's newer managed
+login. To change the colours or logo, edit those two files and run the `infra` workflow again.
+
 ## Signing out
 
 The Sign out button ends the app session and the Cognito session, then returns to the home page.
