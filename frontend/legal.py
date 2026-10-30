@@ -8,11 +8,13 @@ These texts describe what the service actually does, but they are a starting poi
 who knows the places you operate review them before launch, and set the organisation details.
 """
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
 LEGAL_VERSION = "2026-10-30"
 LEGAL_DIR = Path(__file__).parent / "legal"
+OPERATOR = "HeritageVoice Collective"
 UNSET = {
     "operator": "[Organisation name]",
     "contact": "[contact email]",
@@ -43,9 +45,19 @@ PAGES = (
 class OrganisationFacts:
     """Who runs the service. Empty values show a visible placeholder, never nothing."""
 
-    operator: str = ""
+    operator: str = OPERATOR
     contact: str = ""
     jurisdiction: str = ""
+
+    @classmethod
+    def from_environment(cls, env: Mapping[str, str]) -> "OrganisationFacts":
+        """The defaults, overridden by the HERITAGEVOICE_OPERATOR_NAME, _CONTACT_EMAIL and
+        _JURISDICTION environment settings."""
+        return cls(
+            env.get("HERITAGEVOICE_OPERATOR_NAME", "").strip() or OPERATOR,
+            env.get("HERITAGEVOICE_CONTACT_EMAIL", "").strip(),
+            env.get("HERITAGEVOICE_JURISDICTION", "").strip(),
+        )
 
     def values(self) -> dict[str, str]:
         return {

@@ -79,3 +79,25 @@ def test_the_accessibility_statement_does_not_claim_a_conformance_it_has_not_ear
     assert "not yet had" in text
     assert "fully conforms" in text  # only in the negative: "cannot say it fully conforms"
     assert "cannot say it fully conforms" in text
+
+
+def test_the_organisation_name_defaults_to_heritagevoice_collective():
+    assert OrganisationFacts().operator == "HeritageVoice Collective"
+    page = next(p for p in PAGES if p.slug == "terms")
+    assert "run by **HeritageVoice Collective**" in legal_text(page, OrganisationFacts())
+
+
+def test_the_organisation_details_can_be_set_from_the_environment():
+    facts = OrganisationFacts.from_environment(
+        {
+            "HERITAGEVOICE_OPERATOR_NAME": " Example Trust ",
+            "HERITAGEVOICE_CONTACT_EMAIL": "hello@example.org",
+            "HERITAGEVOICE_JURISDICTION": "England and Wales",
+        }
+    )
+    assert (facts.operator, facts.contact, facts.jurisdiction) == (
+        "Example Trust",
+        "hello@example.org",
+        "England and Wales",
+    )
+    assert OrganisationFacts.from_environment({}).operator == "HeritageVoice Collective"
