@@ -9,6 +9,7 @@ from app.api.consents import router as consents_router
 from app.api.library import router as library_router
 from app.api.me import router as me_router
 from app.api.model_settings import router as model_settings_router
+from app.api.public import router as public_router
 from app.api.query import router as query_router
 from app.api.readiness import run_checks
 from app.api.recordings import router as recordings_router
@@ -34,6 +35,7 @@ app.include_router(library_router)
 app.include_router(model_settings_router)
 app.include_router(me_router)
 app.include_router(recordings_router)
+app.include_router(public_router)
 app.include_router(query_router)
 app.include_router(review_router)
 
