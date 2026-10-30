@@ -1,0 +1,48 @@
+# Read-only health report from the instance: container status and the last log lines of each
+# service. Takes no input, so it cannot be steered into running anything else. Secret-looking
+# values (KEY, SECRET, PASSWORD, TOKEN, URL credentials) are blanked before the log is shown.
+# Uses the deploy role, so it appears under the `prod` environment in the Deployments box.
+name: diagnose
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  report:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: prod
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      INSTANCE_ID: ${{ vars.INSTANCE_ID }}
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-session-name: heritagevoice-diagnose
+      - name: Collect and show the report
+        run: |
+          set -euo pipefail
+          # The script below runs on the instance, so its $ and {{ }} must stay unexpanded here.
+          # shellcheck disable=SC2016
+          script='cd /opt/heritagevoice; echo "release: $(cat RELEASE)"; echo; docker ps -a --format "table {{.Names}}\t{{.Status}}"; for s in ui api worker caddy; do echo; echo "=== last log lines: $s"; docker compose --env-file /etc/heritagevoice/app.env -f deploy/docker-compose.yml logs --no-color --tail 40 "$s" 2>&1; done'
+          command_id="$(aws ssm send-command --instance-ids "$INSTANCE_ID" \
+            --document-name AWS-RunShellScript --comment "diagnose" --timeout-seconds 120 \
+            --parameters "$(jq -cn --arg c "$script" '{commands:[$c]}')" \
+            --query Command.CommandId --output text)"
+          for _ in $(seq 1 30); do
+            status="$(aws ssm get-command-invocation --command-id "$command_id" --instance-id "$INSTANCE_ID" \
+              --query Status --output text 2>/dev/null || echo Pending)"
+            case "$status" in Success|Failed|Cancelled|TimedOut) break ;; esac
+            sleep 4
+          done
+          echo "command status: $status"
+          aws ssm get-command-invocation --command-id "$command_id" --instance-id "$INSTANCE_ID" \
+            --query '[StandardOutputContent,StandardErrorContent]' --output text |
+            sed -E 's/((KEY|SECRET|PASSWORD|TOKEN|PASS)[A-Za-z_]*[=:] *)[^ "]+/\1<hidden>/Ig; s#(://[^:/ ]+:)[^@ ]+@#\1<hidden>@#g'
