@@ -1,5 +1,6 @@
 """Shell with navigation by role. The API token stays on the Streamlit server."""
 
+import os
 from collections.abc import Callable
 
 import streamlit as st
@@ -123,7 +124,7 @@ def _run_awaiting_approval(settings: Settings, facts: OrganisationFacts) -> None
 def main() -> None:
     theme.apply()
     settings = Settings()
-    facts = OrganisationFacts()
+    facts = OrganisationFacts.from_environment(os.environ)
     token = resolve_token(settings, st.user)
     if token is None and cognito_enabled(settings):
         _run_for_visitors(settings, facts)
