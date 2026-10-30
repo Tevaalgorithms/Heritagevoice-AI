@@ -4,7 +4,6 @@ Editing the transcript and seeking the audio from a segment arrive with segments
 """
 
 import time
-from uuid import uuid4
 
 import streamlit as st
 
@@ -14,18 +13,13 @@ from frontend.api_client import ApiClient, ApiError, RecordingView, UploadSpec
 from frontend.format import failure_message, progress_for, segment_rows
 from frontend.kinds import BY_KEY, KINDS, REMEDY_NOTICE
 from frontend.messages import message_for
+from frontend.upload_input import idempotency_key, pick_audio
 
 AUDIO_TYPES = ["wav", "mp3", "flac", "ogg", "m4a"]
 LANGUAGES = {f"{lang.name} · {lang.native_name}": lang.code for lang in ALL_LANGUAGES}
 POLL_SECONDS = 2.0
 MAX_POLLS = 150
 DONE = {"review", "published", "failed"}
-
-
-def _key() -> str:
-    """One idempotency key per file selection, so a double click cannot upload twice."""
-    st.session_state.setdefault("upload_key", uuid4().hex)
-    return str(st.session_state["upload_key"])
 
 
 def follow_job(client: ApiClient, job_id: str) -> str | None:
@@ -53,9 +47,10 @@ def show_transcript(recording: RecordingView) -> None:
 
 
 def submit(client: ApiClient, spec: UploadSpec) -> None:
+    """Send the audio, follow its processing, then show the draft transcript."""
     try:
         with st.spinner("Uploading…"):
-            result = client.upload_recording(spec, _key())
+            result = client.upload_recording(spec, idempotency_key(spec.data))
         error = follow_job(client, result.job_id)
         if error:
             st.error(failure_message(error))
@@ -77,29 +72,48 @@ def _choose_kind() -> str:
     return str(key)
 
 
+def _record_or_upload() -> bytes | None:
+    """Record in the browser, or upload an existing file. Both end up as the same audio bytes."""
+    record_tab, file_tab = st.tabs(
+        [":material/mic: Record now", ":material/upload_file: Upload a file"]
+    )
+    with record_tab:
+        st.caption(
+            "Press the microphone, speak in your own language, then press stop. Play it back."
+        )
+        recorded = st.audio_input("Record", label_visibility="collapsed", key="hv-recording")
+    with file_tab:
+        file = st.file_uploader("Audio file", type=AUDIO_TYPES)
+    return pick_audio(recorded, file)
+
+
+def _choose_language() -> str:
+    label = st.selectbox(
+        "Language spoken",
+        list(LANGUAGES),
+        help="Speak in your own language. If yours is missing, ask an admin to add it.",
+    )
+    return LANGUAGES[label]
+
+
 def render(client: ApiClient) -> None:
+    """The Upload page: record or upload audio, say what it is, and send it for review."""
     theme.page_header(
-        "Upload a recording",
-        "Share a song, story, lesson or practice. It is transcribed, then reviewed by people "
-        "before anyone can search it.",
+        "Add a recording",
+        "Record a song, story, lesson or practice in your own language, or upload a file. "
+        "It is transcribed, then reviewed by people before anyone can search it.",
         "upload",
     )
-    file = st.file_uploader("Audio file", type=AUDIO_TYPES)
+    audio = _record_or_upload()
     kind = _choose_kind()
-    language = LANGUAGES[
-        st.selectbox(
-            "Language spoken",
-            list(LANGUAGES),
-            help="Speak in your own language. If yours is missing, ask an admin to add it.",
-        )
-    ]
+    language = _choose_language()
     community = st.text_input("Community ID")
     consent = st.text_input("Consent reference")
-    if st.button("Upload", disabled=not (file and community and consent)):
+    if st.button("Send for review", disabled=not (audio and community and consent)):
         submit(
             client,
             UploadSpec(
-                data=file.getvalue(),
+                data=audio or b"",
                 language=language,
                 community_id=community,
                 consent_id=consent,

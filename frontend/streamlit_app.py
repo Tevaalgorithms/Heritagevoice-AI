@@ -4,6 +4,7 @@ import streamlit as st
 
 from app.config import Settings
 from frontend import theme
+from frontend.account import current_role, show_account
 from frontend.api_client import ApiClient, ApiError
 from frontend.auth import COGNITO_PROVIDER, cognito_enabled, resolve_token
 from frontend.messages import message_for
@@ -33,13 +34,6 @@ def show_status(client: ApiClient) -> None:
     (st.sidebar.success if report.ready else st.sidebar.warning)(label)
 
 
-def is_admin(client: ApiClient) -> bool:
-    try:
-        return client.me().role == "admin"
-    except ApiError:
-        return False
-
-
 def main() -> None:
     theme.apply()
     settings = Settings()
@@ -48,6 +42,8 @@ def main() -> None:
     client = ApiClient(settings.api_url, token)
     theme.brand()
     show_status(client)
+    role = current_role(client)
+    show_account(role, settings)
     pages = [
         st.Page(
             lambda: upload.render(client),
@@ -69,7 +65,7 @@ def main() -> None:
             default=True,
         ),
     ]
-    if is_admin(client):
+    if role == "admin":
         pages.append(
             st.Page(
                 lambda: settings_page.render(client),
