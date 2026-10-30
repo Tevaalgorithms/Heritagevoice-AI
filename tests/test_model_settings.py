@@ -262,13 +262,13 @@ def test_the_overview_shows_the_catalogue_with_key_status_and_the_role_defaults(
         DEFAULT_KEY_NAME,
         True,
     )
-    (row,) = body["roles"]
-    assert (row["role"], row["source"], row["model"], row["fallbacks"]) == (
-        "translation",
-        "default",
-        "claude-sonnet-5-5",
-        [],
-    )
+    assert [r["role"] for r in body["roles"]] == ["translation", "supervisor", "verifier", "answer"]
+    for row in body["roles"]:
+        assert (row["source"], row["model"], row["fallbacks"]) == (
+            "default",
+            "claude-sonnet-5-5",
+            [],
+        )
 
 
 def test_a_missing_key_is_reported_without_revealing_anything(client, fake_secrets):
@@ -401,7 +401,17 @@ def test_invalid_settings_are_rejected_and_an_api_key_can_never_be_submitted(
 
 
 def test_an_unknown_role_is_422(client):
-    assert client.put("/admin/models/supervisor", json=PARAMS).status_code == 422
+    assert client.put("/admin/models/nonsense", json=PARAMS).status_code == 422
+
+
+@pytest.mark.parametrize("role", ["supervisor", "verifier", "answer"])
+def test_each_agent_has_its_own_model_setting(client, role):
+    saved = client.put(f"/admin/models/{role}", json={**PARAMS, "fallbacks": ["claude-opus-5-5"]})
+    assert saved.status_code == 200
+    roles = {r["role"]: r for r in client.get("/admin/models").json()["roles"]}
+    assert roles[role]["source"] == "database"
+    assert roles[role]["fallbacks"] == ["claude-opus-5-5"]
+    assert roles["translation"]["source"] == "default"
 
 
 def test_resetting_returns_to_the_environment_default(client, engine):

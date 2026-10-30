@@ -23,6 +23,12 @@ class WorkflowState(TypedDict, total=False):
     answer: str
     citations: list[Evidence]
     warnings: list[str]
+    coverage: str
+    conflicts: list[str]
+    search_query: str
+    retry_query: str
+    retries: int
+    earlier_evidence: list[Evidence]
     status: str
 
 

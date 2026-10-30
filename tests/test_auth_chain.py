@@ -184,10 +184,10 @@ def test_the_dev_token_works_only_in_the_local_environment(monkeypatch):
     monkeypatch.setenv("HERITAGEVOICE_DEV_API_TOKEN", "local-only-test-value")
     monkeypatch.delenv("HERITAGEVOICE_COGNITO_REGION", raising=False)
     good = bearer("local-only-test-value")
-    assert client.post("/query", json={"question": "Who?"}, headers=good).status_code == 503
+    assert client.post("/v1/query", json={"question": "Who?"}, headers=good).status_code == 503
     monkeypatch.setenv("HERITAGEVOICE_ENVIRONMENT", "production")
-    assert client.post("/query", json={"question": "Who?"}, headers=good).status_code == 503
-    assert client.post("/query", json={"question": "Who?"}).status_code == 503
+    assert client.post("/v1/query", json={"question": "Who?"}, headers=good).status_code == 503
+    assert client.post("/v1/query", json={"question": "Who?"}).status_code == 503
 
 
 def test_in_production_a_dev_token_is_not_a_credential(monkeypatch, engine):
@@ -199,7 +199,7 @@ def test_in_production_a_dev_token_is_not_a_credential(monkeypatch, engine):
     main_app.dependency_overrides[get_key_resolver] = StaticKeys
     try:
         response = TestClient(main_app).post(
-            "/query", json={"question": "Who?"}, headers=bearer("local-only-test-value")
+            "/v1/query", json={"question": "Who?"}, headers=bearer("local-only-test-value")
         )
     finally:
         main_app.dependency_overrides.clear()

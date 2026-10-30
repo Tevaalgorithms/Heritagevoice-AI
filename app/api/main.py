@@ -1,22 +1,20 @@
-"""Runnable development API. No live-data query path is enabled in this scaffold."""
+"""The HeritageVoice API: health, records, review, the Library and questions."""
 
-from fastapi import Depends, FastAPI, HTTPException, Request, Response
+from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from app.api.admin import router as admin_router
-from app.api.auth import require_action
 from app.api.consents import router as consents_router
 from app.api.library import router as library_router
 from app.api.me import router as me_router
 from app.api.model_settings import router as model_settings_router
+from app.api.query import router as query_router
 from app.api.readiness import run_checks
 from app.api.recordings import router as recordings_router
 from app.api.review import router as review_router
-from app.api.tracing import current_trace_id, install_trace_logging, trace_id_middleware
+from app.api.tracing import install_trace_logging, trace_id_middleware
 from app.config import Settings
-from app.models.evidence import QueryRequest
-from app.security.roles import Action
 
 app = FastAPI(title="HeritageVoice AI", version="0.1.0")
 app.middleware("http")(trace_id_middleware)
@@ -36,6 +34,7 @@ app.include_router(library_router)
 app.include_router(model_settings_router)
 app.include_router(me_router)
 app.include_router(recordings_router)
+app.include_router(query_router)
 app.include_router(review_router)
 
 
@@ -46,19 +45,7 @@ def health() -> dict[str, object]:
 
 @app.get("/ready")
 def ready(response: Response) -> dict[str, object]:
-    """Infrastructure readiness only. `/query` stays closed until the agents are implemented."""
+    """Infrastructure readiness: each configured dependency, not the agents."""
     is_ready, checks = run_checks(Settings())
     response.status_code = 200 if is_ready else 503
     return {"ready": is_ready, "checks": checks}
-
-
-@app.post("/query", dependencies=[Depends(require_action(Action.QUERY_ASK))])
-def query(payload: QueryRequest) -> None:
-    raise HTTPException(
-        status_code=503,
-        detail={
-            "status": "unavailable",
-            "request_id": current_trace_id(),
-            "message": "Agent integrations are not implemented. See the implementation backlog.",
-        },
-    )

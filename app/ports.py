@@ -4,7 +4,7 @@ Every method that returns evidence takes the trusted `Principal`; adapters must 
 it inside the query, not after results are returned.
 """
 
-from typing import Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 from pydantic import SecretStr
 
@@ -91,3 +91,9 @@ class Embedder(Protocol):
     def embed_passages(self, texts: list[str]) -> list[list[float]]: ...
 
     def embed_query(self, text: str) -> list[float]: ...
+
+
+class Invoker(Protocol):
+    """One structured model call for an agent. The real one tries models and fall-backs in order."""
+
+    def invoke(self, inputs: dict[str, Any]) -> Any: ...

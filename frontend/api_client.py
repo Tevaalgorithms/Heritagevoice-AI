@@ -17,6 +17,7 @@ from frontend.api_errors import (
 )
 from frontend.api_models import (
     CatalogView,
+    CitationView,
     Health,
     JobView,
     LibraryItem,
@@ -43,6 +44,7 @@ from frontend.api_models import (
 
 __all__ = [
     "ApiClient",
+    "CitationView",
     "LibraryItem",
     "LibraryResult",
     "LibrarySpec",
@@ -100,7 +102,7 @@ class ApiClient:
     def query(self, question: str) -> QueryResult:
         if not self._token:
             raise ApiNotConfiguredError("HERITAGEVOICE_DEV_API_TOKEN is not set")
-        response = self._send("POST", "/query", json={"question": question}, auth=True)
+        response = self._send("POST", "/v1/query", json={"question": question}, auth=True)
         return QueryResult.model_validate(response.json())
 
     def upload_recording(self, spec: UploadSpec, idempotency_key: str) -> UploadResult:

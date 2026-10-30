@@ -135,3 +135,15 @@ def test_an_empty_question_returns_nothing(engine):
 def test_the_default_node_refuses_to_run_until_it_is_wired():
     with pytest.raises(IntegrationNotConfiguredError):
         retrieve({"question": "x"}, INSIDER)
+
+
+def test_a_remedy_passage_carries_its_notice_and_other_kinds_do_not(engine):
+    from app.models.records import REMEDY_NOTICE, HeritageKind  # noqa: PLC0415
+
+    store = vector_store(engine)
+    add(engine, store, "r-remedy", kind=HeritageKind.REMEDY)
+    add(engine, store, "r-story", kind=HeritageKind.STORY)
+    found = ask(HybridRetriever(sessions(engine), store), INSIDER, "water")["hybrid_evidence"]
+    notices = {e.document_id: e.notices for e in found}
+    assert notices["r-remedy"] == (REMEDY_NOTICE,)
+    assert notices["r-story"] == ()

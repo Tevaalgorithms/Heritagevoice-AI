@@ -59,6 +59,7 @@ SUPERVISOR_ROUTES = {
     Route.REFUSE: "stop",
 }
 SUPERVISOR_TARGETS = sorted(set(SUPERVISOR_ROUTES.values()))
+MAX_RETRIES = 1
 STOP_MESSAGES = {
     Route.CLARIFY: ("clarify", "Please clarify the person, place or event."),
     Route.REFUSE: ("refused", "This request cannot be answered."),
@@ -89,6 +90,31 @@ def route_after_supervisor(state: WorkflowState) -> str:
     return SUPERVISOR_ROUTES[state["route"]]
 
 
+def run_answer(state: WorkflowState, principal: Principal, write: Node) -> StateUpdate:
+    """The final gate: whatever the answer step cites, the reader must be allowed to read it."""
+    return _authorized(write(state), "citations", principal)
+
+
+def prepare_retry(state: WorkflowState) -> StateUpdate:
+    """Keep what was found, then search once more with the verifier's suggested query."""
+    found = state.get("earlier_evidence", []) + state.get("hybrid_evidence", [])
+    found += state.get("graph_evidence", [])
+    return {
+        "earlier_evidence": found,
+        "search_query": state.get("retry_query", ""),
+        "retry_query": "",
+        "retries": state.get("retries", 0) + 1,
+        "hybrid_evidence": [],
+        "graph_evidence": [],
+    }
+
+
+def route_after_verify(state: WorkflowState) -> str:
+    """At most one retry, and only when the verifier asked for it."""
+    wants_retry = bool(state.get("retry_query")) and state.get("retries", 0) < MAX_RETRIES
+    return "retry" if wants_retry else "answer"
+
+
 def route_after_hybrid(state: WorkflowState) -> str:
     return "graph" if state["route"] == Route.BOTH else "merge"
 
@@ -102,7 +128,8 @@ def _nodes(principal: Principal, agents: Agents) -> dict[str, Node]:
         "graph": partial(graph, key="graph_evidence"),
         "merge": partial(run_merge, principal=principal),
         "verify": agents.verify,
-        "answer": agents.answer,
+        "answer": partial(run_answer, principal=principal, write=agents.answer),
+        "retry": prepare_retry,
         "stop": run_stop,
     }
 
@@ -111,8 +138,9 @@ def _wire(builder: StateGraph[WorkflowState]) -> None:
     builder.add_edge(START, "supervisor")
     builder.add_conditional_edges("supervisor", route_after_supervisor, SUPERVISOR_TARGETS)
     builder.add_conditional_edges("hybrid", route_after_hybrid, ["graph", "merge"])
-    for source, target in (("graph", "merge"), ("merge", "verify"), ("verify", "answer")):
+    for source, target in (("graph", "merge"), ("merge", "verify"), ("retry", "hybrid")):
         builder.add_edge(source, target)
+    builder.add_conditional_edges("verify", route_after_verify, ["retry", "answer"])
     builder.add_edge("answer", END)
     builder.add_edge("stop", END)
 

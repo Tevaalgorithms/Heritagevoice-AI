@@ -34,6 +34,52 @@
         "title": "CatalogView",
         "type": "object"
       },
+      "Citation": {
+        "description": "A source as shown to the reader: the passage and where it is in the recording. It carries\nno access labels, community, uploader or storage location.",
+        "properties": {
+          "end_s": {
+            "title": "End S",
+            "type": "number"
+          },
+          "evidence_id": {
+            "title": "Evidence Id",
+            "type": "string"
+          },
+          "notices": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notices",
+            "type": "array"
+          },
+          "passage": {
+            "title": "Passage",
+            "type": "string"
+          },
+          "recording_id": {
+            "title": "Recording Id",
+            "type": "string"
+          },
+          "start_s": {
+            "title": "Start S",
+            "type": "number"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "evidence_id",
+          "recording_id",
+          "title",
+          "passage",
+          "start_s",
+          "end_s"
+        ],
+        "title": "Citation",
+        "type": "object"
+      },
       "CommunitiesRequest": {
         "additionalProperties": false,
         "description": "Request body to replace a user's community memberships.",
@@ -483,9 +529,12 @@
         "type": "object"
       },
       "ModelRole": {
-        "description": "A job that calls a language model. Later segments add supervisor, verifier and answer.",
+        "description": "A job that calls a language model. Each can use its own models and fall-backs.",
         "enum": [
-          "translation"
+          "translation",
+          "supervisor",
+          "verifier",
+          "answer"
         ],
         "title": "ModelRole",
         "type": "string"
@@ -684,6 +733,55 @@
           "question"
         ],
         "title": "QueryRequest",
+        "type": "object"
+      },
+      "QueryResponse": {
+        "description": "The answer to a question, with its citations and outcome.\n\n`status` is one of answered, partial, insufficient_evidence, clarify or refused.",
+        "properties": {
+          "answer": {
+            "default": "",
+            "title": "Answer",
+            "type": "string"
+          },
+          "citations": {
+            "items": {
+              "$ref": "#/components/schemas/Citation"
+            },
+            "title": "Citations",
+            "type": "array"
+          },
+          "conversation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversation Id"
+          },
+          "request_id": {
+            "title": "Request Id",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "status",
+          "request_id"
+        ],
+        "title": "QueryResponse",
         "type": "object"
       },
       "RecordingResponse": {
@@ -1886,50 +1984,9 @@
         "summary": "Health"
       }
     },
-    "/query": {
-      "post": {
-        "operationId": "query_query_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/QueryRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "summary": "Query"
-      }
-    },
     "/ready": {
       "get": {
-        "description": "Infrastructure readiness only. `/query` stays closed until the agents are implemented.",
+        "description": "Infrastructure readiness: each configured dependency, not the agents.",
         "operationId": "ready_ready_get",
         "responses": {
           "200": {
@@ -2129,6 +2186,53 @@
         "summary": "Me",
         "tags": [
           "me"
+        ]
+      }
+    },
+    "/v1/query": {
+      "post": {
+        "description": "Answer within the deadline. A reader never sees more than their own access allows.",
+        "operationId": "ask_v1_query_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Ask",
+        "tags": [
+          "query"
         ]
       }
     },

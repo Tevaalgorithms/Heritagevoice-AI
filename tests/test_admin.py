@@ -149,7 +149,7 @@ def test_role_and_membership_changes_apply_immediately(client, engine, idp):
     assert stored(engine, "member-1").role == Role.REVIEWER
     client.put("/admin/users/member-1/communities", json={"communities": ["c9"]}, headers=ADMIN)
     assert stored(engine, "member-1").communities == {"c9"}
-    assert client.post("/query", json={"question": "Who?"}, headers=headers).status_code == 503
+    assert client.post("/v1/query", json={"question": "Who?"}, headers=headers).status_code == 503
 
 
 def test_admins_cannot_change_or_disable_themselves(client):
@@ -167,11 +167,11 @@ def test_unknown_users_are_404_and_bad_ids_are_422(client):
 
 def test_disabling_blocks_the_user_at_once_and_signs_them_out(client, engine, idp):
     member = auth("member-1", "member")
-    assert client.post("/query", json={"question": "Who?"}, headers=member).status_code == 503
+    assert client.post("/v1/query", json={"question": "Who?"}, headers=member).status_code == 503
     assert client.post("/admin/users/member-1/disable", headers=ADMIN).status_code == 200
     assert idp.calls[-1] == ("disable", "member-1")
     assert stored(engine, "member-1").status == UserStatus.DISABLED
-    assert client.post("/query", json={"question": "Who?"}, headers=member).status_code == 403
+    assert client.post("/v1/query", json={"question": "Who?"}, headers=member).status_code == 403
 
 
 def test_a_failing_identity_call_still_leaves_the_user_blocked(client, engine):
