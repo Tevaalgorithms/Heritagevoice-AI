@@ -17,8 +17,8 @@ FACTS = OrganisationFacts("Example Heritage Trust", "legal@example.org", "Englan
 SLUGS = {page.slug for page in PAGES}
 
 
-def test_the_six_expected_documents_exist():
-    assert {"terms", "privacy", "cookies", "acceptable-use", "accessibility", "contact"} == SLUGS
+def test_the_five_expected_documents_exist():
+    assert {"terms", "privacy", "acceptable-use", "accessibility", "contact"} == SLUGS
     for page in PAGES:
         assert (LEGAL_DIR / page.file).stat().st_size > 400, page.file
 
@@ -27,7 +27,7 @@ def test_the_six_expected_documents_exist():
 def test_a_page_with_details_set_has_no_raw_placeholders(page):
     text = legal_text(page, FACTS)
     assert "{{" not in text
-    assert "Example Heritage Trust" in text or page.slug == "cookies" or "legal@example.org" in text
+    assert "Example Heritage Trust" in text or "legal@example.org" in text
     assert LEGAL_VERSION in text
 
 
@@ -68,9 +68,9 @@ def test_the_privacy_notice_does_not_claim_searches_are_never_logged():
     assert "server logs" in text
 
 
-def test_the_cookie_notice_says_only_necessary_cookies_are_used():
-    text = legal_text(next(p for p in PAGES if p.slug == "cookies"), FACTS)
-    assert "only the cookies it needs" in text
+def test_the_privacy_notice_says_only_necessary_cookies_are_used():
+    text = legal_text(next(p for p in PAGES if p.slug == "privacy"), FACTS)
+    assert "only the cookies needed to work" in text
     assert "advertising" in text
 
 

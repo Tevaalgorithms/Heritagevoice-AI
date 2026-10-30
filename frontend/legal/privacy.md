@@ -52,7 +52,10 @@ recordings unless a parent, guardian or the community has agreed.
 
 ## Cookies
 
-We use only the cookies needed to keep you signed in. See the [Cookie Notice](/cookies).
+We use **only the cookies needed to work**: a sign-in session cookie (set only after you sign in) and
+a short-lived one from our sign-in provider, Amazon Cognito, while you sign in. Searching the public
+collection sets no cookie. We use no advertising, tracking or analytics cookies, so we do not ask you
+to accept any. You can block cookies in your browser; you can then still search, but not sign in.
 
 ## Changes
 
