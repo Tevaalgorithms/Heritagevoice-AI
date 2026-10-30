@@ -85,6 +85,10 @@ printed or passed through Terraform.
    they are not in state or plans.
 4. Add the provider keys yourself in the Parameter Store console as `SecureString` under
    `/heritagevoice/prod/` (LLM key, `PINECONE_API_KEY`, `PINECONE_INDEX`).
+   **Releases are automatic.** After each deploy that follows a merge to `main`, the `tag` job
+   tags the live commit with the next patch version (`v0.1.3` becomes `v0.1.4`) and creates a GitHub
+   Release listing every PR merged since the last one. For a bigger jump (`v0.2.0`), push that tag
+   yourself; the next automatic tag continues from it. A commit that already has a tag is skipped.
 5. The first deploy happens when the CI checks pass on `main` (or push a `v*` tag, or run `deploy` and type `deploy`).
 6. Check `https://<domain>/health` and `/ready`.
 

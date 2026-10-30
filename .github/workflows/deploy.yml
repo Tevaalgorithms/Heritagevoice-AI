@@ -1,5 +1,7 @@
 # Deploys to the instance on every merge to main (once the CI checks workflow has passed on that
-# commit), when a v* tag is pushed, or from a typed manual run. CI packs the code into a tarball, uploads it to a
+# commit), when a v* tag is pushed, or from a typed manual run. Every deploy that follows a merge to
+# main is then tagged (next patch version) and gets a GitHub Release with generated notes, so the
+# releases list always matches what is live. CI packs the code into a tarball, uploads it to a
 # private S3 bucket and runs the deploy script on the instance through AWS Systems Manager. The
 # instance pulls with its own role, so it never needs GitHub credentials (the repository is private).
 # Authentication is OpenID Connect: no AWS keys are stored in GitHub.
@@ -44,6 +46,8 @@ jobs:
       github.event.workflow_run.event == 'push')
     runs-on: ubuntu-latest
     environment: prod
+    outputs:
+      sha: ${{ steps.release.outputs.sha }}
     permissions:
       id-token: write
       contents: read
@@ -93,6 +97,7 @@ jobs:
           git archive --format=tar.gz --output release.tar.gz HEAD
           aws s3 cp --only-show-errors release.tar.gz "s3://$RELEASES_BUCKET/releases/$release.tar.gz"
           echo "release=$release" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Deploy through Systems Manager
         env:
@@ -150,3 +155,31 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
         run: gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --verify-tag --generate-notes --title "$TAG"
+
+  # Tags the commit that has just gone live: the next patch version after the newest v* tag, plus a
+  # GitHub Release whose notes list every merged PR since the previous release. Tags made with the
+  # workflow token do not start another workflow, so this never triggers a second deploy. A commit
+  # that already has a v* tag (a manual release) is left alone. Bigger version jumps: push the tag.
+  tag:
+    needs: deploy
+    if: github.event_name == 'workflow_run'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Tag and release the deployed commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ needs.deploy.outputs.sha }}
+        run: |
+          [[ "$SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "No deployed commit to tag" >&2; exit 1; }
+          existing="$(git tag --points-at "$SHA" --list 'v*')"
+          if [[ -n "$existing" ]]; then echo "Already tagged: $existing"; exit 0; fi
+          latest="$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1)"
+          IFS=. read -r major minor patch <<<"${latest#v}"
+          tag="v${major:-0}.${minor:-1}.$(( ${patch:-0} + 1 ))"
+          echo "Tagging $SHA as $tag (previous: ${latest:-none})"
+          gh release create "$tag" --target "$SHA" --generate-notes --title "$tag"
