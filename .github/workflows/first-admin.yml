@@ -1,0 +1,93 @@
+# Creates the first admin: invites the person in Cognito (they get a temporary password by email),
+# adds them to the `admin` group, then records them as admin in the app database. Safe to repeat:
+# an existing Cognito user and an existing app record are left unchanged. Run it once.
+# Two jobs because the two steps use different AWS roles (apply role for Cognito, deploy role
+# to reach the instance).
+name: first-admin
+
+on:
+  workflow_dispatch:
+    inputs:
+      email:
+        description: Email of the first admin (Cognito sends the invitation here)
+        required: true
+
+concurrency:
+  group: first-admin
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  cognito-user:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: infra
+    permissions:
+      id-token: write
+      contents: read
+    outputs:
+      sub: ${{ steps.user.outputs.sub }}
+    env:
+      EMAIL: ${{ inputs.email }}
+      USER_POOL_ID: ${{ vars.COGNITO_USER_POOL_ID }}
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_TF_APPLY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-session-name: heritagevoice-first-admin
+      - name: Invite the user and add them to the admin group
+        id: user
+        run: |
+          set -euo pipefail
+          [[ "$EMAIL" =~ ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]] || { echo "Not a valid email" >&2; exit 1; }
+          if aws cognito-idp admin-get-user --user-pool-id "$USER_POOL_ID" --username "$EMAIL" >/dev/null 2>&1; then
+            echo "Cognito user already exists, not inviting again"
+          else
+            aws cognito-idp admin-create-user --user-pool-id "$USER_POOL_ID" --username "$EMAIL" \
+              --user-attributes Name=email,Value="$EMAIL" Name=email_verified,Value=true \
+              --desired-delivery-mediums EMAIL >/dev/null
+            echo "Invitation sent"
+          fi
+          aws cognito-idp admin-add-user-to-group --user-pool-id "$USER_POOL_ID" --username "$EMAIL" --group-name admin
+          sub="$(aws cognito-idp admin-get-user --user-pool-id "$USER_POOL_ID" --username "$EMAIL" \
+            --query "UserAttributes[?Name=='sub'].Value | [0]" --output text)"
+          [[ "$sub" =~ ^[A-Za-z0-9-]{1,64}$ ]] || { echo "Unexpected sub" >&2; exit 1; }
+          echo "sub=$sub" >> "$GITHUB_OUTPUT"
+
+  app-record:
+    needs: cognito-user
+    runs-on: ubuntu-latest
+    environment: prod
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      INSTANCE_ID: ${{ vars.INSTANCE_ID }}
+      SUB: ${{ needs.cognito-user.outputs.sub }}
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-session-name: heritagevoice-first-admin
+      - name: Record the admin in the app database
+        run: |
+          set -euo pipefail
+          [[ "$SUB" =~ ^[A-Za-z0-9-]{1,64}$ ]] || { echo "Unexpected sub" >&2; exit 1; }
+          script="cd /opt/heritagevoice && docker compose --env-file /etc/heritagevoice/app.env -f deploy/docker-compose.yml exec -T api python -m app.bootstrap --sub $SUB"
+          command_id="$(aws ssm send-command --instance-ids "$INSTANCE_ID" \
+            --document-name AWS-RunShellScript --comment "first admin" --timeout-seconds 120 \
+            --parameters "$(jq -cn --arg c "$script" '{commands:[$c]}')" \
+            --query Command.CommandId --output text)"
+          for _ in $(seq 1 30); do
+            status="$(aws ssm get-command-invocation --command-id "$command_id" --instance-id "$INSTANCE_ID" \
+              --query Status --output text 2>/dev/null || echo Pending)"
+            case "$status" in Success|Failed|Cancelled|TimedOut) break ;; esac
+            sleep 4
+          done
+          aws ssm get-command-invocation --command-id "$command_id" --instance-id "$INSTANCE_ID" \
+            --query '[StandardOutputContent,StandardErrorContent]' --output text | tail -n 10
+          [[ "$status" == "Success" ]] || { echo "Bootstrap $status" >&2; exit 1; }
