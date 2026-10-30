@@ -19,6 +19,8 @@ on:
       confirm:
         description: Type deploy to confirm
         required: true
+  push:
+    tags: ["v*"] # a release: git tag v0.1.0 && git push origin v0.1.0
 
 concurrency:
   group: deploy-prod
@@ -29,7 +31,8 @@ permissions:
 
 jobs:
   deploy:
-    if: inputs.confirm == 'deploy'
+    # A pushed tag is a deliberate release; a manual run must be confirmed by typing deploy.
+    if: github.event_name == 'push' || inputs.confirm == 'deploy'
     runs-on: ubuntu-latest
     environment: prod
     permissions:
@@ -42,13 +45,17 @@ jobs:
       - name: Validate the ref
         id: ref
         run: |
-          ref="$INPUT_REF"
+          ref="${INPUT_REF:-$GITHUB_REF_NAME}"
           [[ "$ref" =~ ^[A-Za-z0-9._/-]{1,100}$ ]] || { echo "Invalid ref" >&2; exit 1; }
           echo "ref=$ref" >> "$GITHUB_OUTPUT"
 
       - uses: actions/checkout@v4
         with:
           ref: ${{ steps.ref.outputs.ref }}
+          fetch-depth: 0
+
+      - name: Only deploy commits that are on main
+        run: git merge-base --is-ancestor HEAD origin/main || { echo "This commit is not on main" >&2; exit 1; }
 
       - name: Require green CI on this exact commit
         env:
@@ -118,3 +125,18 @@ jobs:
           done
           echo "Site did not become ready" >&2
           exit 1
+
+  # Creates the GitHub Release (the Releases box on the repo page) after a tag deployed cleanly.
+  release:
+    needs: deploy
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --verify-tag --generate-notes --title "$TAG"
