@@ -1,7 +1,7 @@
 # Roles that GitHub Actions assumes with short-lived credentials (OpenID Connect). No access keys
 # are created or stored anywhere. This stack is applied by hand, never by CI, because it defines
 # what CI may do:
-#   - deploy: upload a release and run the deploy script on one instance (environment `demo`)
+#   - deploy: upload a release and run the deploy script on one instance (environment `prod`)
 #   - terraform plan: read-only, for pull requests
 #   - terraform apply: manage only heritagevoice-* resources (environment `infra`)
 # The role names start with hv-ci-, outside the heritagevoice-* names CI may manage, so CI cannot
