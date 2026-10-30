@@ -42,6 +42,12 @@ data "aws_iam_policy_document" "app" {
   }
 
   statement {
+    sid       = "ReleaseObjects"
+    actions   = ["s3:GetObject"]
+    resources = ["${aws_s3_bucket.releases.arn}/releases/*"]
+  }
+
+  statement {
     sid       = "EncryptionKey"
     actions   = ["kms:Decrypt", "kms:GenerateDataKey", "kms:Encrypt", "kms:DescribeKey"]
     resources = [aws_kms_key.app.arn]

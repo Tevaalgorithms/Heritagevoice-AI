@@ -20,6 +20,11 @@ output "audio_bucket" {
   value = aws_s3_bucket.audio.bucket
 }
 
+output "releases_bucket" {
+  description = "CI uploads release tarballs here; the instance pulls them with its role."
+  value       = aws_s3_bucket.releases.bucket
+}
+
 output "kms_key_alias" {
   description = "Use this as --key-id when creating the SecureString parameters."
   value       = aws_kms_alias.app.name

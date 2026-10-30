@@ -32,8 +32,8 @@ resource "aws_instance" "app" {
   }
 
   user_data = templatefile("${path.module}/user_data.sh.tftpl", {
-    repo_url              = var.repo_url
-    repo_ref              = var.repo_ref
+    hv_deploy_script      = file("${path.module}/../../deploy/hv-deploy.sh")
+    releases_bucket       = aws_s3_bucket.releases.bucket
     data_volume_id        = replace(aws_ebs_volume.data.id, "-", "")
     domain                = var.domain
     region                = var.region
@@ -48,7 +48,9 @@ resource "aws_instance" "app" {
   tags = { Name = "heritagevoice-${var.environment}", Backup = "daily" }
 
   lifecycle {
-    ignore_changes = [ami] # do not replace the host (and its data) when a newer AMI is published
+    # Never replace the host (and its data) because a newer AMI exists or the first-boot script
+    # changed. Settings are changed through deploys, not by rebuilding the instance.
+    ignore_changes = [ami, user_data]
   }
 }
 
@@ -131,6 +133,7 @@ resource "aws_dlm_lifecycle_policy" "daily" {
 }
 
 resource "aws_budgets_budget" "monthly" {
+  count        = var.budget_email == "" ? 0 : 1
   name         = "heritagevoice-${var.environment}-monthly"
   budget_type  = "COST"
   limit_amount = tostring(var.budget_limit_usd)

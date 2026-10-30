@@ -23,3 +23,7 @@ deploy
 *.tfstate.*
 *.tfvars
 *.tfplan
+
+# macOS metadata files (AppleDouble); alembic would try to load them as migrations
+**/._*
+**/.DS_Store

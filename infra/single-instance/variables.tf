@@ -31,17 +31,6 @@ variable "data_volume_gb" {
   description = "Size of the encrypted data disk (PostgreSQL data and certificates)."
 }
 
-variable "repo_url" {
-  type        = string
-  description = "HTTPS URL of the Git repository the instance deploys from."
-}
-
-variable "repo_ref" {
-  type        = string
-  default     = "main"
-  description = "Git branch or tag to deploy. Use a release tag for anything shared."
-}
-
 variable "cognito_user_pool_id" {
   type        = string
   description = "ID of the Cognito user pool (output of infra/cognito)."
@@ -60,5 +49,6 @@ variable "budget_limit_usd" {
 
 variable "budget_email" {
   type        = string
-  description = "Where budget alerts go."
+  default     = ""
+  description = "Where budget alerts go. Leave empty to skip the budget alert."
 }

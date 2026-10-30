@@ -6,7 +6,15 @@ terraform {
       version = "~> 5.0"
     }
   }
-  # Configure the remote encrypted state backend here (deployment step 2). Never commit state.
+
+  # State lives in an encrypted, versioned S3 bucket. The bucket name is passed at init time so no
+  # account details are committed:
+  #   terraform init -backend-config="bucket=<state bucket>" -backend-config="region=<region>"
+  # Never commit state, plans or *.tfvars.
+  backend "s3" {
+    key     = "heritagevoice/cognito.tfstate"
+    encrypt = true
+  }
 }
 
 provider "aws" {
