@@ -31,6 +31,9 @@ def run(tmp_path, params):
     fake = bin_dir / "aws"
     fake.write_text(f"#!/usr/bin/env bash\nprintf '%s' '{lines}'\n")
     fake.chmod(fake.stat().st_mode | stat.S_IEXEC)
+    chown = bin_dir / "chown"  # records the request; the real one needs root
+    chown.write_text(f"#!/usr/bin/env bash\necho \"$@\" >> '{bin_dir}/chown.log'\n")
+    chown.chmod(chown.stat().st_mode | stat.S_IEXEC)
     config = tmp_path / "config.env"
     config.write_text(CONFIG)
     out = tmp_path / "out"
@@ -56,6 +59,14 @@ def test_the_script_writes_the_env_file_and_the_streamlit_secrets(tmp_path):
     assert 'expose_tokens = ["access"]' in toml
     assert f'client_secret = "{SECRETS["HV_COGNITO_CLIENT_SECRET"]}"' in toml
     assert "cognito-idp.eu-west-2.amazonaws.com/eu-west-2_POOL/.well-known" in toml
+
+
+def test_the_streamlit_file_is_chowned_to_the_ui_container_user(tmp_path):
+    result, out = run(tmp_path, SECRETS)
+    assert result.returncode == 0, result.stderr
+    owner, target = (tmp_path / "bin" / "chown.log").read_text().split()
+    assert owner == "10001:10001"
+    assert target == str(out / "secrets.toml")
 
 
 def test_the_files_are_private_to_root(tmp_path):

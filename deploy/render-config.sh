@@ -6,7 +6,8 @@
 # config.env holds the non-secret settings (written by cloud-init from Terraform values).
 # Secrets are read from AWS SSM Parameter Store (SecureString) under the given path, using the
 # instance's IAM role; nothing secret is stored in the repository, the image or Terraform state.
-# Output (mode 0600, root only): /etc/heritagevoice/app.env and /etc/heritagevoice/secrets.toml.
+# Output (mode 0600): /etc/heritagevoice/app.env (root only) and /etc/heritagevoice/secrets.toml,
+# which is owned by the UI container's user (uid 10001, set in the Dockerfile) so Streamlit can read it.
 set -euo pipefail
 umask 077
 
@@ -52,4 +53,5 @@ server_metadata_url = "https://cognito-idp.${region}.amazonaws.com/${pool}/.well
 client_kwargs = { scope = "openid email" }
 TOML
 chmod 0600 "$OUT_DIR/secrets.toml"
+chown "${HV_UI_OWNER:-10001:10001}" "$OUT_DIR/secrets.toml"
 echo "Wrote $OUT_DIR/app.env and $OUT_DIR/secrets.toml"
