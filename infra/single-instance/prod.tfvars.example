@@ -1,6 +1,6 @@
-# Copy to demo.tfvars (git-ignored) and fill in. Values here are placeholders.
+# Copy to prod.tfvars (git-ignored) and fill in. Values here are placeholders.
 region                = "us-west-2"
-environment           = "demo"
+environment           = "prod"
 domain                = "heritagevoice.tevaalgorithms.com"
 route53_zone_name     = "tevaalgorithms.com"
 cognito_user_pool_id  = "<from infra/cognito output>"

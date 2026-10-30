@@ -5,7 +5,7 @@ variable "region" {
 
 variable "environment" {
   type        = string
-  description = "dev, staging or demo. One pool per environment."
+  description = "dev, staging or prod. One pool per environment."
 }
 
 variable "domain_prefix" {

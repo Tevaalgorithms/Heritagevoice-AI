@@ -35,7 +35,7 @@ printed or passed through Terraform.
 | --- | --- | --- |
 | `infra` | Pull request: read-only `terraform plan`. Manual run on `main`: apply `cognito` or `single-instance` | `infra` environment |
 | `secrets` | Creates the generated secrets in Parameter Store (never overwrites) | `infra` environment |
-| `deploy` | Packs the code, uploads it to the private releases bucket, runs it on the instance, smoke-tests `/ready` | `demo` environment |
+| `deploy` | Packs the code, uploads it to the private releases bucket, runs it on the instance, smoke-tests `/ready` | `prod` environment |
 
 ## One-time bootstrap (by a person, because it defines what CI may do)
 
@@ -46,9 +46,9 @@ printed or passed through Terraform.
    ```sh
    cd infra/github-oidc
    terraform init -backend-config="bucket=<state bucket>" -backend-config="region=us-west-2"
-   terraform apply -var region=us-west-2 -var environment=demo \
+   terraform apply -var region=us-west-2 -var environment=prod \
      -var github_repo=Tevaalgorithms/Heritagevoice-AI -var instance_id=<see below> \
-     -var releases_bucket=heritagevoice-demo-releases-<account> -var state_bucket=<state bucket> \
+     -var releases_bucket=heritagevoice-prod-releases-<account> -var state_bucket=<state bucket> \
      -var create_oidc_provider=false   # the account already has the GitHub OIDC provider
    ```
 
@@ -57,10 +57,10 @@ printed or passed through Terraform.
 3. **GitHub settings**
    - Environment `infra`: required reviewer (you), deployments from `main` only.
      Variable `AWS_TF_APPLY_ROLE_ARN` = output `terraform_apply_role_arn`.
-   - Environment `demo`: required reviewer, `main` and `v*` tags only. Variables
+   - Environment `prod`: required reviewer, `main` and `v*` tags only. Variables
      `AWS_DEPLOY_ROLE_ARN`, `AWS_REGION`, `INSTANCE_ID`, `SITE_DOMAIN`, `RELEASES_BUCKET`.
-   - Repository variables: `AWS_REGION`, `TF_STATE_BUCKET`, `TF_ENVIRONMENT` (`demo`),
-     `SITE_DOMAIN`, `ROUTE53_ZONE_NAME`, `COGNITO_DOMAIN_PREFIX` (unique, e.g. `hv-demo-<6 hex>`),
+   - Repository variables: `AWS_REGION`, `TF_STATE_BUCKET`, `TF_ENVIRONMENT` (`prod`),
+     `SITE_DOMAIN`, `ROUTE53_ZONE_NAME`, `COGNITO_DOMAIN_PREFIX` (unique, e.g. `hv-prod-<6 hex>`),
      `TF_BUDGET_EMAIL` (empty to skip the alert), `AWS_TF_PLAN_ROLE_ARN`, and after step 4
      `COGNITO_USER_POOL_ID`, `COGNITO_APP_CLIENT_ID`.
    - CODEOWNERS or branch protection should require review for `infra/**`.
@@ -69,13 +69,13 @@ printed or passed through Terraform.
 
 1. Run `infra` with `cognito`. Copy `user_pool_id` and `app_client_id` from the log into the
    repository variables `COGNITO_USER_POOL_ID` and `COGNITO_APP_CLIENT_ID`.
-2. Run `infra` with `single-instance`. Copy `instance_id` into the `demo` variable `INSTANCE_ID`
+2. Run `infra` with `single-instance`. Copy `instance_id` into the `prod` variable `INSTANCE_ID`
    and into the second `github-oidc` apply; copy `releases_bucket` into `RELEASES_BUCKET`.
 3. Run `secrets`. It creates `POSTGRES_PASSWORD`, `HV_COOKIE_SECRET` and
    `HV_COGNITO_CLIENT_SECRET` directly in Parameter Store. Terraform never sees the values, so
    they are not in state or plans.
 4. Add the provider keys yourself in the Parameter Store console as `SecureString` under
-   `/heritagevoice/demo/` (LLM key, `PINECONE_API_KEY`, `PINECONE_INDEX`).
+   `/heritagevoice/prod/` (LLM key, `PINECONE_API_KEY`, `PINECONE_INDEX`).
 5. Run `deploy` (Actions, deploy, Run workflow, a tag or `main`) and approve it.
 6. Check `https://<domain>/health` and `/ready`.
 

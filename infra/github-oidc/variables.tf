@@ -5,7 +5,7 @@ variable "region" {
 
 variable "environment" {
   type        = string
-  description = "Must match the GitHub environment name that is allowed to deploy (for example demo)."
+  description = "Must match the GitHub environment name that is allowed to deploy (for example prod)."
 }
 
 variable "github_repo" {

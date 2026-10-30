@@ -4,7 +4,7 @@
 # Authentication is OpenID Connect: no AWS keys are stored in GitHub.
 #
 # One-time setup (see docs/runbooks/deploy-single-instance.md): create the GitHub environment
-# "demo" with required reviewers and these environment variables:
+# "prod" with required reviewers and these environment variables:
 #   AWS_DEPLOY_ROLE_ARN, AWS_REGION, INSTANCE_ID, SITE_DOMAIN, RELEASES_BUCKET
 name: deploy
 
@@ -19,7 +19,7 @@ on:
     tags: ["v*"]
 
 concurrency:
-  group: deploy-demo
+  group: deploy-prod
   cancel-in-progress: false
 
 permissions:
@@ -28,7 +28,7 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: demo # requires approval from the reviewers set on the environment
+    environment: prod # requires approval from the reviewers set on the environment
     permissions:
       id-token: write
       contents: read
