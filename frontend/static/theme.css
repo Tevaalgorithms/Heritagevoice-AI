@@ -61,3 +61,8 @@ input, textarea, [data-baseweb="select"] > div { border-radius: 10px !important;
 .hv-supported { max-width: 820px; margin: 2.4rem auto 0; font-size: .8rem; line-height: 1.9; color: #5B6577; }
 .hv-supported-title { display: block; font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; color: #B4532A; margin-bottom: .2rem; }
 .hv-closing { margin-top: 1.4rem !important; }
+.st-key-hv-sign-in button { min-height: 3.1rem; border-radius: 12px; font-size: 1.05rem; letter-spacing: .02em;
+  background: linear-gradient(180deg, #C25F31, #A94B24); border: 0; color: #fff; box-shadow: 0 8px 22px rgba(180,83,42,.35); }
+.st-key-hv-sign-in button:hover { background: linear-gradient(180deg, #CC673A, #B4532A); box-shadow: 0 12px 28px rgba(180,83,42,.45); }
+.st-key-hv-sign-in button:focus-visible { outline: 3px solid #D98A2B; outline-offset: 3px; }
+.hv-secure { margin-top: .6rem; font-size: .78rem; color: #5B6577; letter-spacing: .04em; }
