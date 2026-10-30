@@ -6,6 +6,7 @@ from pathlib import Path
 
 import streamlit as st
 
+from app.languages import LANGUAGES as SUPPORTED_LANGUAGES
 from frontend.kinds import KINDS
 
 BANNER = Path(__file__).parent / "static" / "banner.jpg"
@@ -106,8 +107,19 @@ def page_header(title: str, subtitle: str, icon: str = "ask") -> None:
     st.markdown(f"<p class='hv-sub'>{subtitle}</p>", unsafe_allow_html=True)
 
 
+def supported_languages_html() -> str:
+    """The languages the app accepts, each in its own script, in small letters."""
+    names = " · ".join(escape(lang.native_name) for lang in SUPPORTED_LANGUAGES)
+    return (
+        "<div class='hv-supported' style='text-align:center'>"
+        "<span class='hv-supported-title'>Languages we support</span>"
+        f"{names} · and more to come</div>"
+    )
+
+
 def footer() -> None:
-    """A closing thought, then the promise the project makes."""
+    """The supported languages, a closing thought, then the promise the project makes."""
+    st.markdown(supported_languages_html(), unsafe_allow_html=True)
     st.markdown(
         "<div class='hv-closing' style='text-align:center'>"
         f"<div class='hv-closing-line'>{CLOSING}</div>"

@@ -102,7 +102,7 @@ def test_the_same_key_from_another_user_is_a_separate_upload(client, engine):
 @pytest.mark.parametrize(
     ("kwargs", "expected"),
     [
-        ({"form": {"language": "fr"}}, (422, "bad_language")),
+        ({"form": {"language": "xx"}}, (422, "bad_language")),
         ({"data": b"this is plain text, not audio"}, (415, "unsupported_type")),
         ({"data": b"MZ" + b"\x00" * 200}, (415, "unsupported_type")),
         ({"data": wav_bytes(90.0, 1000)}, (422, "too_long")),

@@ -28,6 +28,13 @@ LANGUAGES = (
     Language("gu", "Gujarati", "ગુજરાતી", "gu-IN"),
     Language("pa", "Punjabi", "ਪੰਜਾਬੀ", "pa-IN"),
     Language("en", "English", "English", "en-US"),
+    Language("fr", "French", "Français", "fr-FR"),
+    Language("de", "German", "Deutsch", "de-DE"),
+    Language("es", "Spanish", "Español", "es-ES"),
+    Language("it", "Italian", "Italiano", "it-IT"),
+    Language("pt", "Portuguese", "Português", "pt-PT"),
+    Language("nl", "Dutch", "Nederlands", "nl-NL"),
+    Language("ru", "Russian", "Русский", "ru-RU"),
 )
 BY_CODE = {language.code: language for language in LANGUAGES}
 TRANSCRIBE_CODES = {language.code: language.transcribe_code for language in LANGUAGES}

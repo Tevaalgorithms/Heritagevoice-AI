@@ -5,7 +5,8 @@ language) and the server setting `HERITAGEVOICE_ALLOWED_LANGUAGES` decides which
 
 ## What works today
 
-Tamil, Hindi, Telugu, Malayalam, Kannada, Marathi, Bengali, Gujarati, Punjabi and English use
+Tamil, Hindi, Telugu, Malayalam, Kannada, Marathi, Bengali, Gujarati, Punjabi, English, French,
+German, Spanish, Italian, Portuguese, Dutch and Russian use
 Amazon Transcribe for speech to text. The codes come from its supported-languages table:
 <https://docs.aws.amazon.com/transcribe/latest/dg/supported-languages.html>. Search (keywords)
 keeps words whole in all of these scripts. Translation and the later steps use the language model,
