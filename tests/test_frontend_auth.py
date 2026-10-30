@@ -49,3 +49,10 @@ def test_cognito_is_enabled_only_when_fully_configured():
     full = settings(cognito_region="r", cognito_user_pool_id="p", cognito_app_client_id="c")
     assert cognito_enabled(full)
     assert not cognito_enabled(settings(cognito_region="r", cognito_user_pool_id="p"))
+
+
+def test_streamlit_sign_in_has_the_authlib_it_needs():
+    """Without it st.login raises StreamlitMissingAuthlibError and sign-in breaks."""
+    import authlib  # noqa: PLC0415
+
+    assert authlib.__version__
