@@ -41,7 +41,8 @@ env:
 
 jobs:
   plan:
-    if: github.event_name == 'pull_request'
+    # Skipped until the one-time bootstrap has created the plan role and set its variable.
+    if: github.event_name == 'pull_request' && vars.AWS_TF_PLAN_ROLE_ARN != ''
     runs-on: ubuntu-latest
     permissions:
       id-token: write
