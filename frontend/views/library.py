@@ -73,9 +73,10 @@ def _card(item: LibraryItem) -> None:
 
 def _empty(spec: LibrarySpec) -> None:
     searched = "Nothing matched that search." if spec.q else "Nothing has been shared yet."
-    st.info(
-        f"{searched} Only recordings that an admin has approved, and that their community has "
-        "agreed to share with you, appear here."
+    st.markdown(
+        f"<div class='hv-empty'><b>{searched}</b>Only recordings that an administrator has "
+        "approved, and that their community has agreed to share with you, appear here.</div>",
+        unsafe_allow_html=True,
     )
 
 

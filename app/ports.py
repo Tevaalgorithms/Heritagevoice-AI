@@ -11,6 +11,7 @@ from pydantic import SecretStr
 from app.models.evidence import Evidence
 from app.models.llm import ModelParams, ProbeResult
 from app.models.transcript import Segment
+from app.models.users import Signup
 from app.security.permissions import Principal
 from app.security.roles import Role
 
@@ -63,6 +64,10 @@ class IdentityProvider(Protocol):
 
     def disable_user(self, sub: str) -> None:
         """Disable the account and sign it out everywhere."""
+        ...
+
+    def list_signups(self) -> list[Signup]:
+        """Self-created, email-confirmed, enabled accounts (the caller removes approved ones)."""
         ...
 
 

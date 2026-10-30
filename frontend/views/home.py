@@ -1,8 +1,8 @@
-"""The public home page: anyone can search the shared recordings; contributors sign in here too.
+"""The public home page: anyone can search the shared recordings; contributors sign in or sign up.
 
-Searching needs no account. Uploading, asking questions and the admin portal do. The sign-in box
-sits beside the search so a contributor or administrator finds it at once, while a visitor who only
-wants to read is never made to sign in.
+Searching needs no account. Adding recordings does: people create an account, an administrator
+approves it, and then they sign in and upload. Administrators sign in the same way (their role
+decides what they see) and are only ever added by another administrator.
 """
 
 from collections.abc import Callable
@@ -13,25 +13,26 @@ from frontend import theme
 from frontend.api_client import ApiClient
 from frontend.views import library
 
-SIGN_IN_LABEL = "Contributor sign in"
-ADMIN_LABEL = "Administrator sign in"
-ACCOUNT_NOTE = (
-    "Sign in to add recordings. Searching and reading what communities have shared publicly "
-    "is open to everyone and needs no account."
+SIGN_IN_LABEL = "Sign in"
+CREATE_LABEL = "Create an account"
+OPEN_NOTE = "Searching and reading what communities share is open to everyone."
+STEPS = (
+    ("Create an account", "Choose Sign up on the next page and confirm your email."),
+    ("We approve it", "An administrator checks the request and links you to your community."),
+    ("Add recordings", "Sign in, record or upload, and tell us what may be shared."),
 )
-ADMIN_NOTE = "Administrators review recordings and manage settings."
-INVITE_NOTE = (
-    "New contributor accounts are created by an administrator. "
-    "Ask yours to invite you, then sign in with the email they used."
-)
+
+
+def _steps_html() -> str:
+    items = "".join(f"<li><b>{title}</b><span>{text}</span></li>" for title, text in STEPS)
+    return f"<ol class='hv-steps'>{items}</ol>"
 
 
 def _account_card(sign_in: Callable[[], None]) -> None:
-    """Where contributors and administrators start. Both use the same secure sign-in; the
-    account's role decides which sections they see afterwards."""
+    """Where contributors and administrators start. Everyone signs in the same secure way."""
     with st.container(border=True):
-        st.markdown("#### Contribute or manage")
-        st.caption(ACCOUNT_NOTE)
+        st.markdown("#### Share your heritage")
+        st.markdown(_steps_html(), unsafe_allow_html=True)
         st.button(
             SIGN_IN_LABEL,
             icon=":material/login:",
@@ -40,25 +41,41 @@ def _account_card(sign_in: Callable[[], None]) -> None:
             on_click=sign_in,
             key="hv-sign-in",
         )
-        st.caption(ADMIN_NOTE)
         st.button(
-            ADMIN_LABEL,
-            icon=":material/admin_panel_settings:",
+            CREATE_LABEL,
+            icon=":material/person_add:",
             use_container_width=True,
             on_click=sign_in,
-            key="hv-admin-sign-in",
+            key="hv-create-account",
         )
-        st.caption(INVITE_NOTE)
+        st.caption("Administrators sign in here too.")
 
 
 def render(client: ApiClient, sign_in: Callable[[], None]) -> None:
     """The landing page for visitors."""
     theme.landing_top()
-    search, account = st.columns([3, 1.4], gap="large")
+    search, account = st.columns([5, 3], gap="large")
     with search:
         st.markdown("### Search the shared heritage")
+        st.caption(OPEN_NOTE)
         library.search_and_show(client.public_library)
     with account:
         _account_card(sign_in)
     theme.landing_details()
     theme.footer()
+
+
+def render_waiting() -> None:
+    """Shown to someone who is signed in but not yet approved."""
+    theme.page_header(
+        "Your account is waiting for approval",
+        "Thank you for signing up. An administrator reviews each new account and links it to a "
+        "community before it can add recordings.",
+        "people",
+    )
+    st.markdown(
+        "You do not need to do anything else. Once you are approved, sign in again and "
+        "**Add a recording** will be there. Meanwhile you can read what communities have shared "
+        "from the Home page after signing out."
+    )
+    st.caption("Waiting a long time? Use the contact address on the Contact and takedown page.")

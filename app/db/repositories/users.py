@@ -23,6 +23,11 @@ class UserRepository:
         self.set_communities(sub, communities)
         return self._require(sub)
 
+    def known(self, subs: list[str]) -> set[str]:
+        """Which of these accounts already have a record here."""
+        query = select(AppUserRow.sub).where(AppUserRow.sub.in_(subs))
+        return set(self._session.scalars(query))
+
     def get(self, sub: str) -> StoredUser | None:
         row = self._session.get(AppUserRow, sub)
         return None if row is None else self._to_user(row)

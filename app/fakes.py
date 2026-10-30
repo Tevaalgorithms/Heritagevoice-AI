@@ -7,6 +7,7 @@ from app.graph.state import StateUpdate, WorkflowState
 from app.graph.workflow import Agents
 from app.models.evidence import Claim, Evidence, Route
 from app.models.transcript import Segment
+from app.models.users import Signup
 from app.ports import GraphStore, VectorStore
 from app.retrieval.tokenize import tokens
 from app.security.permissions import Principal, can_read
@@ -137,6 +138,7 @@ class FakeIdentityProvider:
 
     def __init__(self) -> None:
         self.calls: list[tuple[str, ...]] = []
+        self.signups: list[Signup] = []
 
     def invite_user(self, email: str, role: Role) -> str:
         sub = f"sub-{len(self.calls) + 1}"
@@ -148,6 +150,9 @@ class FakeIdentityProvider:
 
     def disable_user(self, sub: str) -> None:
         self.calls.append(("disable", sub))
+
+    def list_signups(self) -> list[Signup]:
+        return list(self.signups)
 
 
 class FakeAudioStore:

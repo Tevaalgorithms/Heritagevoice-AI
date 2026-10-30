@@ -46,6 +46,10 @@ ICONS = {
     "ask": "<path d='M4 5h16v11H9l-5 4z'/><path d='M8 9h8M8 12h5'/>",
     "library": "<path d='M4 5h5v14H4z'/><path d='M10 5h5v14h-5z'/><path d='M16 6l4 1-3 12-4-1'/>",
     "legal": "<path d='M6 3h9l3 3v15H6z'/><path d='M9 9h6M9 13h6M9 17h4'/>",
+    "people": (
+        "<circle cx='9' cy='8' r='3'/><path d='M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6'/>"
+        "<path d='M16 6a3 3 0 010 6M18 20c0-2.5-1-4.5-3-5.5'/>"
+    ),
     "home": "<path d='M4 11l8-7 8 7'/><path d='M6 10v10h12V10'/>",
     "settings": (
         "<path d='M4 7h10M18 7h2M4 17h2M10 17h10'/>"

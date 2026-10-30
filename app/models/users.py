@@ -14,6 +14,15 @@ class UserStatus(StrEnum):
     DISABLED = "disabled"
 
 
+class Signup(BaseModel):
+    """Someone who created an account themselves and confirmed their email, not yet approved."""
+
+    model_config = ConfigDict(frozen=True)
+    sub: str
+    email: str
+    created: str
+
+
 class StoredUser(BaseModel):
     """A user as stored: role, status and communities."""
 

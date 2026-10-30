@@ -26,9 +26,8 @@ h2 { border-bottom: 2px solid #E4D6BC; padding-bottom: .4rem; margin-bottom: 1re
 [data-testid="stFileUploaderDropzone"] { background: #FFFDF8; border: 2px dashed #D98A2B; border-radius: 16px; }
 input, textarea, [data-baseweb="select"] > div { border-radius: 10px !important; }
 /* The search box: a white field with a clear border, not a tan bar that melts into the card. */
-[data-testid="stTextInput"] [data-baseweb="base-input"], [data-testid="stTextInput"] [data-baseweb="input"] { background: #FFFFFF !important; }
-[data-testid="stTextInput"] [data-baseweb="input"] { border: 1px solid #C9B88F !important; }
-[data-testid="stTextInput"] [data-baseweb="input"]:focus-within { border-color: #D98A2B !important; box-shadow: 0 0 0 2px rgba(217,138,43,.25); }
+[data-testid="stTextInputRootElement"] { background: #FFFFFF !important; border: 1px solid #C9B88F !important; }
+[data-testid="stTextInputRootElement"]:focus-within { border-color: #D98A2B !important; box-shadow: 0 0 0 2px rgba(217,138,43,.25); }
 [data-testid="stForm"], [data-testid="stExpander"] { background: #FFFDF8; border: 1px solid #E4D6BC; border-radius: 16px; }
 
 .hv-hero { border-radius: 22px; overflow: hidden; box-shadow: 0 18px 48px rgba(20,40,75,.22); margin-bottom: 1.4rem; }
@@ -83,3 +82,13 @@ input, textarea, [data-baseweb="select"] > div { border-radius: 10px !important;
 /* The link icon Streamlit adds beside every heading. */
 [data-testid="stHeaderActionElements"] { display: none !important; }
 .hv-answer { font-size: 1.05rem; line-height: 1.7; color: #1B2A41; overflow-wrap: anywhere; }
+/* The three steps on the home page: numbered, compact, easy to scan. */
+.hv-steps { list-style: none; counter-reset: step; margin: .2rem 0 1rem; padding: 0; }
+.hv-steps li { counter-increment: step; position: relative; padding: 0 0 .8rem 2.6rem; display: flex; flex-direction: column; }
+.hv-steps li::before { content: counter(step); position: absolute; left: 0; top: 0; width: 1.8rem; height: 1.8rem; border-radius: 50%;
+  background: #14284B; color: #FFF7E6; font-weight: 700; font-size: .9rem; display: flex; align-items: center; justify-content: center; }
+.hv-steps li b { color: #14284B; font-size: .98rem; }
+.hv-steps li span { color: #5B6577; font-size: .88rem; line-height: 1.4; }
+/* An empty result is guidance, not a blue alert. */
+.hv-empty { background: #FFFDF8; border: 1px dashed #C9B88F; border-radius: 14px; padding: 1.4rem 1.6rem; color: #3A465B; }
+.hv-empty b { display: block; color: #14284B; font-size: 1.05rem; margin-bottom: .3rem; }
