@@ -13,6 +13,8 @@ ROLE_GROUPS = {role.value for role in Role}
 
 
 class CognitoIdentityProvider:
+    """Amazon Cognito user administration: invite a user, change their group, disable them."""
+
     def __init__(self, region: str, user_pool_id: str, client: Any | None = None) -> None:
         self._pool = user_pool_id
         self._client = client or boto3.client("cognito-idp", region_name=region)

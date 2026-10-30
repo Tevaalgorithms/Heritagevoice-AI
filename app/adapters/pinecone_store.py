@@ -38,6 +38,8 @@ def _community(item: Evidence) -> str:
 
 
 class PineconeVectorStore:
+    """Vector search in Pinecone: one namespace per community, no text stored there."""
+
     def __init__(self, index: Any, embedder: Embedder, hydrate: Hydrate, dimension: int) -> None:
         self._index = index
         self._embedder = embedder

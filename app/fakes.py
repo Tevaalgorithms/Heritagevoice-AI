@@ -22,6 +22,8 @@ def _matches(query: str, item: Evidence) -> bool:
 
 
 class FakeVectorStore:
+    """In-memory vector store for tests and the local demo."""
+
     def __init__(self) -> None:
         self._items: dict[str, Evidence] = {}
 
@@ -41,6 +43,8 @@ class FakeVectorStore:
 
 
 class FakeGraphStore:
+    """In-memory graph store for tests and the local demo."""
+
     def __init__(self, items: list[Evidence] | None = None) -> None:
         self._items = items or []
 
@@ -63,6 +67,8 @@ def _within(item: Evidence, max_hops: int) -> bool:
 
 
 class FakeTranscriber:
+    """A speech-to-text stand-in that returns fixed segments."""
+
     def __init__(self, segments: list[Segment]) -> None:
         self._segments = segments
 
@@ -71,6 +77,8 @@ class FakeTranscriber:
 
 
 class FakeTranslator:
+    """A translator stand-in that returns fixed text."""
+
     def translate(self, segments: list[Segment], target_language: str) -> list[Segment]:
         return [s.model_copy(update={"text": f"[{target_language}] {s.text}"}) for s in segments]
 
@@ -143,6 +151,8 @@ class FakeIdentityProvider:
 
 
 class FakeAudioStore:
+    """In-memory audio storage for tests."""
+
     def __init__(self) -> None:
         self.objects: dict[str, tuple[bytes, str]] = {}
 

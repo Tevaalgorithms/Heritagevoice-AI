@@ -17,6 +17,8 @@ from app.security.roles import Role
 
 @runtime_checkable
 class VectorStore(Protocol):
+    """Meaning-based search over approved content."""
+
     def upsert(self, items: list[Evidence]) -> None: ...
 
     def delete_recording(self, recording_id: str, community_id: str) -> None:
@@ -28,11 +30,15 @@ class VectorStore(Protocol):
 
 @runtime_checkable
 class GraphStore(Protocol):
+    """Relationship search over the reviewed knowledge graph."""
+
     def traverse(self, query: str, principal: Principal, max_hops: int = 2) -> list[Evidence]: ...
 
 
 @runtime_checkable
 class Transcriber(Protocol):
+    """Turns audio into timed text."""
+
     def transcribe(self, audio_key: str, language: str) -> list[Segment]:
         """Transcribe the stored audio object. Segments must be ordered and inside the audio."""
         ...
@@ -40,6 +46,8 @@ class Transcriber(Protocol):
 
 @runtime_checkable
 class Translator(Protocol):
+    """Turns segments into another language, keeping their IDs."""
+
     def translate(self, segments: list[Segment], target_language: str) -> list[Segment]: ...
 
 

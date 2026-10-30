@@ -15,6 +15,8 @@ MAX_TOKENS = 250
 
 @dataclass(frozen=True)
 class Chunk:
+    """A searchable piece of a transcript, keeping its segments and timing."""
+
     index: int
     text: str
     start_s: float

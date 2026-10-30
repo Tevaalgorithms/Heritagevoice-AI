@@ -4,12 +4,16 @@ from enum import IntEnum, StrEnum
 
 
 class Role(StrEnum):
+    """A user's role: member, reviewer or admin."""
+
     MEMBER = "member"
     REVIEWER = "reviewer"
     ADMIN = "admin"
 
 
 class Action(StrEnum):
+    """Something a user can try to do; each is allowed for certain roles."""
+
     RECORDING_UPLOAD = "recording:upload"
     RECORDING_VIEW = "recording:view"
     QUERY_ASK = "query:ask"
@@ -24,6 +28,8 @@ class Action(StrEnum):
 
 
 class Rank(IntEnum):
+    """Orders roles so the lower of two can be taken."""
+
     MEMBER = 1
     REVIEWER = 2
     ADMIN = 3

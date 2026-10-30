@@ -43,6 +43,8 @@ class IndexRefusedError(Exception):
 
 @dataclass(frozen=True)
 class IndexDeps:
+    """What the indexing jobs need: database sessions and the vector store."""
+
     sessions: SessionFactory
     vectors: VectorStore | None = None
 

@@ -52,6 +52,8 @@ def require_permitted(principal: Principal, items: list[Evidence]) -> list[Evide
 
 
 class Reason(StrEnum):
+    """Why an access decision was made."""
+
     ALLOWED = "allowed"
     ROLE = "role_not_permitted"
     COMMUNITY = "not_a_community_member"
@@ -60,6 +62,8 @@ class Reason(StrEnum):
 
 
 class Decision(BaseModel):
+    """The outcome of an access check: allowed or not, and why."""
+
     model_config = ConfigDict(frozen=True)
     allowed: bool
     reason: Reason

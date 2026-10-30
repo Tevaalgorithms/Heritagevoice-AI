@@ -6,6 +6,8 @@ from pydantic import BaseModel, ConfigDict
 
 
 class JobStatus(StrEnum):
+    """Where a background job is in its life."""
+
     QUEUED = "queued"
     PROCESSING = "processing"
     REVIEW = "review"
@@ -14,6 +16,8 @@ class JobStatus(StrEnum):
 
 
 class Job(BaseModel):
+    """A background job as the application sees it."""
+
     model_config = ConfigDict(frozen=True)
     id: str
     kind: str

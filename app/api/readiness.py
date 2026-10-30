@@ -19,6 +19,8 @@ S3_CONFIG = Config(connect_timeout=3, read_timeout=3, retries={"max_attempts": 1
 
 @dataclass(frozen=True)
 class Check:
+    """One dependency the service reports on: whether it is required, configured and healthy."""
+
     name: str
     required: bool
     configured: Callable[[Settings], bool]

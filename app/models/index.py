@@ -6,6 +6,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class ChunkKind(StrEnum):
+    """Whether a searchable chunk comes from a transcript or a translation."""
+
     TRANSCRIPT = "transcript"
     TRANSLATION = "translation"
 

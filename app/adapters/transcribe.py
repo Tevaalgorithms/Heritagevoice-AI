@@ -102,6 +102,8 @@ def segments_from_items(items: list[dict[str, Any]]) -> list[Segment]:
 
 @dataclass(frozen=True)
 class TranscribeConfig:
+    """Where and how to call Amazon Transcribe (bucket, key, region, polling)."""
+
     bucket: str
     kms_key_id: str | None = None
     region: str | None = None
@@ -128,6 +130,8 @@ def default_runtime(region: str | None) -> Runtime:
 
 
 class AmazonTranscribe:
+    """Speech to text with Amazon Transcribe, returning timestamped segments."""
+
     def __init__(self, config: TranscribeConfig, runtime: Runtime | None = None) -> None:
         self._config = config
         self._rt = runtime or default_runtime(config.region)

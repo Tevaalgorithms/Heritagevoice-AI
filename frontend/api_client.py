@@ -1,169 +1,74 @@
-"""Typed client for the HeritageVoice API. The token stays on the Streamlit server."""
+"""Typed client for the HeritageVoice API. The token stays on the Streamlit server.
+
+The error types and data shapes live in `frontend.api_errors` and `frontend.api_models`; they are
+re-exported here so callers can keep importing everything from `frontend.api_client`.
+"""
 
 from http import HTTPStatus
 
 import httpx
-from pydantic import BaseModel
 
+from frontend.api_errors import (
+    ApiError,
+    ApiNotConfiguredError,
+    ApiNotReadyError,
+    ApiRequestError,
+    ApiUnavailableError,
+)
+from frontend.api_models import (
+    CatalogView,
+    Health,
+    JobView,
+    MeView,
+    ModelParamsSpec,
+    ModelsOverview,
+    ModelView,
+    NewModelSpec,
+    ProbeView,
+    QueryResult,
+    Readiness,
+    RecordingSummary,
+    RecordingView,
+    ReviewSpec,
+    SegmentView,
+    UploadResult,
+    UploadSpec,
+    VersionResult,
+    VersionView,
+)
 
-class ApiError(Exception):
-    """Base class for every failure the UI knows how to explain."""
-
-
-class ApiNotConfiguredError(ApiError):
-    """No API token is configured for this environment."""
-
-
-class ApiUnavailableError(ApiError):
-    """The API could not be reached."""
-
-
-class ApiNotReadyError(ApiError):
-    """The API answered 503: running, but its integrations are not ready."""
-
-
-class ApiRequestError(ApiError):
-    def __init__(self, status_code: int, code: str | None = None) -> None:
-        super().__init__(f"The API rejected the request ({status_code})")
-        self.status_code = status_code
-        self.code = code
-
-
-class Health(BaseModel):
-    status: str
-    mode: str
-
-
-class Readiness(BaseModel):
-    ready: bool
-    checks: dict[str, str]
-
-
-class QueryResult(BaseModel):
-    status: str
-    answer: str = ""
-    request_id: str = ""
-
-
-class UploadSpec(BaseModel):
-    data: bytes
-    language: str
-    community_id: str
-    consent_id: str
-    heritage_kind: str = "story"
-
-
-class UploadResult(BaseModel):
-    recording_id: str
-    job_id: str
-
-
-class JobView(BaseModel):
-    job_id: str
-    status: str
-    stage: str | None = None
-    error: str | None = None
-    recording_id: str | None = None
-
-
-class SegmentView(BaseModel):
-    segment_id: str
-    start_s: float
-    end_s: float
-    text: str
-    speaker: str | None = None
-
-
-class VersionView(BaseModel):
-    version: int
-    status: str
-    segments: list[SegmentView]
-
-
-class RecordingView(BaseModel):
-    id: str
-    community_id: str
-    language: str
-    heritage_kind: str = "story"
-    status: str
-    duration_s: float | None = None
-    transcript: VersionView | None = None
-    translation: VersionView | None = None
-
-
-class RecordingSummary(BaseModel):
-    id: str
-    community_id: str
-    language: str
-    heritage_kind: str = "story"
-    status: str
-    duration_s: float | None = None
-
-
-class ReviewSpec(BaseModel):
-    kind: str
-    expected_version: int
-    approved: bool
-    note: str | None = None
-
-
-class VersionResult(BaseModel):
-    kind: str
-    version: int
-    status: str
-
-
-class MeView(BaseModel):
-    user_id: str
-    role: str
-    communities: list[str] = []
-
-
-class ModelParamsSpec(BaseModel):
-    provider: str
-    model: str
-    temperature: float = 0.0
-    timeout_s: float = 30.0
-    max_retries: int = 2
-    fallbacks: list[str] = []
-
-
-class CatalogView(BaseModel):
-    model_id: str
-    provider: str
-    key_name: str
-    status: str
-    key_configured: bool
-
-
-class NewModelSpec(BaseModel):
-    model_id: str
-    provider: str
-    key_name: str
-
-
-class ModelView(BaseModel):
-    role: str
-    provider: str
-    model: str
-    temperature: float
-    timeout_s: float
-    max_retries: int
-    source: str
-    fallbacks: list[str] = []
-
-
-class ModelsOverview(BaseModel):
-    catalog: list[CatalogView]
-    roles: list[ModelView]
-
-
-class ProbeView(BaseModel):
-    ok: bool
-    code: str | None = None
+__all__ = [
+    "ApiClient",
+    "ApiError",
+    "ApiNotConfiguredError",
+    "ApiNotReadyError",
+    "ApiRequestError",
+    "ApiUnavailableError",
+    "CatalogView",
+    "Health",
+    "JobView",
+    "MeView",
+    "ModelParamsSpec",
+    "ModelView",
+    "ModelsOverview",
+    "NewModelSpec",
+    "ProbeView",
+    "QueryResult",
+    "Readiness",
+    "RecordingSummary",
+    "RecordingView",
+    "ReviewSpec",
+    "SegmentView",
+    "UploadResult",
+    "UploadSpec",
+    "VersionResult",
+    "VersionView",
+]
 
 
 class ApiClient:
+    """Calls the HeritageVoice API on behalf of the signed-in user."""
+
     def __init__(
         self,
         base_url: str,

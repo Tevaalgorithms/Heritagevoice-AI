@@ -2,6 +2,7 @@
   "components": {
     "schemas": {
       "CatalogView": {
+        "description": "A catalogue model as shown to admins, with whether its key is configured.",
         "properties": {
           "key_configured": {
             "title": "Key Configured",
@@ -35,6 +36,7 @@
       },
       "CommunitiesRequest": {
         "additionalProperties": false,
+        "description": "Request body to replace a user's community memberships.",
         "properties": {
           "communities": {
             "items": {
@@ -53,6 +55,7 @@
       },
       "ConsentRequest": {
         "additionalProperties": false,
+        "description": "Request body to record a community's consent for a set of rights.",
         "properties": {
           "community_id": {
             "pattern": "^[A-Za-z0-9_-]{1,64}$",
@@ -83,6 +86,7 @@
         "type": "object"
       },
       "ConsentResponse": {
+        "description": "A consent record as the API returns it.",
         "properties": {
           "community_id": {
             "title": "Community Id",
@@ -120,6 +124,7 @@
       },
       "DecisionRequest": {
         "additionalProperties": false,
+        "description": "Request body to approve or reject a version, guarded by its version.",
         "properties": {
           "approved": {
             "title": "Approved",
@@ -161,6 +166,7 @@
       },
       "EditRequest": {
         "additionalProperties": false,
+        "description": "Request body to edit a draft, guarded by the version the editor saw.",
         "properties": {
           "edits": {
             "items": {
@@ -220,6 +226,7 @@
       },
       "InviteRequest": {
         "additionalProperties": false,
+        "description": "Request body to invite a new user with a role and communities.",
         "properties": {
           "communities": {
             "default": [],
@@ -248,6 +255,7 @@
         "type": "object"
       },
       "JobResponse": {
+        "description": "The state of a processing job, with a safe error code if it failed.",
         "properties": {
           "error": {
             "anyOf": [
@@ -302,6 +310,7 @@
         "type": "object"
       },
       "Me": {
+        "description": "The signed-in user as the server knows them: ID, role and communities.",
         "properties": {
           "communities": {
             "items": {
@@ -397,6 +406,7 @@
         "type": "string"
       },
       "ModelView": {
+        "description": "The model setting in force for one job.",
         "properties": {
           "fallbacks": {
             "items": {
@@ -451,6 +461,7 @@
         "type": "object"
       },
       "ModelsOverview": {
+        "description": "Everything the Settings page needs: the catalogue and each job's setting.",
         "properties": {
           "catalog": {
             "items": {
@@ -526,6 +537,7 @@
         "type": "object"
       },
       "Provider": {
+        "description": "The model providers the code knows how to call.",
         "enum": [
           "anthropic"
         ],
@@ -533,6 +545,7 @@
         "type": "string"
       },
       "PublishResult": {
+        "description": "The recording's status after a publish attempt.",
         "properties": {
           "recording_id": {
             "title": "Recording Id",
@@ -552,6 +565,7 @@
       },
       "QueryRequest": {
         "additionalProperties": false,
+        "description": "A user's question.",
         "properties": {
           "conversation_id": {
             "anyOf": [
@@ -578,6 +592,7 @@
         "type": "object"
       },
       "RecordingResponse": {
+        "description": "A recording with its latest transcript and translation.",
         "properties": {
           "community_id": {
             "title": "Community Id",
@@ -645,6 +660,7 @@
         "type": "object"
       },
       "RecordingSummary": {
+        "description": "A recording as listed for reviewers.",
         "properties": {
           "community_id": {
             "title": "Community Id",
@@ -691,6 +707,7 @@
       },
       "RevokeRequest": {
         "additionalProperties": false,
+        "description": "Request body to withdraw a recording, with the policy version and reason.",
         "properties": {
           "policy_version": {
             "pattern": "^[A-Za-z0-9._-]{1,32}$",
@@ -725,6 +742,7 @@
         "type": "string"
       },
       "Role": {
+        "description": "A user's role: member, reviewer or admin.",
         "enum": [
           "member",
           "reviewer",
@@ -735,6 +753,7 @@
       },
       "RoleRequest": {
         "additionalProperties": false,
+        "description": "Request body to change a user's role.",
         "properties": {
           "role": {
             "$ref": "#/components/schemas/Role"
@@ -748,6 +767,7 @@
       },
       "Segment": {
         "additionalProperties": false,
+        "description": "A timed piece of speech with its text and speaker.",
         "properties": {
           "end_s": {
             "minimum": 0.0,
@@ -791,6 +811,7 @@
       },
       "SegmentEdit": {
         "additionalProperties": false,
+        "description": "A corrected text for one segment.",
         "properties": {
           "segment_id": {
             "pattern": "^[A-Za-z0-9_-]{1,64}$",
@@ -813,6 +834,7 @@
       },
       "StatusChange": {
         "additionalProperties": false,
+        "description": "Request body to change a catalogue model's status.",
         "properties": {
           "status": {
             "$ref": "#/components/schemas/ModelStatus"
@@ -826,6 +848,7 @@
       },
       "UploadForm": {
         "additionalProperties": false,
+        "description": "The multipart form for an upload: the audio and what it contains.",
         "properties": {
           "community_id": {
             "pattern": "^[A-Za-z0-9_-]{1,64}$",
@@ -862,6 +885,7 @@
         "type": "object"
       },
       "UploadResponse": {
+        "description": "The IDs of the new recording and its processing job.",
         "properties": {
           "job_id": {
             "title": "Job Id",
@@ -920,6 +944,7 @@
         "type": "object"
       },
       "VersionResult": {
+        "description": "The new version created or decided by a review action.",
         "properties": {
           "kind": {
             "title": "Kind",
@@ -943,6 +968,7 @@
         "type": "object"
       },
       "VersionView": {
+        "description": "One draft or approved version of a transcript or translation.",
         "properties": {
           "segments": {
             "items": {
@@ -969,6 +995,7 @@
         "type": "object"
       },
       "app__api__consents__RevokeResponse": {
+        "description": "What a revocation changed: recordings revoked and jobs stopped.",
         "properties": {
           "consent_id": {
             "title": "Consent Id",
@@ -992,6 +1019,7 @@
         "type": "object"
       },
       "app__api__recordings__RevokeResponse": {
+        "description": "What revoking a recording changed.",
         "properties": {
           "jobs_stopped": {
             "title": "Jobs Stopped",

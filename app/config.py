@@ -10,6 +10,8 @@ from app.security.roles import Role
 
 
 class Settings(BaseSettings):
+    """All configuration, read from environment variables with the HERITAGEVOICE_ prefix."""
+
     model_config = SettingsConfigDict(env_prefix="HERITAGEVOICE_", env_file=".env", extra="ignore")
     environment: str = "local"
     dev_api_token: SecretStr | None = None

@@ -38,6 +38,8 @@ EDITABLE = (RecordingStatus.REVIEW, RecordingStatus.PUBLISHED)
 
 
 class ReviewError(Exception):
+    """A review action was refused; carries a safe code."""
+
     def __init__(self, code: str, status_code: int) -> None:
         super().__init__(code)
         self.code = code
@@ -58,6 +60,8 @@ def _transcript_not_approved() -> ReviewError:
 
 @dataclass(frozen=True)
 class EditInput:
+    """The inputs for editing a draft."""
+
     kind: Subject
     expected_version: int
     edits: dict[str, str]
@@ -66,6 +70,8 @@ class EditInput:
 
 @dataclass(frozen=True)
 class DecisionInput:
+    """The inputs for approving or rejecting a version."""
+
     kind: Subject
     expected_version: int
     approved: bool

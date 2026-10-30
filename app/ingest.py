@@ -36,6 +36,8 @@ PROVIDER_STAGES = {"asr", "mt"}
 
 @dataclass(frozen=True)
 class IngestDeps:
+    """What the ingestion job needs: sessions, speech-to-text and the translator."""
+
     sessions: SessionFactory
     transcriber: Transcriber
     translator: Translator | None = None

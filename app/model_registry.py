@@ -51,6 +51,8 @@ class ChainLink:
 
 
 class ModelRegistry:
+    """Decides which models serve a job, reading settings and the catalogue with a short cache."""
+
     def __init__(
         self,
         sessions: SessionFactory,

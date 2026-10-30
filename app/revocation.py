@@ -19,6 +19,8 @@ CLEANUP = (UNINDEX_KIND,)  # never cancel the jobs that remove content from the 
 
 @dataclass(frozen=True)
 class Revocation:
+    """The outcome of withdrawing consent: recordings revoked and jobs stopped."""
+
     recordings: int
     jobs_stopped: int
 

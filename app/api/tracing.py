@@ -27,6 +27,8 @@ def langsmith_metadata() -> dict[str, str]:
 
 
 class TraceIdFilter(logging.Filter):
+    """Adds the current request's trace ID to every log line."""
+
     def filter(self, record: logging.LogRecord) -> bool:
         record.trace_id = current_trace_id()
         return True

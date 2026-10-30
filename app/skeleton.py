@@ -40,6 +40,8 @@ def graph_view(item: Evidence) -> Evidence:
 
 
 class Skeleton:
+    """The walking skeleton: upload, publish, revoke and ask, using only in-memory fakes."""
+
     def __init__(self, transcriber: Transcriber | None = None) -> None:
         self.vector = FakeVectorStore()
         self.graph = FakeGraphStore()
