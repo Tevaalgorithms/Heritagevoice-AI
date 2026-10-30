@@ -1,5 +1,6 @@
 # Terraform from CI. Pull requests get a read-only plan; applying is a manual run of this workflow
-# on main, approved in the `infra` environment. The CI role can manage only heritagevoice-*
+# on main, confirmed by typing the stack name (the free GitHub plan has no required reviewers
+# for private repositories). The CI role can manage only heritagevoice-*
 # resources, and the github-oidc stack (which defines CI's own permissions) is applied by hand.
 #
 # Setup (docs/runbooks/deploy-single-instance.md): repository variables AWS_REGION,
@@ -18,6 +19,9 @@ on:
         required: true
         type: choice
         options: [cognito, single-instance]
+      confirm:
+        description: Type the stack name again to confirm the apply
+        required: true
 
 concurrency:
   group: infra
@@ -90,9 +94,11 @@ jobs:
         run: terraform -chdir=infra/${{ matrix.stack }} plan -input=false -lock=false -no-color
 
   apply:
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    if: >
+      github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' &&
+      inputs.confirm == inputs.stack
     runs-on: ubuntu-latest
-    environment: infra # requires approval from the reviewers set on the environment
+    environment: infra
     permissions:
       id-token: write
       contents: read
