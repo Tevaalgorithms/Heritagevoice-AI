@@ -38,7 +38,6 @@ input, textarea, [data-baseweb="select"] > div { border-radius: 10px !important;
 .hv-sub { color: #5B6577; margin: -.4rem 0 1.4rem; font-size: 1.02rem; }
 .hv-empty { text-align: center; padding: 2rem 1rem 1rem; }
 .hv-empty h3 { border: 0; }
-.hv-foot { text-align: center; color: #5B6577; font-size: .85rem; margin-top: 2.5rem; font-style: italic; }
 @media (max-width: 760px) { .hv-cards { grid-template-columns: 1fr; } }
 [data-testid="stColumn"] .stButton { display: flex; justify-content: center; }
 .hv-lead { display: block; }
@@ -50,3 +49,15 @@ input, textarea, [data-baseweb="select"] > div { border-radius: 10px !important;
 .hv-chips-title { font-size: .78rem; letter-spacing: .1em; text-transform: uppercase; color: #5B6577; margin-bottom: .6rem; }
 .hv-chip { display: inline-block; margin: .25rem .3rem; padding: .4rem 1rem; border-radius: 999px; background: #FFFDF8;
   border: 1px solid #E4D6BC; color: #14284B; font-size: .95rem; box-shadow: 0 1px 3px rgba(20,40,75,.06); }
+.hv-langs { max-width: 720px; margin: 1.4rem auto .6rem; padding: 1.2rem 1.6rem; border-radius: 16px;
+  background: linear-gradient(135deg, #14284B, #0E1D38); }
+.hv-langs-title { font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif; font-size: 1.25rem;
+  color: #FFF7E6; margin-bottom: .4rem; }
+.hv-langs-text { color: #E6DCC6 !important; margin: 0; font-size: .97rem; line-height: 1.55; }
+.hv-closing { max-width: 760px; margin: 2.6rem auto 0; padding-top: 1.4rem; border-top: 1px solid #E4D6BC; }
+.hv-closing-line { font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif; font-size: 1.2rem;
+  line-height: 1.55; color: #14284B; font-style: italic; }
+.hv-promise { margin-top: .8rem; font-size: .78rem; letter-spacing: .12em; text-transform: uppercase; color: #B4532A; }
+.hv-supported { max-width: 820px; margin: 2.4rem auto 0; font-size: .8rem; line-height: 1.9; color: #5B6577; }
+.hv-supported-title { display: block; font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; color: #B4532A; margin-bottom: .2rem; }
+.hv-closing { margin-top: 1.4rem !important; }
