@@ -30,7 +30,7 @@ jobs:
       HERITAGEVOICE_TEST_DATABASE_URL: postgresql+psycopg://heritagevoice:ci-only-test-db@localhost:5432/heritagevoice_test
     steps:
       - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@v7
       - run: uv sync --locked
       - run: uv lock --check
       - run: uv run ruff check .
