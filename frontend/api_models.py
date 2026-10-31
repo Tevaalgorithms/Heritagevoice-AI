@@ -169,6 +169,30 @@ class MyGroupView(BaseModel):
     consents: list[ConsentChoiceView] = []
 
 
+class AssertionView(BaseModel):
+    """A relationship proposed from a recording, with the words it came from."""
+
+    id: str
+    recording_id: str
+    subject: str
+    relation: str
+    object: str
+    asserted_by: str
+    review_state: str
+    confidence: float
+    start_s: float | None = None
+    end_s: float | None = None
+    passage: str = ""
+
+
+class AssertionEditSpec(BaseModel):
+    """Corrections to a proposal; a field left as None stays as it was."""
+
+    subject: str | None = None
+    relation: str | None = None
+    object: str | None = None
+
+
 class MeView(BaseModel):
     """The signed-in user."""
 

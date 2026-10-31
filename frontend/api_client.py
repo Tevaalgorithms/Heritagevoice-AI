@@ -16,6 +16,8 @@ from frontend.api_errors import (
     ApiUnavailableError,
 )
 from frontend.api_models import (
+    AssertionEditSpec,
+    AssertionView,
     CatalogView,
     CitationView,
     ConsentView,
@@ -50,6 +52,8 @@ from frontend.api_models import (
 )
 
 __all__ = [
+    "AssertionEditSpec",
+    "AssertionView",
     "ApiClient",
     "IntegrationGroup",
     "IntegrationItem",
@@ -239,6 +243,17 @@ class ApiClient:
 
     def revoke_consent(self, consent_id: str) -> None:
         self._send("POST", f"/admin/consents/{consent_id}/revoke", auth=True)
+
+    def assertions(self, state: str) -> list[AssertionView]:
+        """Proposed relationships in one review state (admins only)."""
+        response = self._send("GET", "/v1/graph/assertions", auth=True, params={"state": state})
+        return [AssertionView.model_validate(item) for item in response.json()]
+
+    def decide_assertion(
+        self, assertion_id: str, approved: bool, edit: AssertionEditSpec | None = None
+    ) -> None:
+        body = {"approved": approved, "edit": edit.model_dump(exclude_none=True) if edit else None}
+        self._send("POST", f"/v1/graph/assertions/{assertion_id}/decision", auth=True, json=body)
 
     def invite_user(self, email: str, role: str, communities: list[str]) -> None:
         """Invite a person by email with a role. This is the only way an admin is created."""

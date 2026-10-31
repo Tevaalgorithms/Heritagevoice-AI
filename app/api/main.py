@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 
 from app.api.admin import router as admin_router
 from app.api.consents import router as consents_router
+from app.api.graph_review import router as graph_review_router
 from app.api.groups import mine_router as my_groups_router
 from app.api.groups import router as groups_router
 from app.api.integrations import router as integrations_router
@@ -36,6 +37,7 @@ def validation_error(request: Request, error: RequestValidationError) -> JSONRes
 app.include_router(admin_router)
 app.include_router(consents_router)
 app.include_router(groups_router)
+app.include_router(graph_review_router)
 app.include_router(media_router)
 app.include_router(my_groups_router)
 app.include_router(integrations_router)

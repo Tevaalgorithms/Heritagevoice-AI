@@ -94,6 +94,15 @@ class GraphAssertionRepository:
         self._session.flush()
         return True
 
+    def revise(self, assertion_id: str, subject: str, relation: Relation, object_: str) -> bool:
+        """Correct the words of an assertion in place (its ID stays, so a re-run adds no copy)."""
+        row = self._session.get(GraphAssertionRow, assertion_id)
+        if row is None:
+            return False
+        row.subject, row.relation, row.object = subject, relation.value, object_
+        self._session.flush()
+        return True
+
     def recording_ids_with_approved(self) -> list[str]:
         query = (
             select(GraphAssertionRow.recording_id)

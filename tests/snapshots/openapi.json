@@ -22,6 +22,126 @@
         "title": "ApproveRequest",
         "type": "object"
       },
+      "AssertionEdit": {
+        "additionalProperties": false,
+        "description": "Corrections to the words of a proposal. Anything left out stays as it was.",
+        "properties": {
+          "object": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Object"
+          },
+          "relation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Relation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "subject": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject"
+          }
+        },
+        "title": "AssertionEdit",
+        "type": "object"
+      },
+      "AssertionView": {
+        "description": "A proposed relationship with the words it came from, so a reviewer can check it.",
+        "properties": {
+          "asserted_by": {
+            "title": "Asserted By",
+            "type": "string"
+          },
+          "confidence": {
+            "title": "Confidence",
+            "type": "number"
+          },
+          "end_s": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End S"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "object": {
+            "title": "Object",
+            "type": "string"
+          },
+          "passage": {
+            "title": "Passage",
+            "type": "string"
+          },
+          "recording_id": {
+            "title": "Recording Id",
+            "type": "string"
+          },
+          "relation": {
+            "$ref": "#/components/schemas/Relation"
+          },
+          "review_state": {
+            "$ref": "#/components/schemas/ReviewState"
+          },
+          "start_s": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start S"
+          },
+          "subject": {
+            "title": "Subject",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "recording_id",
+          "subject",
+          "relation",
+          "object",
+          "asserted_by",
+          "review_state",
+          "confidence",
+          "start_s",
+          "end_s",
+          "passage"
+        ],
+        "title": "AssertionView",
+        "type": "object"
+      },
       "CatalogView": {
         "description": "A catalogue model as shown to admins, with whether its key is configured.",
         "properties": {
@@ -216,46 +336,22 @@
         "title": "ConsentResponse",
         "type": "object"
       },
-      "DecisionRequest": {
-        "additionalProperties": false,
-        "description": "Request body to approve or reject a version, guarded by its version.",
+      "DecisionResult": {
+        "description": "The new state of the proposal.",
         "properties": {
-          "approved": {
-            "title": "Approved",
-            "type": "boolean"
-          },
-          "expected_version": {
-            "minimum": 1.0,
-            "title": "Expected Version",
-            "type": "integer"
-          },
-          "kind": {
-            "enum": [
-              "transcript",
-              "translation"
-            ],
-            "title": "Kind",
+          "id": {
+            "title": "Id",
             "type": "string"
           },
-          "note": {
-            "anyOf": [
-              {
-                "maxLength": 500,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Note"
+          "review_state": {
+            "$ref": "#/components/schemas/ReviewState"
           }
         },
         "required": [
-          "kind",
-          "expected_version",
-          "approved"
+          "id",
+          "review_state"
         ],
-        "title": "DecisionRequest",
+        "title": "DecisionResult",
         "type": "object"
       },
       "EditRequest": {
@@ -1151,6 +1247,29 @@
         "title": "RecordingSummary",
         "type": "object"
       },
+      "Relation": {
+        "description": "The kinds of relationship the knowledge graph can record.",
+        "enum": [
+          "SPOKE_IN",
+          "MENTIONS",
+          "DESCRIBES",
+          "OCCURRED_AT",
+          "RELATED_TO",
+          "SUPPORTED_BY"
+        ],
+        "title": "Relation",
+        "type": "string"
+      },
+      "ReviewState": {
+        "description": "Whether a graph assertion is pending, approved or rejected.",
+        "enum": [
+          "pending",
+          "approved",
+          "rejected"
+        ],
+        "title": "ReviewState",
+        "type": "string"
+      },
       "RevokeRequest": {
         "additionalProperties": false,
         "description": "Request body to withdraw a recording, with the policy version and reason.",
@@ -1535,6 +1654,31 @@
         "title": "RevokeResponse",
         "type": "object"
       },
+      "app__api__graph_review__DecisionRequest": {
+        "additionalProperties": false,
+        "description": "Approve or reject a proposal, optionally correcting it first.",
+        "properties": {
+          "approved": {
+            "title": "Approved",
+            "type": "boolean"
+          },
+          "edit": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AssertionEdit"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "approved"
+        ],
+        "title": "DecisionRequest",
+        "type": "object"
+      },
       "app__api__recordings__RevokeResponse": {
         "description": "What revoking a recording changed.",
         "properties": {
@@ -1557,6 +1701,48 @@
           "jobs_stopped"
         ],
         "title": "RevokeResponse",
+        "type": "object"
+      },
+      "app__api__review__DecisionRequest": {
+        "additionalProperties": false,
+        "description": "Request body to approve or reject a version, guarded by its version.",
+        "properties": {
+          "approved": {
+            "title": "Approved",
+            "type": "boolean"
+          },
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "kind": {
+            "enum": [
+              "transcript",
+              "translation"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "required": [
+          "kind",
+          "expected_version",
+          "approved"
+        ],
+        "title": "DecisionRequest",
         "type": "object"
       }
     },
@@ -2682,6 +2868,115 @@
         "summary": "Ready"
       }
     },
+    "/v1/graph/assertions": {
+      "get": {
+        "operationId": "list_assertions_v1_graph_assertions_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "state",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ReviewState",
+              "default": "pending"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AssertionView"
+                  },
+                  "title": "Response List Assertions V1 Graph Assertions Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Assertions",
+        "tags": [
+          "graph"
+        ]
+      }
+    },
+    "/v1/graph/assertions/{assertion_id}/decision": {
+      "post": {
+        "operationId": "decide_assertion_v1_graph_assertions__assertion_id__decision_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "assertion_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "title": "Assertion Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/app__api__graph_review__DecisionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Decide Assertion",
+        "tags": [
+          "graph"
+        ]
+      }
+    },
     "/v1/groups/mine": {
       "get": {
         "operationId": "my_groups_v1_groups_mine_get",
@@ -3354,7 +3649,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DecisionRequest"
+                "$ref": "#/components/schemas/app__api__review__DecisionRequest"
               }
             }
           },

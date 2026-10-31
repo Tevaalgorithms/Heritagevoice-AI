@@ -88,7 +88,7 @@ def _error(error: Exception) -> HTTPException:
     return HTTPException(status_code=403, detail={"code": "consent_denied"})
 
 
-def _allowed_recording(
+def allowed_recording(
     session: Session, principal: Principal, recording_id: str, action: Action
 ) -> Recording:
     recording = viewable(session, principal, recording_id)
@@ -134,7 +134,7 @@ def edit_recording_draft(
     edits = {e.segment_id: e.text for e in body.edits}
     request = EditInput(Subject(body.kind), body.expected_version, edits, principal.user_id)
     with factory() as session:
-        recording = _allowed_recording(session, principal, recording_id, Action.DRAFT_EDIT)
+        recording = allowed_recording(session, principal, recording_id, Action.DRAFT_EDIT)
         try:
             saved = edit_draft(session, recording, request)
         except ReviewError as error:
@@ -151,7 +151,7 @@ def review_recording(
 ) -> VersionResult:
     request = DecisionInput(Subject(body.kind), body.expected_version, body.approved, body.note)
     with factory() as session:
-        recording = _allowed_recording(session, principal, recording_id, Action.REVIEW_APPROVE)
+        recording = allowed_recording(session, principal, recording_id, Action.REVIEW_APPROVE)
         try:
             saved = decide(session, recording, request, principal.user_id)
         except ReviewError as error:
@@ -164,7 +164,7 @@ def publish_recording_endpoint(
     recording_id: Annotated[str, PathId], principal: Principal_, factory: Factory
 ) -> PublishResult:
     with factory() as session:
-        recording = _allowed_recording(session, principal, recording_id, Action.REVIEW_APPROVE)
+        recording = allowed_recording(session, principal, recording_id, Action.REVIEW_APPROVE)
         try:
             status = publish(session, recording)
         except (ReviewError, ConsentDeniedError) as error:
@@ -195,7 +195,7 @@ def set_visibility_endpoint(
 ) -> VisibilityResult:
     """Admin only. Public needs the community's public-sharing consent; the change is audited."""
     with factory() as session:
-        recording = _allowed_recording(session, principal, recording_id, Action.VISIBILITY_MANAGE)
+        recording = allowed_recording(session, principal, recording_id, Action.VISIBILITY_MANAGE)
         try:
             change_visibility(session, recording, body.visibility)
         except ConsentDeniedError as error:

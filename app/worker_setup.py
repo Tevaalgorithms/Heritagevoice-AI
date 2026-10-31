@@ -15,6 +15,7 @@ from app.config import Settings
 from app.db.session import session_scope
 from app.fakes import FakeTranscriber
 from app.graph_extraction import EXTRACT_KIND, ExtractDeps, extract_recording
+from app.graph_projection import PROJECT_KIND, project_recording
 from app.graph_setup import RuntimeGraphProjection
 from app.indexing import INDEX_KIND, UNINDEX_KIND, IndexDeps, index_recording, unindex_recording
 from app.ingest import IngestDeps, ingest_handler
@@ -82,4 +83,5 @@ def build_handlers(settings: Settings, engine: Engine) -> Mapping[str, Handler]:
         **_graph_handlers(settings, engine),
         INDEX_KIND: partial(index_recording, deps=deps),
         UNINDEX_KIND: partial(unindex_recording, deps=deps),
+        PROJECT_KIND: partial(project_recording, deps=deps),
     }
