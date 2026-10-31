@@ -29,7 +29,7 @@ jobs:
     env:
       HERITAGEVOICE_TEST_DATABASE_URL: postgresql+psycopg://heritagevoice:ci-only-test-db@localhost:5432/heritagevoice_test
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v6
       - run: uv sync --locked
       - run: uv lock --check
@@ -47,7 +47,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with: { fetch-depth: 0 }
       # Scans the whole history every time; require this check in branch protection.
       - run: docker run --rm -v "$PWD":/repo zricethezav/gitleaks:v8.24.3 detect --source /repo --config /repo/.gitleaks.toml --redact --no-banner
@@ -57,7 +57,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Build the image
         run: docker build -t heritagevoice:ci .
       - name: Scan for fixable high and critical vulnerabilities
@@ -80,7 +80,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.9.8
@@ -97,6 +97,6 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Lint the workflow files
         run: docker run --rm -v "$PWD":/repo -w /repo rhysd/actionlint:1.7.4 -color=false
