@@ -64,7 +64,7 @@ def _stop_after_transcription(state: PreservationState) -> str:
 def build_preservation_graph(
     transcriber: Transcriber, translator: Translator | None = None
 ) -> CompiledStateGraph[PreservationState]:
-    """Without a translator the graph stops after the draft transcript (translation: segment 04)."""
+    """Without a translator the graph stops after the draft transcript."""
     builder = StateGraph(PreservationState)
     builder.add_node("transcribe", _guarded(partial(transcribe, transcriber=transcriber), "asr"))
     builder.add_edge(START, "transcribe")

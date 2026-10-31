@@ -1,6 +1,6 @@
 """Review page: compare transcript and translation, edit, approve or reject, then publish.
 
-Playing the audio next to each segment arrives with segment 10 (media access).
+Playing the audio next to each segment is not available on this page yet.
 """
 
 import streamlit as st
@@ -82,7 +82,7 @@ def _review_recording(client: ApiClient, recording_id: str) -> None:
     except ApiError as error:
         st.error(message_for(error))
         return
-    st.caption("Audio playback next to each segment arrives with segment 10.")
+    st.caption("Audio playback next to each segment is not available on this page yet.")
     left, right = st.columns(2)
     with left:
         _version_panel(client, recording, "transcript")

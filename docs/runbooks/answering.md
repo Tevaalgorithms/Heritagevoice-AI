@@ -39,14 +39,15 @@ labels, uploader or storage path. `warnings` lists degraded steps, for example
 
 ## Models
 
-Three jobs, each with its own primary and fall-backs on the Settings page: `supervisor`, `verifier`
-and `answer` (see `models.md`). Until a key is configured every model call fails safely, so
+Each job has its own primary model and fall-backs on the Settings page: `supervisor` (also used to
+rewrite follow-up questions), `verifier`, `answer` and `graph` (see `models.md`). Until a key is configured every model call fails safely, so
 questions answer "not enough" or fall back as above.
 
-## Not done yet
+## Limits
 
-- Knowledge graph search (segments 07 and 08), so relationship questions use text search.
-- Parallel text and graph search (the graph search is a stub), conversation memory and a saved
-  conversation (task 9.8; `conversation_id` is only echoed back), a response-language choice.
-- None of this has run against a real model. The prompts and the checks around them are tested with
-  fake models; answer quality needs real runs on your recordings.
+- Text and graph search run one after the other, not in parallel.
+- Conversation memory is stateless: the page sends the last few exchanges and a small step rewrites
+  a follow-up into a standalone question. Nothing is stored on the server, and `conversation_id` is
+  only echoed back.
+- The prompts and the checks around them are tested with fake models; answer quality needs real
+  runs on your own recordings.

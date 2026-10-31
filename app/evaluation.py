@@ -1,4 +1,4 @@
-"""Measure how well an embedding model retrieves the expected sources (task 5.2 bake-off).
+"""Measure how well an embedding model retrieves the expected sources (the embedding bake-off).
 
 Each segment is indexed in its own language and, when present, its English translation, so a
 question in either language can find it. A question is a hit when any expected `recording:segment`

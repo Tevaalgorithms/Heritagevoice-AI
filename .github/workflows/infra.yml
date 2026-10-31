@@ -46,7 +46,10 @@ env:
 jobs:
   plan:
     # Skipped until the one-time bootstrap has created the plan role and set its variable.
-    if: github.event_name == 'pull_request' && vars.AWS_TF_PLAN_ROLE_ARN != ''
+    # Never for pull requests from forks: they must not be able to ask for cloud credentials.
+    if: >
+      github.event_name == 'pull_request' && vars.AWS_TF_PLAN_ROLE_ARN != '' &&
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     permissions:
       id-token: write

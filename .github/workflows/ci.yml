@@ -1,5 +1,14 @@
 name: checks
-on: [push, pull_request]
+# Pull requests run once; pushes only run on main (which deploys) and on release tags.
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+permissions:
+  contents: read
+
 jobs:
   checks:
     runs-on: ubuntu-latest

@@ -13,23 +13,21 @@ current prices before relying on this.
 > daily disk snapshots, not point-in-time recovery. Move to a managed setup (RDS, load balancer,
 > containers) before real community recordings go in.
 
-Status: the Terraform validates and the container stack was tested locally, but **none of this
-has been applied to a real AWS account yet**. Expect to fix small things on the first run and
-record them here.
+Status: this profile has been applied and runs a live site. Names below (`example.org`, `<owner>/<repo>`,
+`<account>`) are placeholders for your own values.
 
 ## What you need
 
 - An AWS account with MFA, the AWS CLI configured, and Terraform 1.6 or newer.
-- A domain you control. This guide uses `heritagevoice.tevaalgorithms.com`, a subdomain of an
-  existing Route 53 zone, so the main site is untouched; Terraform adds one `A` record only.
+- A domain you control. This guide uses `heritagevoice.example.org`, a subdomain of an existing
+  Route 53 zone, so the main site is untouched; Terraform adds one `A` record only.
 - Check the zone has no `CAA` record that blocks Let's Encrypt (`letsencrypt.org`).
 - This repository's URL (it must be reachable by the instance: public, or add a deploy key).
 
 ## Everything runs through CI/CD
 
-Nothing is created or deployed from a laptop, except the one-time bootstrap below. The repository
-is private, so workflow logs are visible only to people with access; secrets are still never
-printed or passed through Terraform.
+Nothing is created or deployed from a laptop, except the one-time bootstrap below. Secrets are never
+printed or passed through Terraform, and workflow logs never contain them.
 
 | Workflow | What it does | Confirmation |
 | --- | --- | --- |
@@ -40,39 +38,49 @@ printed or passed through Terraform.
 ## One-time bootstrap (by a person, because it defines what CI may do)
 
 1. **State bucket**: a private, versioned, encrypted S3 bucket named `heritagevoice-tfstate-<account>`
-   (it already exists in this account). Never put the account ID in Git.
+   (create it once per account). Never put the account ID in Git.
 2. **CI roles** (`infra/github-oidc`):
 
    ```sh
    cd infra/github-oidc
    terraform init -backend-config="bucket=<state bucket>" -backend-config="region=us-west-2"
    terraform apply -var region=us-west-2 -var environment=prod \
-     -var github_repo=Tevaalgorithms/Heritagevoice-AI -var instance_id=<see below> \
+     -var github_repo=<owner>/<repo> -var instance_id=<see below> \
      -var releases_bucket=heritagevoice-prod-releases-<account> -var state_bucket=<state bucket> \
      -var create_oidc_provider=false \
-     -var github_subject_prefix="$(gh api repos/Tevaalgorithms/Heritagevoice-AI/actions/oidc/customization/sub --jq .sub_claim_prefix)"
+     -var github_subject_prefix="$(gh api repos/<owner>/<repo>/actions/oidc/customization/sub --jq .sub_claim_prefix)"
    # create_oidc_provider=false: the account already has the GitHub OIDC provider
    ```
 
    `instance_id` does not exist before the first `infra` run. Apply this stack twice: first with
    a placeholder such as `i-00000000000000000`, then again with the real ID after step 4.
 3. **GitHub settings**
-   - Environment `infra`: deployments from `main` only.
+   - Environment `infra`: deployments from `main` only, **required reviewers** (see below).
      Variable `AWS_TF_APPLY_ROLE_ARN` = output `terraform_apply_role_arn`.
-   - Environment `prod`: `main` and `v*` tags only. Variables
+   - Environment `prod`: `main` and `v*` tags only, **required reviewers** (see below). Variables
      `AWS_DEPLOY_ROLE_ARN`, `AWS_REGION`, `INSTANCE_ID`, `SITE_DOMAIN`, `RELEASES_BUCKET`.
    - Repository variables: `AWS_REGION`, `TF_STATE_BUCKET`, `TF_ENVIRONMENT` (`prod`),
      `SITE_DOMAIN`, `ROUTE53_ZONE_NAME`, `COGNITO_DOMAIN_PREFIX` (unique, e.g. `hv-prod-<6 hex>`),
      `TF_BUDGET_EMAIL` (empty to skip the alert), `AWS_TF_PLAN_ROLE_ARN`, and after step 4
      `COGNITO_USER_POOL_ID`, `COGNITO_APP_CLIENT_ID`.
-   - CODEOWNERS or branch protection should require review for `infra/**`.
+   - Branch protection on `main` and the `CODEOWNERS` file: see
+     [`repository-settings.md`](repository-settings.md).
 
-> **No approval gate.** Required reviewers on environments need a paid GitHub plan for private
-> repositories, and this project uses the free plan. Instead, applies and secrets
-> are manual and need a typed confirmation; every merge to `main` that passes CI deploys automatically (a pushed `v*` tag or a typed manual run also deploy), and only
-> people with write access can start one: keep the repository's collaborators to the people who
-> may change production. Read the `Plan` step of an `infra` run before relying on it; it cannot
-> stop the apply that follows. Moving to a paid plan later means adding required reviewers.
+## Approval gates
+
+Two independent gates stand between a pull request and your AWS account:
+
+1. **GitHub.** Every job that touches AWS (`deploy`, `infra` apply, `secrets`, `first-admin`,
+   `diagnose`) runs in the GitHub environment `prod` or `infra`. Give those environments
+   **required reviewers**: the job then waits, and only starts after a maintainer approves it.
+   Merging a pull request into `main` triggers the deploy, but nothing reaches AWS until the
+   approval is given.
+2. **AWS.** The CI roles (`infra/github-oidc`) trust only tokens issued to a job running in the
+   named environment (`...:environment:prod` or `...:environment:infra`). A job that never passed
+   the environment's approval cannot obtain AWS credentials, whatever the workflow file says.
+
+Applies and secrets also need a typed confirmation. Pull requests from forks never receive AWS
+credentials. See [`repository-settings.md`](repository-settings.md) for the exact settings.
 
 ## Order of the first run
 
@@ -110,8 +118,9 @@ the first two.
    ```
 
 3. Sign in at `https://<domain>`. Further users are invited through the admin API.
-4. Uploads also need a consent record for each community. There is no endpoint for that yet
-   (TODO task 2.8); until it exists, create one from a short script run the same way.
+4. Uploads need a consent: in the app, an administrator or coordinator creates a group and records
+   its consent under **Groups and consent**; contributors can also share openly and give their own
+   consent on the upload form.
 
 ## Releasing and rolling back
 
