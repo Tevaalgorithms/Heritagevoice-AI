@@ -528,9 +528,9 @@ langchain-text-splitters==1.1.3 \
     --hash=sha256:50edeb318b3be6a6308dddd7d616ab82823a9ccbea59a9c14c58a7b91df60295 \
     --hash=sha256:929b6c76f99d611a5b1d8f5591ef302909b86a436ceb3217034d24e4757868d8
     # via langchain-classic
-langgraph==1.2.17 \
-    --hash=sha256:311516e313abd5424596d6c5250507c89be2e1973cbe813061696728803b0e10 \
-    --hash=sha256:e022a9fea64631fed946557a23f3fa5ac2ff38c72dcb999f426fc77d55ccde60
+langgraph==1.2.18 \
+    --hash=sha256:4c3e4289043ed0f99625a09990a012d7b16bb576301d8616810de7db01725f9e \
+    --hash=sha256:f430f28ea7fbc129c3cf7dc31c19c33dc27d93aeebd25c6d64fd5c1bad93d27d
     # via
     #   heritagevoice-ai
     #   langchain
