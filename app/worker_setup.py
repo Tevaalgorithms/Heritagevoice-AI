@@ -6,16 +6,21 @@ from functools import partial
 
 from sqlalchemy import Engine
 
+from app.adapters.llm_runner import ModelRunner, structured_chain
 from app.adapters.llm_translator import build_translator
 from app.adapters.transcribe import AmazonTranscribe, TranscribeConfig
+from app.agents.graph_extractor import GraphExtractor, Proposals
+from app.agents.prompts.graph import GRAPH_PROMPT
 from app.config import Settings
 from app.db.session import session_scope
 from app.fakes import FakeTranscriber
+from app.graph_extraction import EXTRACT_KIND, ExtractDeps, extract_recording
 from app.graph_setup import RuntimeGraphProjection
 from app.indexing import INDEX_KIND, UNINDEX_KIND, IndexDeps, index_recording, unindex_recording
 from app.ingest import IngestDeps, ingest_handler
 from app.model_registry import ModelRegistry
 from app.models.job import Job, Outcome
+from app.models.llm import ModelRole
 from app.models.transcript import Segment
 from app.ports import Transcriber
 from app.secrets import secrets_for
@@ -61,10 +66,20 @@ def _ingest_handlers(settings: Settings, engine: Engine) -> dict[str, Handler]:
     return {INGEST_KIND: ingest_handler(deps)}
 
 
+def _graph_handlers(settings: Settings, engine: Engine) -> dict[str, Handler]:
+    registry = ModelRegistry(lambda: session_scope(engine), settings)
+    runner = ModelRunner(
+        registry, secrets_for(settings), ModelRole.GRAPH, structured_chain(GRAPH_PROMPT, Proposals)
+    )
+    deps = ExtractDeps(lambda: session_scope(engine), GraphExtractor(runner))
+    return {EXTRACT_KIND: partial(extract_recording, deps=deps)}
+
+
 def build_handlers(settings: Settings, engine: Engine) -> Mapping[str, Handler]:
     deps = index_deps(settings, engine)
     return {
         **_ingest_handlers(settings, engine),
+        **_graph_handlers(settings, engine),
         INDEX_KIND: partial(index_recording, deps=deps),
         UNINDEX_KIND: partial(unindex_recording, deps=deps),
     }

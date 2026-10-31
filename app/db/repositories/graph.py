@@ -42,6 +42,29 @@ class GraphAssertionRepository:
         row = self._session.get(GraphAssertionRow, assertion_id)
         return None if row is None else _to_assertion(row)
 
+    def replace_pending(
+        self, recording_id: str, version: int, proposed: list[GraphAssertion]
+    ) -> int:
+        """Drop pending proposals about older transcripts, then add the ones not seen before.
+
+        Approved and rejected assertions are never touched, so a decision survives a re-run.
+        """
+        self._session.execute(
+            delete(GraphAssertionRow).where(
+                GraphAssertionRow.recording_id == recording_id,
+                GraphAssertionRow.review_state == ReviewState.PENDING.value,
+                GraphAssertionRow.transcript_version != version,
+            )
+        )
+        known = set(
+            self._session.scalars(
+                select(GraphAssertionRow.id).where(GraphAssertionRow.recording_id == recording_id)
+            )
+        )
+        fresh = [a for a in proposed if a.id not in known]
+        self.add_many(fresh)
+        return len(fresh)
+
     def approved_for(self, recording_id: str) -> list[GraphAssertion]:
         query = (
             select(GraphAssertionRow)

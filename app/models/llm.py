@@ -13,6 +13,7 @@ class ModelRole(StrEnum):
     SUPERVISOR = "supervisor"
     VERIFIER = "verifier"
     ANSWER = "answer"
+    GRAPH = "graph"
 
 
 DEFAULT_KEY_NAME = "HERITAGEVOICE_LLM_API_KEY"  # the Anthropic key, kept for existing setups

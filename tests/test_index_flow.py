@@ -253,6 +253,7 @@ def test_publishing_queues_an_index_job_that_makes_the_content_searchable(engine
         publish(session, recording)
     with Session(engine) as session:
         (job,) = [j for j in _jobs(session) if j.kind == INDEX_KIND]
+        assert [j.kind for j in _jobs(session)].count("extract_graph") == 1
     assert search(engine, person(), "ஏற்றம்") == []  # not searchable until the job has run
     deps = IndexDeps(sessions(engine))
     outcome = index_recording(

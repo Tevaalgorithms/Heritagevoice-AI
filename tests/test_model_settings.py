@@ -262,7 +262,13 @@ def test_the_overview_shows_the_catalogue_with_key_status_and_the_role_defaults(
         DEFAULT_KEY_NAME,
         True,
     )
-    assert [r["role"] for r in body["roles"]] == ["translation", "supervisor", "verifier", "answer"]
+    assert [r["role"] for r in body["roles"]] == [
+        "translation",
+        "supervisor",
+        "verifier",
+        "answer",
+        "graph",
+    ]
     for row in body["roles"]:
         assert (row["source"], row["model"], row["fallbacks"]) == (
             "default",
