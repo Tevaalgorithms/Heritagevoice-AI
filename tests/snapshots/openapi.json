@@ -336,6 +336,25 @@
         "title": "ConsentResponse",
         "type": "object"
       },
+      "Decision": {
+        "additionalProperties": false,
+        "description": "What the admin decides.",
+        "properties": {
+          "action": {
+            "enum": [
+              "take_down",
+              "dismiss"
+            ],
+            "title": "Action",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "title": "Decision",
+        "type": "object"
+      },
       "DecisionResult": {
         "description": "The new state of the proposal.",
         "properties": {
@@ -1196,6 +1215,17 @@
         "title": "RecordingResponse",
         "type": "object"
       },
+      "RecordingStatus": {
+        "description": "Where a recording is in its life, from draft to published or revoked.",
+        "enum": [
+          "draft",
+          "review",
+          "published",
+          "revoked"
+        ],
+        "title": "RecordingStatus",
+        "type": "string"
+      },
       "RecordingSummary": {
         "description": "A recording as listed for reviewers.",
         "properties": {
@@ -1259,6 +1289,143 @@
         ],
         "title": "Relation",
         "type": "string"
+      },
+      "ReportReason": {
+        "description": "Why someone reported a recording.",
+        "enum": [
+          "private",
+          "harmful",
+          "health",
+          "copyright",
+          "other"
+        ],
+        "title": "ReportReason",
+        "type": "string"
+      },
+      "ReportReceipt": {
+        "description": "Confirmation that the report was received.",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "ReportReceipt",
+        "type": "object"
+      },
+      "ReportRequest": {
+        "additionalProperties": false,
+        "description": "What the reporter says: which recording, why, and an optional note.",
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/ReportReason"
+          },
+          "recording_id": {
+            "pattern": "^[A-Za-z0-9_-]{1,64}$",
+            "title": "Recording Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "recording_id",
+          "reason"
+        ],
+        "title": "ReportRequest",
+        "type": "object"
+      },
+      "ReportStatus": {
+        "description": "Where a report is: waiting for an admin, or decided.",
+        "enum": [
+          "open",
+          "taken_down",
+          "dismissed"
+        ],
+        "title": "ReportStatus",
+        "type": "string"
+      },
+      "ReportView": {
+        "description": "A report as an admin sees it, with enough of the recording to decide.",
+        "properties": {
+          "community": {
+            "title": "Community",
+            "type": "string"
+          },
+          "heritage_kind": {
+            "title": "Heritage Kind",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "opening": {
+            "title": "Opening",
+            "type": "string"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/ReportReason"
+          },
+          "recording_id": {
+            "title": "Recording Id",
+            "type": "string"
+          },
+          "recording_status": {
+            "$ref": "#/components/schemas/RecordingStatus"
+          },
+          "reporter": {
+            "title": "Reporter",
+            "type": "string"
+          },
+          "reports_for_recording": {
+            "title": "Reports For Recording",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "recording_id",
+          "reason",
+          "note",
+          "reporter",
+          "heritage_kind",
+          "language",
+          "community",
+          "recording_status",
+          "opening",
+          "reports_for_recording"
+        ],
+        "title": "ReportView",
+        "type": "object"
       },
       "ReviewState": {
         "description": "Whether a graph assertion is pending, approved or rejected.",
@@ -2868,6 +3035,119 @@
         "summary": "Ready"
       }
     },
+    "/v1/admin/reports": {
+      "get": {
+        "operationId": "list_reports_v1_admin_reports_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ReportStatus",
+              "default": "open"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ReportView"
+                  },
+                  "title": "Response List Reports V1 Admin Reports Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Reports",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/v1/admin/reports/{report_id}/decision": {
+      "post": {
+        "operationId": "decide_report_v1_admin_reports__report_id__decision_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "report_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "title": "Report Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Decision"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Decide Report V1 Admin Reports  Report Id  Decision Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Decide Report",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
     "/v1/graph/assertions": {
       "get": {
         "operationId": "list_assertions_v1_graph_assertions_get",
@@ -3293,6 +3573,47 @@
         "summary": "Public Library",
         "tags": [
           "public"
+        ]
+      }
+    },
+    "/v1/public/report": {
+      "post": {
+        "operationId": "report_as_visitor_v1_public_report_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportReceipt"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Report As Visitor",
+        "tags": [
+          "reports"
         ]
       }
     },
@@ -3803,6 +4124,52 @@
         "summary": "Set Visibility Endpoint",
         "tags": [
           "review"
+        ]
+      }
+    },
+    "/v1/reports": {
+      "post": {
+        "operationId": "report_as_member_v1_reports_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportReceipt"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Report As Member",
+        "tags": [
+          "reports"
         ]
       }
     }

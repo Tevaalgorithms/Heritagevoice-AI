@@ -18,6 +18,7 @@ from app.api.public import router as public_router
 from app.api.query import router as query_router
 from app.api.readiness import run_checks
 from app.api.recordings import router as recordings_router
+from app.api.reports import router as reports_router
 from app.api.review import router as review_router
 from app.api.tracing import install_trace_logging, trace_id_middleware
 from app.config import Settings
@@ -39,6 +40,7 @@ app.include_router(consents_router)
 app.include_router(groups_router)
 app.include_router(graph_review_router)
 app.include_router(media_router)
+app.include_router(reports_router)
 app.include_router(my_groups_router)
 app.include_router(integrations_router)
 app.include_router(library_router)

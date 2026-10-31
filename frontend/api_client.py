@@ -41,6 +41,7 @@ from frontend.api_models import (
     Readiness,
     RecordingSummary,
     RecordingView,
+    ReportView,
     ReviewSpec,
     SegmentView,
     SignupView,
@@ -82,6 +83,7 @@ __all__ = [
     "ProbeView",
     "QueryResult",
     "Readiness",
+    "ReportView",
     "RecordingSummary",
     "RecordingView",
     "ReviewSpec",
@@ -243,6 +245,23 @@ class ApiClient:
 
     def revoke_consent(self, consent_id: str) -> None:
         self._send("POST", f"/admin/consents/{consent_id}/revoke", auth=True)
+
+    def report_item(self, recording_id: str, reason: str, note: str) -> None:
+        """Say a recording should not be shared. Works with or without an account."""
+        body = {"recording_id": recording_id, "reason": reason, "note": note or None}
+        path = "/v1/reports" if self._token else "/v1/public/report"
+        self._send("POST", path, auth=bool(self._token), json=body)
+
+    def reports(self) -> list[ReportView]:
+        """Reports waiting for an admin."""
+        response = self._send("GET", "/v1/admin/reports", auth=True)
+        return [ReportView.model_validate(item) for item in response.json()]
+
+    def decide_report(self, report_id: str, take_down: bool) -> None:
+        action = "take_down" if take_down else "dismiss"
+        self._send(
+            "POST", f"/v1/admin/reports/{report_id}/decision", auth=True, json={"action": action}
+        )
 
     def assertions(self, state: str) -> list[AssertionView]:
         """Proposed relationships in one review state (admins only)."""

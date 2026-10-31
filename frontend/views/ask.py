@@ -6,6 +6,7 @@ from frontend import theme
 from frontend.api_client import ApiClient, ApiError, CitationView, QueryResult
 from frontend.format import format_time
 from frontend.messages import message_for
+from frontend.views.report import report_button
 
 NO_ANSWER = "No answer was returned."
 STATUS_NOTES = {
@@ -48,6 +49,7 @@ def _source(client: ApiClient, number: int, citation: CitationView, scope: str) 
         st.warning(notice, icon=":material/health_and_safety:")
     st.markdown(theme.passage_html(citation.passage), unsafe_allow_html=True)
     _listen(client, citation, f"listen-{scope}-{number}")
+    report_button(client, citation.recording_id, f"{scope}-{number}")
 
 
 def _sources(client: ApiClient, result: QueryResult, scope: str) -> None:

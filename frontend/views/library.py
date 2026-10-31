@@ -15,6 +15,7 @@ from frontend.api_client import ApiClient, ApiError, LibraryItem, LibraryResult,
 from frontend.format import format_time
 from frontend.kinds import KINDS, label_for
 from frontend.messages import message_for
+from frontend.views.report import report_button
 
 ANY = "Any"
 VIEWS = {"Original language": "original", "English translation": "translation"}
@@ -60,7 +61,7 @@ def _heading(item: LibraryItem) -> str:
     return f"{label_for(item.heritage_kind)} · {spoken}{source}"
 
 
-def _card(item: LibraryItem) -> None:
+def _card(client: ApiClient, item: LibraryItem) -> None:
     with st.container(border=True):
         st.markdown(f"**{_heading(item)}**")
         for notice in item.notices:
@@ -69,6 +70,7 @@ def _card(item: LibraryItem) -> None:
         span = f"{format_time(item.start_s)} to {format_time(item.end_s)}"
         shown = "English translation" if item.view == "translation" else "Original words"
         st.caption(f"{shown} · {span}")
+        report_button(client, item.recording_id, item.evidence_id)
 
 
 def _empty(spec: LibrarySpec) -> None:
@@ -80,7 +82,7 @@ def _empty(spec: LibrarySpec) -> None:
     )
 
 
-def search_and_show(fetch: Callable[[LibrarySpec], LibraryResult]) -> None:
+def search_and_show(client: ApiClient, fetch: Callable[[LibrarySpec], LibraryResult]) -> None:
     """The search form and its results. `fetch` decides who is asking: a signed-in reader or an
     open visitor, so the same page serves both and the server applies the right limits."""
     spec = _filters()
@@ -94,7 +96,7 @@ def search_and_show(fetch: Callable[[LibrarySpec], LibraryResult]) -> None:
         return
     st.caption(f"{len(items)} shown")
     for item in items:
-        _card(item)
+        _card(client, item)
 
 
 def render(client: ApiClient) -> None:
@@ -105,5 +107,5 @@ def render(client: ApiClient) -> None:
         "Choose a language, or search for what you want to find.",
         "library",
     )
-    search_and_show(client.library)
+    search_and_show(client, client.library)
     theme.footer()

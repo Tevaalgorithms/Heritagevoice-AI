@@ -175,6 +175,21 @@ class CommunityRow(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 
+class ItemReportRow(Base):
+    """A report about a recording, for an admin to decide."""
+
+    __tablename__ = "item_report"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    recording_id: Mapped[str] = mapped_column(ForeignKey("recording.id"), index=True)
+    reason: Mapped[str] = mapped_column(String(16))
+    note: Mapped[str | None] = mapped_column(String(500), default=None)
+    reporter: Mapped[str | None] = mapped_column(String(64), default=None)
+    status: Mapped[str] = mapped_column(String(16), index=True, default="open")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    resolved_by: Mapped[str | None] = mapped_column(String(64), default=None)
+
+
 class AuditLogRow(Base):
     """Who did what to whom. Never stores transcript or recording content."""
 
