@@ -12,7 +12,7 @@ from frontend.api_client import ApiClient, ApiError
 from frontend.auth import COGNITO_PROVIDER, cognito_enabled, resolve_token
 from frontend.legal import PAGES, OrganisationFacts
 from frontend.messages import message_for
-from frontend.views import ask, groups, library, people, relationships, review, upload
+from frontend.views import ask, groups, library, people, relationships, reports, review, upload
 from frontend.views import home as home_view
 from frontend.views import legal as legal_view
 from frontend.views import settings as settings_page
@@ -91,6 +91,13 @@ def _member_sections(client: ApiClient, role: str | None) -> dict[str, list[obje
                 title="Review",
                 icon=":material/fact_check:",
                 url_path="review",
+            ),
+            _page(
+                reports.render,
+                client,
+                title="Reports",
+                icon=":material/flag:",
+                url_path="reports",
             ),
             _page(
                 relationships.render,

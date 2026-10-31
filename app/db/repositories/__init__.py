@@ -12,6 +12,7 @@ from app.db.repositories.graph import GraphAssertionRepository
 from app.db.repositories.jobs import JobRepository
 from app.db.repositories.model_settings import ModelCatalogRepository, ModelSettingRepository
 from app.db.repositories.recordings import RecordingRepository
+from app.db.repositories.reports import ReportRepository
 from app.db.repositories.transcripts import (
     NewVersion,
     ReviewDecisionRepository,
@@ -32,6 +33,7 @@ __all__ = [
     "ModelSettingRepository",
     "NewVersion",
     "RecordingRepository",
+    "ReportRepository",
     "ReviewDecisionRepository",
     "TranscriptRepository",
     "UserRepository",

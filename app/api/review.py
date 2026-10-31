@@ -15,6 +15,7 @@ from app.api.auth import SessionFactory, current_principal, get_session_factory
 from app.api.recordings import PathId, viewable
 from app.api.tracing import current_trace_id
 from app.db.repositories import AuditEntry, AuditRepository, RecordingRepository
+from app.models.groups import OPEN_COMMUNITY
 from app.models.records import Recording, Subject, Visibility
 from app.review import DecisionInput, EditInput, ReviewError, decide, edit_draft, publish
 from app.security.consent import ConsentDeniedError
@@ -113,6 +114,7 @@ def list_recordings(principal: Principal_, factory: Factory) -> list[RecordingSu
             found = repository.list_all()
         else:
             found = repository.list_for(principal.communities, owner)
+            found += repository.list_owned_in(principal.user_id, OPEN_COMMUNITY)
     return [
         RecordingSummary(
             id=r.id,

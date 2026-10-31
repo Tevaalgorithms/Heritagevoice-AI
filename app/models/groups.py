@@ -6,6 +6,7 @@ from uuid import uuid4
 from pydantic import BaseModel, ConfigDict
 
 MAX_ID = 48
+OPEN_COMMUNITY = "everyone"  # open sharing: no group; reserved, no family can take this ID
 
 
 class Group(BaseModel):

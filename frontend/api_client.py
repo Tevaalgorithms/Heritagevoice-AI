@@ -30,6 +30,7 @@ from frontend.api_models import (
     LibraryItem,
     LibraryResult,
     LibrarySpec,
+    MemberView,
     MeView,
     ModelParamsSpec,
     ModelsOverview,
@@ -41,6 +42,7 @@ from frontend.api_models import (
     Readiness,
     RecordingSummary,
     RecordingView,
+    ReportView,
     ReviewSpec,
     SegmentView,
     SignupView,
@@ -75,6 +77,7 @@ __all__ = [
     "Health",
     "JobView",
     "MeView",
+    "MemberView",
     "ModelParamsSpec",
     "ModelView",
     "ModelsOverview",
@@ -82,6 +85,7 @@ __all__ = [
     "ProbeView",
     "QueryResult",
     "Readiness",
+    "ReportView",
     "RecordingSummary",
     "RecordingView",
     "ReviewSpec",
@@ -117,10 +121,20 @@ class ApiClient:
         response = self._send("GET", "/ready", accept_not_ready=True)
         return Readiness.model_validate(response.json())
 
-    def query(self, question: str) -> QueryResult:
+    def query(
+        self,
+        question: str,
+        response_language: str | None = None,
+        history: list[dict[str, str]] | None = None,
+    ) -> QueryResult:
         if not self._token:
             raise ApiNotConfiguredError("HERITAGEVOICE_DEV_API_TOKEN is not set")
-        response = self._send("POST", "/v1/query", json={"question": question}, auth=True)
+        body = {
+            "question": question,
+            "response_language": response_language,
+            "history": history or [],
+        }
+        response = self._send("POST", "/v1/query", json=body, auth=True)
         return QueryResult.model_validate(response.json())
 
     def upload_recording(self, spec: UploadSpec, idempotency_key: str) -> UploadResult:
@@ -236,6 +250,25 @@ class ApiClient:
         )
         return [ConsentView.model_validate(item) for item in response.json()]
 
+    def members(self, group_id: str) -> list[MemberView]:
+        response = self._send("GET", f"/admin/groups/{group_id}/members", auth=True)
+        return [MemberView.model_validate(item) for item in response.json()]
+
+    def add_member(self, group_id: str, email: str) -> MemberView:
+        response = self._send(
+            "POST", f"/admin/groups/{group_id}/members", auth=True, json={"email": email}
+        )
+        return MemberView.model_validate(response.json())
+
+    def remove_member(self, group_id: str, sub: str) -> None:
+        self._send("DELETE", f"/admin/groups/{group_id}/members/{sub}", auth=True)
+
+    def give_open_consent(self, playback: bool, attribution: bool) -> str:
+        """Record the contributor's own consent for open sharing; returns the consent reference."""
+        body = {"confirm": True, "playback": playback, "attribution": attribution}
+        response = self._send("POST", "/v1/open-sharing/consent", auth=True, json=body)
+        return str(response.json()["consent_id"])
+
     def create_consent(self, community_id: str, rights: list[str]) -> ConsentView:
         body = {"community_id": community_id, "rights": rights}
         response = self._send("POST", "/admin/consents", auth=True, json=body)
@@ -243,6 +276,23 @@ class ApiClient:
 
     def revoke_consent(self, consent_id: str) -> None:
         self._send("POST", f"/admin/consents/{consent_id}/revoke", auth=True)
+
+    def report_item(self, recording_id: str, reason: str, note: str) -> None:
+        """Say a recording should not be shared. Works with or without an account."""
+        body = {"recording_id": recording_id, "reason": reason, "note": note or None}
+        path = "/v1/reports" if self._token else "/v1/public/report"
+        self._send("POST", path, auth=bool(self._token), json=body)
+
+    def reports(self) -> list[ReportView]:
+        """Reports waiting for an admin."""
+        response = self._send("GET", "/v1/admin/reports", auth=True)
+        return [ReportView.model_validate(item) for item in response.json()]
+
+    def decide_report(self, report_id: str, take_down: bool) -> None:
+        action = "take_down" if take_down else "dismiss"
+        self._send(
+            "POST", f"/v1/admin/reports/{report_id}/decision", auth=True, json={"action": action}
+        )
 
     def assertions(self, state: str) -> list[AssertionView]:
         """Proposed relationships in one review state (admins only)."""

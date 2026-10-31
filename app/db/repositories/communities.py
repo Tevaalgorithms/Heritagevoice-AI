@@ -4,7 +4,7 @@ from sqlalchemy import Select, select
 from sqlalchemy.orm import Session
 
 from app.db.tables import CommunityRow
-from app.models.groups import Group, slugify
+from app.models.groups import OPEN_COMMUNITY, Group, slugify
 
 
 def _to_group(row: CommunityRow) -> Group:
@@ -36,6 +36,6 @@ class CommunityRepository:
 
     def _free_id(self, base: str) -> str:
         query = select(CommunityRow.id).where(CommunityRow.id.like(f"{base}%"))
-        taken = set(self._session.scalars(query))
+        taken = set(self._session.scalars(query)) | {OPEN_COMMUNITY}
         candidates = (base, *(f"{base}-{n}" for n in range(2, len(taken) + 3)))
         return next(c for c in candidates if c not in taken)

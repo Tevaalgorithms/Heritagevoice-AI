@@ -56,6 +56,23 @@ class CognitoIdentityProvider:
         users = (user for page in self._pages() for user in page["Users"])
         return [signup for user in users if (signup := _signup(user)) is not None]
 
+    def find_sub(self, email: str) -> str | None:
+        user = self._lookup("email", email)
+        return None if user is None else _attribute(user["Attributes"], "sub")
+
+    def email_of(self, sub: str) -> str | None:
+        user = self._lookup("sub", sub)
+        return None if user is None else _attribute(user["Attributes"], "email")
+
+    def _lookup(self, attribute: str, value: str) -> dict[str, Any] | None:
+        """One account matching `attribute = value`. The value is quoted, never concatenated raw."""
+        quoted = value.replace("\\", "\\\\").replace('"', '\\"')
+        page = self._client.list_users(
+            UserPoolId=self._pool, Filter=f'{attribute} = "{quoted}"', Limit=1
+        )
+        users = page.get("Users", [])
+        return users[0] if users else None
+
     def _pages(self) -> Iterator[dict[str, Any]]:
         token: str | None = None
         for _ in range(MAX_PAGES):

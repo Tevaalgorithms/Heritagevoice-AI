@@ -15,7 +15,7 @@ from app.db.engine import engine_from_settings
 from app.db.session import session_scope
 from app.graph.workflow import Agents
 from app.models.evidence import QueryRequest, QueryResponse
-from app.qa import answer_question
+from app.qa import Ask, answer_question
 from app.qa_setup import build_agents
 from app.security.permissions import Principal
 from app.security.roles import Action
@@ -40,6 +40,10 @@ def get_agents() -> Agents:
         raise HTTPException(status_code=503, detail={"code": "unavailable"}) from error
 
 
+def ask_from(payload: QueryRequest) -> Ask:
+    return Ask(payload.question, payload.response_language, payload.history)
+
+
 def _unavailable() -> HTTPException:
     return HTTPException(status_code=503, detail={"code": "unavailable"})
 
@@ -54,7 +58,8 @@ async def ask(
     deadline = Settings().query_deadline_s
     try:
         outcome = await asyncio.wait_for(
-            run_in_threadpool(answer_question, payload.question, principal, agents), deadline
+            run_in_threadpool(answer_question, ask_from(payload), principal, agents),
+            deadline,
         )
     except TimeoutError as error:
         raise HTTPException(status_code=504, detail={"code": "deadline"}) from error

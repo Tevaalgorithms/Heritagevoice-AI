@@ -1,9 +1,26 @@
 {
   "components": {
     "schemas": {
+      "AddMember": {
+        "additionalProperties": false,
+        "description": "The email address of an existing, approved account.",
+        "properties": {
+          "email": {
+            "maxLength": 254,
+            "pattern": "^[^@\\s\\\"\\\\]+@[^@\\s\\\"\\\\]+\\.[^@\\s\\\"\\\\]+$",
+            "title": "Email",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "title": "AddMember",
+        "type": "object"
+      },
       "ApproveRequest": {
         "additionalProperties": false,
-        "description": "Request body to approve a sign-up: the communities they may add recordings to.",
+        "description": "Request body to approve a sign-up: the groups they join. None is fine.",
         "properties": {
           "communities": {
             "items": {
@@ -11,14 +28,10 @@
               "type": "string"
             },
             "maxItems": 20,
-            "minItems": 1,
             "title": "Communities",
             "type": "array"
           }
         },
-        "required": [
-          "communities"
-        ],
         "title": "ApproveRequest",
         "type": "object"
       },
@@ -334,6 +347,25 @@
           "revoked"
         ],
         "title": "ConsentResponse",
+        "type": "object"
+      },
+      "Decision": {
+        "additionalProperties": false,
+        "description": "What the admin decides.",
+        "properties": {
+          "action": {
+            "enum": [
+              "take_down",
+              "dismiss"
+            ],
+            "title": "Action",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "title": "Decision",
         "type": "object"
       },
       "DecisionResult": {
@@ -766,6 +798,25 @@
         "title": "Me",
         "type": "object"
       },
+      "MemberView": {
+        "description": "A member of the group.",
+        "properties": {
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "sub": {
+            "title": "Sub",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sub",
+          "email"
+        ],
+        "title": "MemberView",
+        "type": "object"
+      },
       "ModelParams": {
         "additionalProperties": false,
         "description": "What an admin can set for a role: a primary model, fall-backs in order, and limits. The\nmodel names are checked against the catalogue when saved.",
@@ -993,6 +1044,51 @@
         "title": "NewValue",
         "type": "object"
       },
+      "OpenConsent": {
+        "description": "The consent that was recorded, to send with the upload.",
+        "properties": {
+          "community_id": {
+            "title": "Community Id",
+            "type": "string"
+          },
+          "consent_id": {
+            "title": "Consent Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "consent_id",
+          "community_id"
+        ],
+        "title": "OpenConsent",
+        "type": "object"
+      },
+      "OpenConsentRequest": {
+        "additionalProperties": false,
+        "description": "What the contributor agrees to. `confirm` must be true: they have the right to share.",
+        "properties": {
+          "attribution": {
+            "default": false,
+            "title": "Attribution",
+            "type": "boolean"
+          },
+          "confirm": {
+            "const": true,
+            "title": "Confirm",
+            "type": "boolean"
+          },
+          "playback": {
+            "default": true,
+            "title": "Playback",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "confirm"
+        ],
+        "title": "OpenConsentRequest",
+        "type": "object"
+      },
       "ProbeResult": {
         "description": "Outcome of the Test button: a short safe code, never provider text or the key.",
         "properties": {
@@ -1061,11 +1157,30 @@
             ],
             "title": "Conversation Id"
           },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/Turn"
+            },
+            "maxItems": 4,
+            "title": "History",
+            "type": "array"
+          },
           "question": {
             "maxLength": 8000,
             "minLength": 1,
             "title": "Question",
             "type": "string"
+          },
+          "response_language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response Language"
           }
         },
         "required": [
@@ -1196,6 +1311,17 @@
         "title": "RecordingResponse",
         "type": "object"
       },
+      "RecordingStatus": {
+        "description": "Where a recording is in its life, from draft to published or revoked.",
+        "enum": [
+          "draft",
+          "review",
+          "published",
+          "revoked"
+        ],
+        "title": "RecordingStatus",
+        "type": "string"
+      },
       "RecordingSummary": {
         "description": "A recording as listed for reviewers.",
         "properties": {
@@ -1259,6 +1385,143 @@
         ],
         "title": "Relation",
         "type": "string"
+      },
+      "ReportReason": {
+        "description": "Why someone reported a recording.",
+        "enum": [
+          "private",
+          "harmful",
+          "health",
+          "copyright",
+          "other"
+        ],
+        "title": "ReportReason",
+        "type": "string"
+      },
+      "ReportReceipt": {
+        "description": "Confirmation that the report was received.",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "ReportReceipt",
+        "type": "object"
+      },
+      "ReportRequest": {
+        "additionalProperties": false,
+        "description": "What the reporter says: which recording, why, and an optional note.",
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/ReportReason"
+          },
+          "recording_id": {
+            "pattern": "^[A-Za-z0-9_-]{1,64}$",
+            "title": "Recording Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "recording_id",
+          "reason"
+        ],
+        "title": "ReportRequest",
+        "type": "object"
+      },
+      "ReportStatus": {
+        "description": "Where a report is: waiting for an admin, or decided.",
+        "enum": [
+          "open",
+          "taken_down",
+          "dismissed"
+        ],
+        "title": "ReportStatus",
+        "type": "string"
+      },
+      "ReportView": {
+        "description": "A report as an admin sees it, with enough of the recording to decide.",
+        "properties": {
+          "community": {
+            "title": "Community",
+            "type": "string"
+          },
+          "heritage_kind": {
+            "title": "Heritage Kind",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "opening": {
+            "title": "Opening",
+            "type": "string"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/ReportReason"
+          },
+          "recording_id": {
+            "title": "Recording Id",
+            "type": "string"
+          },
+          "recording_status": {
+            "$ref": "#/components/schemas/RecordingStatus"
+          },
+          "reporter": {
+            "title": "Reporter",
+            "type": "string"
+          },
+          "reports_for_recording": {
+            "title": "Reports For Recording",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "recording_id",
+          "reason",
+          "note",
+          "reporter",
+          "heritage_kind",
+          "language",
+          "community",
+          "recording_status",
+          "opening",
+          "reports_for_recording"
+        ],
+        "title": "ReportView",
+        "type": "object"
       },
       "ReviewState": {
         "description": "Whether a graph assertion is pending, approved or rejected.",
@@ -1434,6 +1697,29 @@
           "status"
         ],
         "title": "StatusChange",
+        "type": "object"
+      },
+      "Turn": {
+        "additionalProperties": false,
+        "description": "One earlier exchange of the same conversation, as the page remembers it.",
+        "properties": {
+          "answer": {
+            "default": "",
+            "maxLength": 600,
+            "title": "Answer",
+            "type": "string"
+          },
+          "question": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Question",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question"
+        ],
+        "title": "Turn",
         "type": "object"
       },
       "UploadForm": {
@@ -2020,6 +2306,176 @@
           }
         ],
         "summary": "Create Group",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/groups/{group_id}/members": {
+      "get": {
+        "operationId": "list_members_admin_groups__group_id__members_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "group_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "title": "Group Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MemberView"
+                  },
+                  "title": "Response List Members Admin Groups  Group Id  Members Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Members",
+        "tags": [
+          "admin"
+        ]
+      },
+      "post": {
+        "operationId": "add_member_admin_groups__group_id__members_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "group_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "title": "Group Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddMember"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Add Member",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/groups/{group_id}/members/{sub}": {
+      "delete": {
+        "operationId": "remove_member_admin_groups__group_id__members__sub__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "group_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "title": "Group Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "sub",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9-]{1,64}$",
+              "title": "Sub",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Remove Member Admin Groups  Group Id  Members  Sub  Delete",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Remove Member",
         "tags": [
           "admin"
         ]
@@ -2868,6 +3324,119 @@
         "summary": "Ready"
       }
     },
+    "/v1/admin/reports": {
+      "get": {
+        "operationId": "list_reports_v1_admin_reports_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ReportStatus",
+              "default": "open"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ReportView"
+                  },
+                  "title": "Response List Reports V1 Admin Reports Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Reports",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/v1/admin/reports/{report_id}/decision": {
+      "post": {
+        "operationId": "decide_report_v1_admin_reports__report_id__decision_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "report_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "title": "Report Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Decision"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Decide Report V1 Admin Reports  Report Id  Decision Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Decide Report",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
     "/v1/graph/assertions": {
       "get": {
         "operationId": "list_assertions_v1_graph_assertions_get",
@@ -3191,6 +3760,52 @@
         ]
       }
     },
+    "/v1/open-sharing/consent": {
+      "post": {
+        "operationId": "give_consent_v1_open_sharing_consent_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenConsentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenConsent"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Give Consent",
+        "tags": [
+          "open-sharing"
+        ]
+      }
+    },
     "/v1/public/library": {
       "get": {
         "description": "Search by words when `q` is given, otherwise browse the newest public recordings.",
@@ -3293,6 +3908,47 @@
         "summary": "Public Library",
         "tags": [
           "public"
+        ]
+      }
+    },
+    "/v1/public/report": {
+      "post": {
+        "operationId": "report_as_visitor_v1_public_report_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportReceipt"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Report As Visitor",
+        "tags": [
+          "reports"
         ]
       }
     },
@@ -3803,6 +4459,52 @@
         "summary": "Set Visibility Endpoint",
         "tags": [
           "review"
+        ]
+      }
+    },
+    "/v1/reports": {
+      "post": {
+        "operationId": "report_as_member_v1_reports_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportReceipt"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Report As Member",
+        "tags": [
+          "reports"
         ]
       }
     }

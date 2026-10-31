@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 from app.api.admin import router as admin_router
 from app.api.consents import router as consents_router
 from app.api.graph_review import router as graph_review_router
+from app.api.group_members import router as group_members_router
 from app.api.groups import mine_router as my_groups_router
 from app.api.groups import router as groups_router
 from app.api.integrations import router as integrations_router
@@ -14,10 +15,12 @@ from app.api.library import router as library_router
 from app.api.me import router as me_router
 from app.api.media import router as media_router
 from app.api.model_settings import router as model_settings_router
+from app.api.open_sharing import router as open_sharing_router
 from app.api.public import router as public_router
 from app.api.query import router as query_router
 from app.api.readiness import run_checks
 from app.api.recordings import router as recordings_router
+from app.api.reports import router as reports_router
 from app.api.review import router as review_router
 from app.api.tracing import install_trace_logging, trace_id_middleware
 from app.config import Settings
@@ -37,8 +40,11 @@ def validation_error(request: Request, error: RequestValidationError) -> JSONRes
 app.include_router(admin_router)
 app.include_router(consents_router)
 app.include_router(groups_router)
+app.include_router(group_members_router)
 app.include_router(graph_review_router)
 app.include_router(media_router)
+app.include_router(open_sharing_router)
+app.include_router(reports_router)
 app.include_router(my_groups_router)
 app.include_router(integrations_router)
 app.include_router(library_router)

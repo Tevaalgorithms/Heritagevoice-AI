@@ -15,6 +15,7 @@ class WorkflowState(TypedDict, total=False):
     """What the question-answering graph carries between steps."""
 
     question: str
+    response_language: str  # a supported language code; absent = the question's language
     route: Route
     hybrid_evidence: list[Evidence]
     graph_evidence: list[Evidence]

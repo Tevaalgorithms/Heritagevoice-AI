@@ -296,9 +296,16 @@ def test_approval_never_makes_an_admin_or_reviewer(client, engine, idp):
     assert stored(engine, "new-1").role == Role.MEMBER
 
 
-@pytest.mark.parametrize(
-    "body", [{}, {"communities": []}, {"communities": ["bad id!"]}, {"communities": ["c"] * 21}]
-)
+def test_a_person_can_be_approved_with_no_group_because_open_sharing_needs_none(
+    client, engine, idp
+):
+    idp.signups = [WAITING]
+    response = client.post("/admin/signups/new-1/approve", json={}, headers=ADMIN)
+    assert response.status_code == 201
+    assert stored(engine, "new-1").communities == frozenset()
+
+
+@pytest.mark.parametrize("body", [{"communities": ["bad id!"]}, {"communities": ["c"] * 21}])
 def test_approval_needs_valid_communities(client, engine, idp, body):
     idp.signups = [WAITING]
     assert client.post("/admin/signups/new-1/approve", json=body, headers=ADMIN).status_code == 422
@@ -399,3 +406,28 @@ def test_cognito_listing_follows_pages_and_stops(cognito_stub):
     )
     assert [s.email for s in provider.list_signups()] == ["a@example.org", "b@example.org"]
     stubber.assert_no_pending_responses()
+
+
+def test_cognito_lookups_quote_the_value_and_return_the_first_match():
+    seen = {}
+
+    class Client:
+        def list_users(self, **kwargs):
+            seen.update(kwargs)
+            attributes = [{"Name": "sub", "Value": "abc"}, {"Name": "email", "Value": "a@x.org"}]
+            return {"Users": [{"Attributes": attributes}]}
+
+    provider = CognitoIdentityProvider("eu-west-2", "pool", Client())
+    assert provider.find_sub('a"b@x.org') == "abc"
+    assert seen["Filter"] == 'email = "a\\"b@x.org"'
+    assert provider.email_of("abc") == "a@x.org"
+    assert seen["Filter"] == 'sub = "abc"'
+
+
+def test_cognito_lookups_return_none_when_nobody_matches():
+    class Client:
+        def list_users(self, **kwargs):
+            return {"Users": []}
+
+    provider = CognitoIdentityProvider("eu-west-2", "pool", Client())
+    assert (provider.find_sub("a@x.org"), provider.email_of("abc")) == (None, None)

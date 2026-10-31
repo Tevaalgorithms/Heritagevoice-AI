@@ -96,6 +96,14 @@ class IdentityProvider(Protocol):
         """Self-created, email-confirmed, enabled accounts (the caller removes approved ones)."""
         ...
 
+    def find_sub(self, email: str) -> str | None:
+        """The account with this email address, if there is one."""
+        ...
+
+    def email_of(self, sub: str) -> str | None:
+        """The email address of an account, if it still exists."""
+        ...
+
 
 @runtime_checkable
 class AudioStore(Protocol):

@@ -143,6 +143,13 @@ class GroupView(BaseModel):
     name: str
 
 
+class MemberView(BaseModel):
+    """A person in a group."""
+
+    sub: str
+    email: str
+
+
 class ConsentView(BaseModel):
     """What a group has allowed, and whether it was withdrawn."""
 
@@ -167,6 +174,22 @@ class MyGroupView(BaseModel):
     id: str
     name: str
     consents: list[ConsentChoiceView] = []
+
+
+class ReportView(BaseModel):
+    """A report about a recording, as an admin sees it."""
+
+    id: str
+    recording_id: str
+    reason: str
+    note: str | None = None
+    reporter: str
+    heritage_kind: str
+    language: str
+    community: str
+    recording_status: str
+    opening: str = ""
+    reports_for_recording: int = 1
 
 
 class AssertionView(BaseModel):

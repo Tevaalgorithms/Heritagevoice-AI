@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field
 from app.config import IntegrationNotConfiguredError
 from app.errors import ProviderError
 from app.graph.state import StateUpdate, WorkflowState
+from app.languages import BY_CODE
 from app.models.evidence import Claim, Evidence
 from app.ports import Invoker
 
@@ -23,6 +24,7 @@ logger = logging.getLogger("heritagevoice.agents")
 WRITER_UNAVAILABLE = "answer_writer_unavailable"
 INSUFFICIENT = "The recordings you can read do not contain enough to answer this question."
 FALLBACK_CLAIMS = 3
+SAME_LANGUAGE = "the same language as the question"
 MARKER = re.compile(r"\[(\d+)\]")
 
 
@@ -31,6 +33,12 @@ class AnswerDraft(BaseModel):
 
     answer: Annotated[str, Field(min_length=1, max_length=4000)]
     claims_used: Annotated[list[int], Field(max_length=12)]
+
+
+def _language_name(code: str | None) -> str:
+    """The language to write in, as the model should read it. Unknown or unset: the question's."""
+    language = BY_CODE.get(code or "")
+    return f"{language.name} ({language.native_name})" if language else SAME_LANGUAGE
 
 
 def _draft(result: Any) -> AnswerDraft:
@@ -114,7 +122,8 @@ class AnswerAgent:
         return self._answer(state, claims)
 
     def _answer(self, state: WorkflowState, claims: list[Claim]) -> StateUpdate:
-        text, used, warnings = self._write(state["question"], claims)
+        language = _language_name(state.get("response_language"))
+        text, used, warnings = self._write(state["question"], claims, language)
         by_id = {item.evidence_id: item for item in state.get("evidence", [])}
         citations, by_claim = _sources(claims, used, by_id)
         answer = _renumbered(text, by_claim) + _extras(citations, state.get("conflicts", []))
@@ -126,10 +135,13 @@ class AnswerAgent:
         update.update({"warnings": warnings} if warnings else {})
         return update
 
-    def _write(self, question: str, claims: list[Claim]) -> tuple[str, list[int], list[str]]:
+    def _write(
+        self, question: str, claims: list[Claim], language: str
+    ) -> tuple[str, list[int], list[str]]:
         numbered = "\n".join(f"[{i}] {claim.text}" for i, claim in enumerate(claims, start=1))
+        inputs = {"question": question, "claims": numbered, "answer_language": language}
         try:
-            draft = _draft(self._runner.invoke({"question": question, "claims": numbered}))
+            draft = _draft(self._runner.invoke(inputs))
         except ProviderError:
             return (*_fallback(claims), [WRITER_UNAVAILABLE])
         used = _valid_used(draft, len(claims))
