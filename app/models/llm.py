@@ -26,8 +26,8 @@ class Provider(StrEnum):
 
 
 MAX_FALLBACKS = 3
-# The models present when the catalogue is first created (migration 0008). After that admins
-# manage the catalogue in the Settings page; this list only seeds it.
+# The models present when the catalogue is first created (migrations 0008 and 0010). After that
+# admins manage the catalogue in the Settings page; this list only seeds it.
 SEED_MODELS: dict[Provider, tuple[str, ...]] = {
     Provider.ANTHROPIC: (
         "claude-fable-5-1",
@@ -35,6 +35,7 @@ SEED_MODELS: dict[Provider, tuple[str, ...]] = {
         "claude-sonnet-5-5",
         "claude-haiku-5-5",
     ),
+    Provider.OPENAI: ("gpt-5.4", "gpt-5.4-mini", "gpt-5.4-nano"),
 }
 
 
