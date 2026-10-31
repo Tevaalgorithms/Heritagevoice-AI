@@ -56,7 +56,7 @@ def _catalog_rows(catalog: list[CatalogView]) -> list[dict[str, str]]:
             "Provider": entry.provider,
             "Status": entry.status,
             "Key name": entry.key_name,
-            "Key": "Configured" if entry.key_configured else "Missing",
+            "Key": "🟢 Configured" if entry.key_configured else "🔴 Missing",
         }
         for entry in catalog
     ]

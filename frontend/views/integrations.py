@@ -110,7 +110,7 @@ def _item(client: ApiClient, item: IntegrationItem) -> None:
     with st.container(border=True):
         head, status = st.columns([4, 1])
         head.markdown(f"**{item.label}**" + (" · not used yet" if item.planned else ""))
-        status.caption(_status(item))
+        status.markdown(f":green[**{_status(item)}**]" if item.configured else _status(item))
         st.caption(item.help)
         _field(client, item)
 
