@@ -14,6 +14,7 @@ from typing import Annotated, Protocol
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict, SecretStr
 
+from app.adapters.neo4j_probe import Neo4jConnection
 from app.adapters.pinecone_probe import PineconeConnection
 from app.api.admin import AdminContext, context_for
 from app.config import Settings
@@ -39,6 +40,18 @@ class PineconeCheck(Protocol):
     def check(
         self, api_key: SecretStr | None, index: str | None, dimension: int
     ) -> ProbeResult: ...
+
+
+class Neo4jCheck(Protocol):
+    """Checks a Neo4j address and login."""
+
+    def check(
+        self, uri: str | None, user: str | None, password: SecretStr | None
+    ) -> ProbeResult: ...
+
+
+def get_neo4j_check() -> Neo4jCheck:
+    return Neo4jConnection()
 
 
 def get_reader() -> ParameterStoreSecrets:
@@ -179,3 +192,14 @@ def test_pinecone(
 def _setting(reader: ParameterStoreSecrets, name: str) -> str | None:
     value = reader.get(name)
     return value.get_secret_value() if value else None
+
+
+@router.post("/neo4j/test")
+def test_neo4j(
+    ctx: Ctx,
+    d: Annotated[Deps, Depends(deps)],
+    probe: Annotated[Neo4jCheck, Depends(get_neo4j_check)],
+) -> ProbeResult:
+    """Connect with the saved address, user and password. Writes nothing."""
+    uri, user = _setting(d.reader, "NEO4J_URI"), _setting(d.reader, "NEO4J_USERNAME")
+    return probe.check(uri, user, d.reader.get("NEO4J_PASSWORD"))

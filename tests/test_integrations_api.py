@@ -8,7 +8,7 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
 from app.api.auth import current_principal, get_session_factory
-from app.api.integrations import get_pinecone_check, get_reader, get_writer
+from app.api.integrations import get_neo4j_check, get_pinecone_check, get_reader, get_writer
 from app.api.main import app
 from app.db.repositories import ModelCatalogRepository
 from app.db.session import session_scope
@@ -108,7 +108,8 @@ def test_the_overview_groups_the_services_and_marks_whats_missing(client):
     found = items(client)
     assert found["OPENAI_API_KEY"]["configured"] is False
     assert found["EMBEDDING_MODEL"]["default"] == "multilingual-e5-large"
-    assert found["NEO4J_URI"]["planned"] is True
+    assert found["NEO4J_URI"]["planned"] is False
+    assert found["LANGSMITH_API_KEY"]["planned"] is True
 
 
 def test_a_saved_secret_is_stored_encrypted_and_then_only_reported_as_configured(client, store):
@@ -258,3 +259,35 @@ def test_the_pinecone_test_falls_back_to_the_default_dimension_and_never_returns
     assert response.json() == {"ok": False, "code": "unknown_index"}
     assert "pc-key-123" not in response.text
     assert probe.seen[0][2] == 1024
+
+
+class Neo4jProbe:
+    def __init__(self, result):
+        self.result = result
+        self.seen = []
+
+    def check(self, uri, user, password):
+        self.seen.append((uri, user, password))
+        return self.result
+
+
+def test_the_neo4j_test_uses_the_saved_address_user_and_password(client):
+    put(client, "NEO4J_URI", "neo4j+s://abc.databases.neo4j.io")
+    put(client, "NEO4J_USERNAME", "neo4j")
+    put(client, "NEO4J_PASSWORD", "pw-123")
+    probe = Neo4jProbe(ProbeResult(ok=False, code="bad_credentials"))
+    app.dependency_overrides[get_neo4j_check] = lambda: probe
+    response = client.post("/admin/integrations/neo4j/test")
+    assert response.json() == {"ok": False, "code": "bad_credentials"}
+    uri, user, password = probe.seen[0]
+    assert (uri, user, password.get_secret_value()) == (
+        "neo4j+s://abc.databases.neo4j.io",
+        "neo4j",
+        "pw-123",
+    )
+    assert "pw-123" not in response.text
+
+
+def test_only_admins_can_run_the_neo4j_test(client):
+    act_as(person(Role.MEMBER))
+    assert client.post("/admin/integrations/neo4j/test").status_code == 403

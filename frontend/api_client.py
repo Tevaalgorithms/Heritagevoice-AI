@@ -267,6 +267,10 @@ class ApiClient:
         response = self._send("POST", "/admin/integrations/pinecone/test", auth=True)
         return ProbeView.model_validate(response.json())
 
+    def test_neo4j(self) -> ProbeView:
+        response = self._send("POST", "/admin/integrations/neo4j/test", auth=True)
+        return ProbeView.model_validate(response.json())
+
     def set_model_status(self, model_id: str, status: str) -> CatalogView:
         response = self._send(
             "PUT", f"/admin/models/catalog/{model_id}", auth=True, json={"status": status}

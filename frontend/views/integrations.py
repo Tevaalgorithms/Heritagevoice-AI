@@ -127,12 +127,26 @@ def _pinecone_test(client: ApiClient) -> None:
         )
 
 
+def _neo4j_test(client: ApiClient) -> None:
+    if st.button("Test the Neo4j connection", icon=":material/network_check:"):
+        try:
+            result = client.test_neo4j()
+        except ApiError as error:
+            st.error(message_for(error))
+            return
+        st.success("Neo4j answered and the login works.") if result.ok else st.error(
+            probe_message(result.code)
+        )
+
+
 def _group(client: ApiClient, group: IntegrationGroup) -> None:
     st.subheader(group.label)
     for item in group.items:
         _item(client, item)
     if group.label.startswith("Pinecone"):
         _pinecone_test(client)
+    if group.label.startswith("Neo4j"):
+        _neo4j_test(client)
 
 
 def render(client: ApiClient) -> None:

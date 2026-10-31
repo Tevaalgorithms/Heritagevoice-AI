@@ -104,24 +104,21 @@ INTEGRATIONS = (
         "Neo4j connection address",
         Kind.SETTING,
         NEO4J_GROUP,
-        "From your AuraDB instance (starts with neo4j+s://). Not used until the graph is built.",
-        planned=True,
+        "From your AuraDB instance (starts with neo4j+s://). Use the Test button after saving.",
     ),
     Integration(
         "NEO4J_USERNAME",
         "Neo4j user name",
         Kind.SETTING,
         NEO4J_GROUP,
-        "Not used until the graph is built.",
-        planned=True,
+        "From the file you downloaded when the instance was created.",
     ),
     Integration(
         "NEO4J_PASSWORD",
         "Neo4j password",
         Kind.SECRET,
         NEO4J_GROUP,
-        "Not used until the graph is built.",
-        planned=True,
+        "From the file you downloaded when the instance was created.",
     ),
 )
 BY_NAME = {item.name: item for item in INTEGRATIONS}
