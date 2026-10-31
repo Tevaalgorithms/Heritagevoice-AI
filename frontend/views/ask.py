@@ -2,6 +2,7 @@
 
 import streamlit as st
 
+from app.languages import LANGUAGES
 from frontend import theme
 from frontend.api_client import ApiClient, ApiError, CitationView, QueryResult
 from frontend.format import format_time
@@ -20,11 +21,29 @@ EXAMPLES = (
 )
 
 
-def answer_for(client: ApiClient, question: str) -> dict[str, object]:
+SAME = "The language I ask in"
+ANSWER_LANGUAGES = {
+    SAME: None,
+    **{f"{lang.name} · {lang.native_name}": lang.code for lang in LANGUAGES},
+}
+
+
+def _answer_language() -> str | None:
+    """Which language the answer should be written in; None means the question's own."""
+    label = st.selectbox(
+        "Answer in",
+        list(ANSWER_LANGUAGES),
+        key="answer-language",
+        help="The sources stay in their original words; only the written answer changes.",
+    )
+    return ANSWER_LANGUAGES[str(label)]
+
+
+def answer_for(client: ApiClient, question: str, language: str | None = None) -> dict[str, object]:
     """One assistant turn: the text, and the sources when the answer has them."""
     try:
         with st.spinner("Looking through the recordings…"):
-            result = client.query(question)
+            result = client.query(question, language)
     except ApiError as error:
         return {"role": "assistant", "content": message_for(error), "result": None}
     return {"role": "assistant", "content": result.answer or NO_ANSWER, "result": result}
@@ -78,7 +97,11 @@ def show_history(client: ApiClient) -> None:
 
 def ask(client: ApiClient, question: str) -> None:
     st.session_state.messages.append({"role": "user", "content": question, "result": None})
-    st.session_state.messages.append(answer_for(client, question))
+    st.session_state.messages.append(
+        answer_for(
+            client, question, ANSWER_LANGUAGES[st.session_state.get("answer-language", SAME)]
+        )
+    )
     st.rerun()
 
 
@@ -104,6 +127,7 @@ def render(client: ApiClient) -> None:
     if st.session_state.messages and st.button("New conversation"):
         st.session_state.messages = []
         st.rerun()
+    _answer_language()
     show_history(client)
     if not st.session_state.messages:
         suggestions(client)

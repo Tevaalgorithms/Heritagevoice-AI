@@ -2,7 +2,9 @@
 
 from enum import StrEnum
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from app.languages import BY_CODE
 
 
 class Route(StrEnum):
@@ -47,6 +49,14 @@ class QueryRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     question: str = Field(min_length=1, max_length=8000)
     conversation_id: str | None = None
+    response_language: str | None = None  # a supported language code; None = the question's own
+
+    @field_validator("response_language")
+    @classmethod
+    def _supported(cls, value: str | None) -> str | None:
+        if value is not None and value not in BY_CODE:
+            raise ValueError("unsupported language")
+        return value
 
 
 class Citation(BaseModel):

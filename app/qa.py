@@ -51,11 +51,14 @@ def _status(final: WorkflowState) -> str:
     return status if status in STATUSES else "insufficient_evidence"
 
 
-def answer_question(question: str, principal: Principal, agents: Agents) -> Outcome:
+def answer_question(
+    question: str, principal: Principal, agents: Agents, language: str | None = None
+) -> Outcome:
     """Run the graph. Authorization failures inside it raise `PermissionError`."""
-    final = cast(
-        WorkflowState, build_workflow(principal, agents=agents).invoke({"question": question})
-    )
+    start: WorkflowState = {"question": question}
+    if language:
+        start["response_language"] = language
+    final = cast(WorkflowState, build_workflow(principal, agents=agents).invoke(start))
     return Outcome(
         status=_status(final),
         answer=final.get("answer", ""),

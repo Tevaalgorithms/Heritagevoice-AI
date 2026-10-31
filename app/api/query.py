@@ -54,7 +54,10 @@ async def ask(
     deadline = Settings().query_deadline_s
     try:
         outcome = await asyncio.wait_for(
-            run_in_threadpool(answer_question, payload.question, principal, agents), deadline
+            run_in_threadpool(
+                answer_question, payload.question, principal, agents, payload.response_language
+            ),
+            deadline,
         )
     except TimeoutError as error:
         raise HTTPException(status_code=504, detail={"code": "deadline"}) from error

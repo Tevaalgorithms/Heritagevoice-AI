@@ -71,3 +71,24 @@ def test_a_failed_question_becomes_a_friendly_message_not_an_exception(monkeypat
     assert turn["role"] == "assistant"
     assert "too long" in str(turn["content"])
     assert turn["result"] is None
+
+
+def test_the_chosen_answer_language_is_sent_and_the_default_sends_none():
+    sent = []
+
+    def handler(request):
+        sent.append(request.content)
+        return httpx.Response(200, json={"status": "answered", "answer": "x", "request_id": "r"})
+
+    client_for(handler).query("Q?", "ta")
+    client_for(handler).query("Q?")
+    assert b'"response_language":"ta"' in sent[0]
+    assert b'"response_language":null' in sent[1]
+
+
+def test_every_supported_language_can_be_chosen_for_the_answer():
+    from app.languages import LANGUAGES  # noqa: PLC0415
+    from frontend.views.ask import ANSWER_LANGUAGES, SAME  # noqa: PLC0415
+
+    assert ANSWER_LANGUAGES[SAME] is None
+    assert set(ANSWER_LANGUAGES.values()) - {None} == {lang.code for lang in LANGUAGES}

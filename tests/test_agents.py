@@ -220,6 +220,21 @@ def test_the_answer_cites_sources_numbered_from_the_claims_it_used():
     assert update["status"] == "answered"
 
 
+def test_the_answer_is_written_in_the_chosen_language():
+    state = answer_state(claims(("A.", ["e1"])), [evidence("e1")], response_language="ta")
+    runner = writes("A [1].", [1])
+    AnswerAgent(runner)(state)
+    assert runner.calls[0]["answer_language"] == "Tamil (தமிழ்)"
+
+
+@pytest.mark.parametrize("extra", [{}, {"response_language": "xx"}])
+def test_without_a_known_language_the_answer_follows_the_question(extra):
+    state = answer_state(claims(("A.", ["e1"])), [evidence("e1")], **extra)
+    runner = writes("A [1].", [1])
+    AnswerAgent(runner)(state)
+    assert runner.calls[0]["answer_language"] == "the same language as the question"
+
+
 def test_the_model_cannot_cite_a_claim_it_did_not_use_or_that_does_not_exist():
     state = answer_state(claims(("A.", ["e1"]), ("B.", ["e2"])), [evidence("e1"), evidence("e2")])
     update = AnswerAgent(writes("A [1]. Not mine [2]. Fake [9].", [1]))(state)

@@ -119,10 +119,11 @@ class ApiClient:
         response = self._send("GET", "/ready", accept_not_ready=True)
         return Readiness.model_validate(response.json())
 
-    def query(self, question: str) -> QueryResult:
+    def query(self, question: str, response_language: str | None = None) -> QueryResult:
         if not self._token:
             raise ApiNotConfiguredError("HERITAGEVOICE_DEV_API_TOKEN is not set")
-        response = self._send("POST", "/v1/query", json={"question": question}, auth=True)
+        body = {"question": question, "response_language": response_language}
+        response = self._send("POST", "/v1/query", json=body, auth=True)
         return QueryResult.model_validate(response.json())
 
     def upload_recording(self, spec: UploadSpec, idempotency_key: str) -> UploadResult:
