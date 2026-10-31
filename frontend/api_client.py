@@ -18,6 +18,8 @@ from frontend.api_errors import (
 from frontend.api_models import (
     CatalogView,
     CitationView,
+    ConsentView,
+    GroupView,
     Health,
     IntegrationGroup,
     IntegrationItem,
@@ -30,6 +32,7 @@ from frontend.api_models import (
     ModelParamsSpec,
     ModelsOverview,
     ModelView,
+    MyGroupView,
     NewModelSpec,
     ProbeView,
     QueryResult,
@@ -62,6 +65,9 @@ __all__ = [
     "ApiRequestError",
     "ApiUnavailableError",
     "CatalogView",
+    "ConsentView",
+    "GroupView",
+    "MyGroupView",
     "Health",
     "JobView",
     "MeView",
@@ -200,6 +206,34 @@ class ApiClient:
 
     def decline_signup(self, sub: str) -> None:
         self._send("POST", f"/admin/signups/{sub}/decline", auth=True)
+
+    def groups(self) -> list[GroupView]:
+        """The groups an admin or coordinator manages."""
+        response = self._send("GET", "/admin/groups", auth=True)
+        return [GroupView.model_validate(item) for item in response.json()]
+
+    def create_group(self, name: str) -> GroupView:
+        response = self._send("POST", "/admin/groups", auth=True, json={"name": name})
+        return GroupView.model_validate(response.json())
+
+    def my_groups(self) -> list[MyGroupView]:
+        """The signed-in user's groups, each with the consents they can pick."""
+        response = self._send("GET", "/v1/groups/mine", auth=True)
+        return [MyGroupView.model_validate(item) for item in response.json()]
+
+    def consents(self, community_id: str) -> list[ConsentView]:
+        response = self._send(
+            "GET", "/admin/consents", auth=True, params={"community_id": community_id}
+        )
+        return [ConsentView.model_validate(item) for item in response.json()]
+
+    def create_consent(self, community_id: str, rights: list[str]) -> ConsentView:
+        body = {"community_id": community_id, "rights": rights}
+        response = self._send("POST", "/admin/consents", auth=True, json=body)
+        return ConsentView.model_validate(response.json())
+
+    def revoke_consent(self, consent_id: str) -> None:
+        self._send("POST", f"/admin/consents/{consent_id}/revoke", auth=True)
 
     def invite_user(self, email: str, role: str, communities: list[str]) -> None:
         """Invite a person by email with a role. This is the only way an admin is created."""

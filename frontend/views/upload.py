@@ -9,10 +9,11 @@ import streamlit as st
 
 from app.languages import LANGUAGES as ALL_LANGUAGES
 from frontend import theme
-from frontend.api_client import ApiClient, ApiError, RecordingView, UploadSpec
+from frontend.api_client import ApiClient, ApiError, MyGroupView, RecordingView, UploadSpec
 from frontend.format import failure_message, progress_for, segment_rows
 from frontend.kinds import BY_KEY, KINDS, REMEDY_NOTICE
 from frontend.messages import message_for
+from frontend.rights import describe
 from frontend.upload_input import idempotency_key, pick_audio
 
 AUDIO_TYPES = ["wav", "mp3", "flac", "ogg", "m4a", "mp4"]
@@ -89,8 +90,8 @@ def _record_or_upload() -> bytes | None:
 
 
 VISIBILITY_CHOICES = {
-    "Only my community": "community",
-    "All signed-in users (needs your community's public-sharing consent)": "public",
+    "Only my group": "community",
+    "All signed-in users (needs your group's public-sharing consent)": "public",
 }
 REMEDY_PUBLIC_NOTICE = "Not medically validated. Shared from the traditional notes of elders."
 PUBLIC_NOTE = (
@@ -122,6 +123,41 @@ def _choose_language() -> str:
     return LANGUAGES[label]
 
 
+def _my_groups(client: ApiClient) -> list[MyGroupView]:
+    try:
+        return client.my_groups()
+    except ApiError as error:
+        st.error(message_for(error))
+        return []
+
+
+def _choose_group(client: ApiClient) -> tuple[str, str] | None:
+    """Pick one of your groups and a consent it has recorded. None if there is nothing to pick."""
+    groups = _my_groups(client)
+    if not groups:
+        st.warning("You are not in a group yet. Ask an administrator or coordinator to add you.")
+        return None
+    group = st.selectbox(
+        "Group",
+        groups,
+        format_func=lambda g: g.name,
+        help="The family or community this recording belongs to.",
+    )
+    if not group.consents:
+        st.warning(
+            f"“{group.name}” has no consent recorded yet. Ask a coordinator or administrator "
+            "to record what the group allows (Groups and consent), then come back."
+        )
+        return None
+    consent = st.selectbox(
+        "What the group allows",
+        group.consents,
+        format_func=lambda c: f"{describe(c.rights)} (v{c.policy_version}, {c.id[:16]})",
+        help="The consent the group agreed to. It decides what may be done with the recording.",
+    )
+    return group.id, consent.id
+
+
 def render(client: ApiClient) -> None:
     """The Upload page: record or upload audio, say what it is, and send it for review."""
     theme.page_header(
@@ -134,9 +170,9 @@ def render(client: ApiClient) -> None:
     kind = _choose_kind()
     language = _choose_language()
     visibility = _choose_visibility(kind)
-    community = st.text_input("Community ID")
-    consent = st.text_input("Consent reference")
-    if st.button("Send for review", disabled=not (audio and community and consent)):
+    chosen = _choose_group(client)
+    if st.button("Send for review", disabled=not (audio and chosen)):
+        community, consent = chosen or ("", "")
         submit(
             client,
             UploadSpec(

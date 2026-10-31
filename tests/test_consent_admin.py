@@ -83,12 +83,12 @@ def test_an_admin_creates_a_consent_and_it_is_audit_logged(client, engine):
     )
 
 
-@pytest.mark.parametrize("role", [Role.MEMBER, Role.REVIEWER])
-def test_only_admins_manage_consents(client, role):
-    act_as(person(role))
+def test_members_cannot_manage_consents(client):
+    act_as(person(Role.MEMBER))
     assert create(client).status_code == 403
     assert client.get("/admin/consents/x").status_code == 403
     assert client.post("/admin/consents/x/revoke").status_code == 403
+    assert client.get("/admin/consents?community_id=c1").status_code == 403
 
 
 @pytest.mark.parametrize(

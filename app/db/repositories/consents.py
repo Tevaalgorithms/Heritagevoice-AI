@@ -1,5 +1,6 @@
 """Consent records: what a community has allowed for a recording."""
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db.tables import (
@@ -42,6 +43,15 @@ class ConsentRepository:
     def get(self, consent_id: str) -> Consent | None:
         row = self._session.get(ConsentRow, consent_id)
         return None if row is None else _to_consent(row)
+
+    def for_communities(self, community_ids: list[str]) -> list[Consent]:
+        """The consents of these groups, oldest first."""
+        query = (
+            select(ConsentRow)
+            .where(ConsentRow.community_id.in_(community_ids))
+            .order_by(ConsentRow.id)
+        )
+        return [_to_consent(row) for row in self._session.scalars(query)]
 
     def revoke(self, consent_id: str) -> bool:
         """Mark the consent revoked; False if it does not exist. Idempotent."""

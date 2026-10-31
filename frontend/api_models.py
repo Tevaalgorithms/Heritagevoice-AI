@@ -136,6 +136,39 @@ class SignupView(BaseModel):
     created: str
 
 
+class GroupView(BaseModel):
+    """A group: a family, a village, a choir. People see the name; the system uses the ID."""
+
+    id: str
+    name: str
+
+
+class ConsentView(BaseModel):
+    """What a group has allowed, and whether it was withdrawn."""
+
+    id: str
+    community_id: str
+    rights: list[str]
+    policy_version: str
+    revoked: bool
+
+
+class ConsentChoiceView(BaseModel):
+    """A consent a contributor can pick when adding a recording."""
+
+    id: str
+    policy_version: str
+    rights: list[str]
+
+
+class MyGroupView(BaseModel):
+    """A group the signed-in user belongs to, with its active consents."""
+
+    id: str
+    name: str
+    consents: list[ConsentChoiceView] = []
+
+
 class MeView(BaseModel):
     """The signed-in user."""
 

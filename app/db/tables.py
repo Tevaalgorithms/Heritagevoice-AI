@@ -164,6 +164,17 @@ class CommunityMemberRow(Base):
     community_id: Mapped[str] = mapped_column(String(64), primary_key=True)
 
 
+class CommunityRow(Base):
+    """A group of people who share heritage: an ID for the code and a friendly name for people."""
+
+    __tablename__ = "community"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    name: Mapped[str] = mapped_column(String(80))
+    created_by: Mapped[str] = mapped_column(String(64), default="system")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
 class AuditLogRow(Base):
     """Who did what to whom. Never stores transcript or recording content."""
 
