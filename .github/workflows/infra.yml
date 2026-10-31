@@ -76,7 +76,7 @@ jobs:
           fi
       - uses: actions/checkout@v4
         if: steps.ready.outputs.run == 'true'
-      - uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@v4
         if: steps.ready.outputs.run == 'true'
         with:
           terraform_version: 1.9.8
@@ -107,7 +107,7 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@v4
         with:
           terraform_version: 1.9.8
       - uses: aws-actions/configure-aws-credentials@v4
