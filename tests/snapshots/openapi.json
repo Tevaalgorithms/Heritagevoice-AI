@@ -1864,6 +1864,33 @@
         ]
       }
     },
+    "/admin/integrations/neo4j/test": {
+      "post": {
+        "description": "Connect with the saved address, user and password. Writes nothing.",
+        "operationId": "test_neo4j_admin_integrations_neo4j_test_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProbeResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Test Neo4J",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
     "/admin/integrations/pinecone/test": {
       "post": {
         "description": "Look the index up with the saved key. Writes nothing.",

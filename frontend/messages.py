@@ -60,6 +60,12 @@ PROBE_MESSAGES = {
     "no_index": "No Pinecone index name is saved yet.",
     "unknown_index": "Pinecone does not know that index name.",
     "dimension_mismatch": "The index has a different dimension than the one saved here.",
+    "no_settings": "The Neo4j address, user name or password is not saved yet.",
+    "bad_address": "The Neo4j address must start with neo4j+s:// (copy it from the instance).",
+    "bad_credentials": "Neo4j rejected the user name or password.",
+    "unreachable": (
+        "Neo4j could not be reached. Check the address and that the instance is running."
+    ),
     "no_key": "No API key is configured on the server, so the model cannot be tested.",
     "bad_key": "The provider rejected the configured API key.",
     "unknown_model": "The provider does not know this model name.",
