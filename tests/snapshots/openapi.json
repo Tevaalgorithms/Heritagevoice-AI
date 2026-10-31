@@ -1080,6 +1080,14 @@
             ],
             "title": "Conversation Id"
           },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/Turn"
+            },
+            "maxItems": 4,
+            "title": "History",
+            "type": "array"
+          },
           "question": {
             "maxLength": 8000,
             "minLength": 1,
@@ -1612,6 +1620,29 @@
           "status"
         ],
         "title": "StatusChange",
+        "type": "object"
+      },
+      "Turn": {
+        "additionalProperties": false,
+        "description": "One earlier exchange of the same conversation, as the page remembers it.",
+        "properties": {
+          "answer": {
+            "default": "",
+            "maxLength": 600,
+            "title": "Answer",
+            "type": "string"
+          },
+          "question": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Question",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question"
+        ],
+        "title": "Turn",
         "type": "object"
       },
       "UploadForm": {

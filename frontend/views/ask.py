@@ -39,11 +39,35 @@ def _answer_language() -> str | None:
     return ANSWER_LANGUAGES[str(label)]
 
 
-def answer_for(client: ApiClient, question: str, language: str | None = None) -> dict[str, object]:
+REMEMBERED_TURNS = 3
+MAX_QUESTION = 500
+MAX_ANSWER = 600
+
+
+def remembered(messages: list[dict[str, object]]) -> list[dict[str, str]]:
+    """The last few finished exchanges, shortened, so a follow-up can refer back to them."""
+    pairs = zip(messages[::2], messages[1::2], strict=False)
+    turns = [
+        {
+            "question": str(asked["content"])[:MAX_QUESTION],
+            "answer": str(reply["content"])[:MAX_ANSWER],
+        }
+        for asked, reply in pairs
+        if reply.get("result") is not None
+    ]
+    return turns[-REMEMBERED_TURNS:]
+
+
+def answer_for(
+    client: ApiClient,
+    question: str,
+    language: str | None = None,
+    history: list[dict[str, str]] | None = None,
+) -> dict[str, object]:
     """One assistant turn: the text, and the sources when the answer has them."""
     try:
         with st.spinner("Looking through the recordings…"):
-            result = client.query(question, language)
+            result = client.query(question, language, history)
     except ApiError as error:
         return {"role": "assistant", "content": message_for(error), "result": None}
     return {"role": "assistant", "content": result.answer or NO_ANSWER, "result": result}
@@ -96,12 +120,10 @@ def show_history(client: ApiClient) -> None:
 
 
 def ask(client: ApiClient, question: str) -> None:
+    earlier = remembered(st.session_state.messages)
+    language = ANSWER_LANGUAGES[st.session_state.get("answer-language", SAME)]
     st.session_state.messages.append({"role": "user", "content": question, "result": None})
-    st.session_state.messages.append(
-        answer_for(
-            client, question, ANSWER_LANGUAGES[st.session_state.get("answer-language", SAME)]
-        )
-    )
+    st.session_state.messages.append(answer_for(client, question, language, earlier))
     st.rerun()
 
 

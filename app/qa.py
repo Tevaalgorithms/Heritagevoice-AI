@@ -6,12 +6,12 @@ the recording, never access labels or storage details.
 """
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import cast
 
 from app.graph.state import WorkflowState
 from app.graph.workflow import Agents, build_workflow
-from app.models.evidence import Citation, Evidence
+from app.models.evidence import Citation, Evidence, Turn
 from app.security.permissions import Principal
 
 TIMES = re.compile(r"\?t=([0-9.]+)-([0-9.]+)$")
@@ -51,13 +51,21 @@ def _status(final: WorkflowState) -> str:
     return status if status in STATUSES else "insufficient_evidence"
 
 
-def answer_question(
-    question: str, principal: Principal, agents: Agents, language: str | None = None
-) -> Outcome:
+@dataclass(frozen=True)
+class Ask:
+    """A question with what the page remembers: the chat so far and the answer language."""
+
+    question: str
+    language: str | None = None
+    history: list[Turn] = field(default_factory=list)
+
+
+def answer_question(ask: Ask, principal: Principal, agents: Agents) -> Outcome:
     """Run the graph. Authorization failures inside it raise `PermissionError`."""
+    question = agents.rewrite(ask.question, ask.history) if agents.rewrite else ask.question
     start: WorkflowState = {"question": question}
-    if language:
-        start["response_language"] = language
+    if ask.language:
+        start["response_language"] = ask.language
     final = cast(WorkflowState, build_workflow(principal, agents=agents).invoke(start))
     return Outcome(
         status=_status(final),

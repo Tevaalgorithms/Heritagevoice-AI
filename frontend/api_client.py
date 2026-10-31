@@ -119,10 +119,19 @@ class ApiClient:
         response = self._send("GET", "/ready", accept_not_ready=True)
         return Readiness.model_validate(response.json())
 
-    def query(self, question: str, response_language: str | None = None) -> QueryResult:
+    def query(
+        self,
+        question: str,
+        response_language: str | None = None,
+        history: list[dict[str, str]] | None = None,
+    ) -> QueryResult:
         if not self._token:
             raise ApiNotConfiguredError("HERITAGEVOICE_DEV_API_TOKEN is not set")
-        body = {"question": question, "response_language": response_language}
+        body = {
+            "question": question,
+            "response_language": response_language,
+            "history": history or [],
+        }
         response = self._send("POST", "/v1/query", json=body, auth=True)
         return QueryResult.model_validate(response.json())
 
