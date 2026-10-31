@@ -29,20 +29,33 @@ def answer_for(client: ApiClient, question: str) -> dict[str, object]:
     return {"role": "assistant", "content": result.answer or NO_ANSWER, "result": result}
 
 
-def _source(number: int, citation: CitationView) -> None:
+def _listen(client: ApiClient, citation: CitationView, key: str) -> None:
+    """Play the cited moment. Fails quietly when the recording is not playable for this reader."""
+    if not st.button("Listen", icon=":material/play_circle:", key=key):
+        return
+    try:
+        audio, kind = client.recording_media(citation.recording_id)
+    except ApiError:
+        st.caption("This recording cannot be played here.")
+        return
+    st.audio(audio, format=kind, start_time=int(citation.start_s), end_time=int(citation.end_s))
+
+
+def _source(client: ApiClient, number: int, citation: CitationView, scope: str) -> None:
     span = f"{format_time(citation.start_s)} to {format_time(citation.end_s)}"
     st.markdown(f"**[{number}]** {citation.title} · {span}")
     for notice in citation.notices:
         st.warning(notice, icon=":material/health_and_safety:")
     st.markdown(theme.passage_html(citation.passage), unsafe_allow_html=True)
+    _listen(client, citation, f"listen-{scope}-{number}")
 
 
-def _sources(result: QueryResult) -> None:
+def _sources(client: ApiClient, result: QueryResult, scope: str) -> None:
     if not result.citations:
         return
     with st.expander(f"Sources ({len(result.citations)})"):
         for number, citation in enumerate(result.citations, start=1):
-            _source(number, citation)
+            _source(client, number, citation, scope)
 
 
 def _status_note(result: QueryResult) -> None:
@@ -51,14 +64,14 @@ def _status_note(result: QueryResult) -> None:
         st.info(note, icon=":material/info:")
 
 
-def show_history() -> None:
-    for message in st.session_state.messages:
+def show_history(client: ApiClient) -> None:
+    for index, message in enumerate(st.session_state.messages):
         with st.chat_message(message["role"]):
             st.markdown(theme.answer_html(message["content"]), unsafe_allow_html=True)
             result = message.get("result")
             if result is not None:
                 _status_note(result)
-                _sources(result)
+                _sources(client, result, str(index))
 
 
 def ask(client: ApiClient, question: str) -> None:
@@ -89,7 +102,7 @@ def render(client: ApiClient) -> None:
     if st.session_state.messages and st.button("New conversation"):
         st.session_state.messages = []
         st.rerun()
-    show_history()
+    show_history(client)
     if not st.session_state.messages:
         suggestions(client)
     if question := st.chat_input("Ask about the songs, stories and knowledge in this collection"):
