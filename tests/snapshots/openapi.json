@@ -120,6 +120,33 @@
         "title": "CommunitiesRequest",
         "type": "object"
       },
+      "ConsentChoice": {
+        "description": "A consent a contributor can pick: its reference and what it allows.",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "policy_version": {
+            "title": "Policy Version",
+            "type": "string"
+          },
+          "rights": {
+            "items": {
+              "$ref": "#/components/schemas/Right"
+            },
+            "title": "Rights",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "policy_version",
+          "rights"
+        ],
+        "title": "ConsentChoice",
+        "type": "object"
+      },
       "ConsentRequest": {
         "additionalProperties": false,
         "description": "Request body to record a community's consent for a set of rights.",
@@ -264,6 +291,41 @@
           "edits"
         ],
         "title": "EditRequest",
+        "type": "object"
+      },
+      "Group": {
+        "description": "A group as people see it: a friendly name and the ID the system uses.",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "Group",
+        "type": "object"
+      },
+      "GroupRequest": {
+        "description": "Request body to create a group by its friendly name.",
+        "properties": {
+          "name": {
+            "maxLength": 80,
+            "minLength": 2,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "GroupRequest",
         "type": "object"
       },
       "GroupView": {
@@ -760,6 +822,33 @@
         "title": "ModelsOverview",
         "type": "object"
       },
+      "MyGroup": {
+        "description": "A group the signed-in user belongs to, with its active consents.",
+        "properties": {
+          "consents": {
+            "items": {
+              "$ref": "#/components/schemas/ConsentChoice"
+            },
+            "title": "Consents",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "consents"
+        ],
+        "title": "MyGroup",
+        "type": "object"
+      },
       "NewModel": {
         "additionalProperties": false,
         "description": "An admin adds a model by name. The provider is picked from a fixed list, and the key is\nreferred to by its Parameter Store *name*, never by value.",
@@ -1099,7 +1188,7 @@
         "type": "string"
       },
       "Role": {
-        "description": "A user's role: member, reviewer or admin.",
+        "description": "A user's role. People see `reviewer` as Coordinator: it manages groups and consents.",
         "enum": [
           "member",
           "reviewer",
@@ -1484,6 +1573,56 @@
   "openapi": "3.1.0",
   "paths": {
     "/admin/consents": {
+      "get": {
+        "operationId": "list_consents_admin_consents_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "community_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "title": "Community Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ConsentResponse"
+                  },
+                  "title": "Response List Consents Admin Consents Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Consents",
+        "tags": [
+          "admin"
+        ]
+      },
       "post": {
         "operationId": "create_consent_admin_consents_post",
         "requestBody": {
@@ -1620,6 +1759,80 @@
           }
         ],
         "summary": "Revoke",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/groups": {
+      "get": {
+        "operationId": "list_groups_admin_groups_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Group"
+                  },
+                  "title": "Response List Groups Admin Groups Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Groups",
+        "tags": [
+          "admin"
+        ]
+      },
+      "post": {
+        "operationId": "create_group_admin_groups_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GroupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Group"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Group",
         "tags": [
           "admin"
         ]
@@ -2439,6 +2652,36 @@
           }
         },
         "summary": "Ready"
+      }
+    },
+    "/v1/groups/mine": {
+      "get": {
+        "operationId": "my_groups_v1_groups_mine_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MyGroup"
+                  },
+                  "title": "Response My Groups V1 Groups Mine Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "My Groups",
+        "tags": [
+          "groups"
+        ]
       }
     },
     "/v1/jobs/{job_id}": {

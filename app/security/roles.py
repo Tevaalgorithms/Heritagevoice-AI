@@ -4,7 +4,7 @@ from enum import IntEnum, StrEnum
 
 
 class Role(StrEnum):
-    """A user's role: member, reviewer or admin."""
+    """A user's role. People see `reviewer` as Coordinator: it manages groups and consents."""
 
     MEMBER = "member"
     REVIEWER = "reviewer"
@@ -25,6 +25,7 @@ class Action(StrEnum):
     INTEGRATION_MANAGE = "integration:manage"
     RECORDING_REVOKE = "recording:revoke"
     CONSENT_MANAGE = "consent:manage"
+    GROUP_MANAGE = "group:manage"
     MODEL_MANAGE = "model:manage"
     USER_MANAGE = "user:manage"
     INDEX_REBUILD = "index:rebuild"
@@ -50,7 +51,9 @@ ROLE_PERMISSIONS: dict[Action, frozenset[Role]] = {
     Action.VISIBILITY_MANAGE: frozenset({Role.ADMIN}),
     Action.INTEGRATION_MANAGE: frozenset({Role.ADMIN}),
     Action.RECORDING_REVOKE: frozenset({Role.ADMIN}),
-    Action.CONSENT_MANAGE: frozenset({Role.ADMIN}),
+    # Coordinators (the reviewer role) manage groups and consents, only for groups they belong to.
+    Action.CONSENT_MANAGE: frozenset({Role.REVIEWER, Role.ADMIN}),
+    Action.GROUP_MANAGE: frozenset({Role.REVIEWER, Role.ADMIN}),
     Action.MODEL_MANAGE: frozenset({Role.ADMIN}),
     Action.USER_MANAGE: frozenset({Role.ADMIN}),
     Action.INDEX_REBUILD: frozenset({Role.ADMIN}),

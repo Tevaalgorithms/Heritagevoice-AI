@@ -1,7 +1,7 @@
 """People (admin only): approve or decline new accounts, and invite people, including new admins.
 
 Anyone can create an account, but it can do nothing until an administrator approves it here and
-chooses the communities it may add recordings to. Administrators are never approved from a
+chooses the groups it may add recordings to. Administrators are never approved from a
 sign-up: the only way to make one is to invite them on the second tab.
 """
 
@@ -10,21 +10,27 @@ from html import escape
 import streamlit as st
 
 from frontend import theme
-from frontend.api_client import ApiClient, ApiError, ApiRequestError, SignupView
+from frontend.api_client import ApiClient, ApiError, ApiRequestError, GroupView, SignupView
 from frontend.messages import message_for
 
 NOT_FOUND = 404
-ROLES = {"Contributor": "member", "Administrator": "admin"}
-COMMUNITY_HELP = (
-    "Type a community ID and press Enter. Use the same ID the community's consent uses."
-)
+ROLES = {"Contributor": "member", "Coordinator": "reviewer", "Administrator": "admin"}
+GROUP_HELP = "Groups are created under Groups and consent."
 
 
-def _communities(client: ApiClient) -> list[str]:
+def _groups(client: ApiClient) -> list[GroupView]:
     try:
-        return client.me().communities
+        return client.groups()
     except ApiError:
         return []
+
+
+def _pick_groups(label: str, groups: list[GroupView], key: str) -> list[str]:
+    """Choose from existing groups by name; the IDs come back."""
+    names = {g.id: g.name for g in groups}
+    return st.multiselect(
+        label, list(names), format_func=names.__getitem__, help=GROUP_HELP, key=key
+    )
 
 
 def _failure(error: ApiError) -> str:
@@ -44,16 +50,12 @@ def _decide(action: str, client: ApiClient, sub: str, communities: list[str]) ->
         st.rerun()
 
 
-def _request_card(client: ApiClient, person: SignupView, options: list[str]) -> None:
+def _request_card(client: ApiClient, person: SignupView, options: list[GroupView]) -> None:
     with st.container(border=True):
         st.markdown(f"<b>{escape(person.email)}</b>", unsafe_allow_html=True)
         st.caption(f"Asked for an account on {person.created}. Their email has been verified.")
-        chosen = st.multiselect(
-            "Communities they may add recordings to",
-            options,
-            accept_new_options=True,
-            help=COMMUNITY_HELP,
-            key=f"communities-{person.sub}",
+        chosen = _pick_groups(
+            "Groups they may add recordings to", options, f"communities-{person.sub}"
         )
         approve, decline, _ = st.columns([1, 1, 3])
         if approve.button(
@@ -74,7 +76,7 @@ def _waiting_tab(client: ApiClient) -> None:
         st.info("Nobody is waiting. New requests appear here once the person confirms their email.")
         return
     st.caption(f"{len(people)} waiting, oldest first")
-    options = _communities(client)
+    options = _groups(client)
     for person in people:
         _request_card(client, person, options)
 
@@ -82,14 +84,13 @@ def _waiting_tab(client: ApiClient) -> None:
 def _invite_tab(client: ApiClient) -> None:
     st.caption(
         "Invite someone by email. They receive a temporary password and set their own. "
+        "A Coordinator looks after the groups they belong to and records their consents. "
         "Choose Administrator only for people who should review recordings and manage settings."
     )
     with st.form("invite", border=True):
         email = st.text_input("Email address")
         role = st.radio("Role", list(ROLES), horizontal=True)
-        communities = st.multiselect(
-            "Communities", _communities(client), accept_new_options=True, help=COMMUNITY_HELP
-        )
+        communities = _pick_groups("Groups", _groups(client), "invite-groups")
         sent = st.form_submit_button("Send invitation", type="primary")
     if sent:
         _send_invite(client, email.strip(), ROLES[role], communities)

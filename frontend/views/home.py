@@ -18,7 +18,7 @@ CREATE_LABEL = "Create an account"
 OPEN_NOTE = "Searching and reading what communities share is open to everyone."
 STEPS = (
     ("Create an account", "Choose Sign up on the next page and confirm your email."),
-    ("We approve it", "An administrator checks the request and links you to your community."),
+    ("We approve it", "An administrator checks the request and links you to your group."),
     ("Add recordings", "Sign in, record or upload, and tell us what may be shared."),
 )
 
@@ -69,7 +69,7 @@ def render_waiting() -> None:
     theme.page_header(
         "Your account is waiting for approval",
         "Thank you for signing up. An administrator reviews each new account and links it to a "
-        "community before it can add recordings.",
+        "group before it can add recordings.",
         "people",
     )
     st.markdown(

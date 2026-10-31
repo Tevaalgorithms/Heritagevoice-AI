@@ -44,6 +44,11 @@ class UserRepository:
         self._session.add_all(CommunityMemberRow(user_sub=sub, community_id=c) for c in communities)
         self._session.flush()
 
+    def add_community(self, sub: str, community: str) -> None:
+        """Join a group, keeping the ones already held."""
+        held = self._require(sub).communities
+        self.set_communities(sub, held | {community})
+
     def _row(self, sub: str) -> AppUserRow:
         row = self._session.get(AppUserRow, sub)
         if row is None:

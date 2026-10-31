@@ -12,7 +12,7 @@ from frontend.api_client import ApiClient, ApiError
 from frontend.auth import COGNITO_PROVIDER, cognito_enabled, resolve_token
 from frontend.legal import PAGES, OrganisationFacts
 from frontend.messages import message_for
-from frontend.views import ask, library, people, review, upload
+from frontend.views import ask, groups, library, people, review, upload
 from frontend.views import home as home_view
 from frontend.views import legal as legal_view
 from frontend.views import settings as settings_page
@@ -47,6 +47,16 @@ def _legal_pages(facts: OrganisationFacts) -> list[object]:
     ]
 
 
+def _groups_page(client: ApiClient) -> object:
+    return _page(
+        groups.render,
+        client,
+        title="Groups and consent",
+        icon=":material/groups:",
+        url_path="groups",
+    )
+
+
 def _member_sections(client: ApiClient, role: str | None) -> dict[str, list[object]]:
     """Everyone reads the Library and can add a recording; reviewing and settings are admin-only."""
     sections: dict[str, list[object]] = {
@@ -71,6 +81,8 @@ def _member_sections(client: ApiClient, role: str | None) -> dict[str, list[obje
             )
         ],
     }
+    if role == "reviewer":
+        sections["Administration"] = [_groups_page(client)]
     if role == "admin":
         sections["Administration"] = [
             _page(
@@ -80,6 +92,7 @@ def _member_sections(client: ApiClient, role: str | None) -> dict[str, list[obje
                 icon=":material/fact_check:",
                 url_path="review",
             ),
+            _groups_page(client),
             _page(
                 people.render, client, title="People", icon=":material/group:", url_path="people"
             ),
