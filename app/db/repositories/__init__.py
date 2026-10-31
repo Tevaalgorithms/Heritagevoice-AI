@@ -8,6 +8,7 @@ from app.db.repositories.audit import AuditEntry, AuditRepository
 from app.db.repositories.chunks import ChunkRepository
 from app.db.repositories.communities import CommunityRepository
 from app.db.repositories.consents import ConsentRepository
+from app.db.repositories.graph import GraphAssertionRepository
 from app.db.repositories.jobs import JobRepository
 from app.db.repositories.model_settings import ModelCatalogRepository, ModelSettingRepository
 from app.db.repositories.recordings import RecordingRepository
@@ -25,6 +26,7 @@ __all__ = [
     "ChunkRepository",
     "CommunityRepository",
     "ConsentRepository",
+    "GraphAssertionRepository",
     "JobRepository",
     "ModelCatalogRepository",
     "ModelSettingRepository",

@@ -6,6 +6,7 @@ import zlib
 from app.graph.state import StateUpdate, WorkflowState
 from app.graph.workflow import Agents
 from app.models.evidence import Claim, Evidence, Route
+from app.models.records import GraphAssertion, Visibility
 from app.models.transcript import Segment
 from app.models.users import Signup
 from app.ports import GraphStore, VectorStore
@@ -231,3 +232,25 @@ def _cosine(a: list[float], b: list[float]) -> float:
     dot = sum(x * y for x, y in zip(a, b, strict=True))
     norm = (sum(x * x for x in a) ** 0.5) * (sum(y * y for y in b) ** 0.5)
     return dot / norm if norm else 0.0
+
+
+class FakeGraphProjection:
+    """In-memory graph projection for tests: remembers what was written per recording."""
+
+    def __init__(self) -> None:
+        self.written: dict[str, tuple[str, Visibility, list[GraphAssertion]]] = {}
+
+    def replace_recording(
+        self,
+        recording_id: str,
+        community_id: str,
+        visibility: Visibility,
+        assertions: list[GraphAssertion],
+    ) -> None:
+        self.written[recording_id] = (community_id, visibility, assertions)
+
+    def delete_recording(self, recording_id: str) -> None:
+        self.written.pop(recording_id, None)
+
+    def recording_ids(self) -> list[str]:
+        return sorted(self.written)

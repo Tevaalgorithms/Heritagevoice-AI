@@ -139,8 +139,7 @@ def test_a_dimension_that_is_not_a_number_falls_back_to_the_default():
     )
 
 
-def test_the_fingerprint_changes_with_the_key_but_never_contains_it():
-    one = PineconeConfig("key-one", "i", "m", 1).fingerprint()
-    two = PineconeConfig("key-two", "i", "m", 1).fingerprint()
-    assert one != two
-    assert "key-one" not in str(one)
+def test_a_changed_key_makes_a_different_config_and_never_shows_in_its_repr():
+    one = PineconeConfig("key-one", "i", "m", 1)
+    assert one != PineconeConfig("key-two", "i", "m", 1)
+    assert "key-one" not in repr(one)
