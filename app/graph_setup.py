@@ -6,12 +6,14 @@ working without Neo4j. Saving them in the portal needs no redeploy (see `Runtime
 
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from typing import Any
 
 from neo4j import GraphDatabase
 
 from app.adapters.neo4j_graph import Neo4jProjection
+from app.adapters.neo4j_reader import Neo4jGraphReader
 from app.models.records import GraphAssertion, Visibility
-from app.ports import GraphProjection
+from app.ports import GraphProjection, GraphReader
 from app.runtime_store import RuntimeStore
 from app.secrets import SecretReader, secret_text
 
@@ -35,10 +37,12 @@ def current_config(reader: SecretReader) -> Neo4jConfig | None:
     return Neo4jConfig(uri, user, password) if uri and user and password else None
 
 
+def _driver(config: Neo4jConfig) -> Any:
+    return GraphDatabase.driver(config.uri, auth=(config.user, config.password))
+
+
 def _neo4j_builder(config: Neo4jConfig) -> GraphProjection:
-    projection = Neo4jProjection(
-        GraphDatabase.driver(config.uri, auth=(config.user, config.password))
-    )
+    projection = Neo4jProjection(_driver(config))
     projection.ensure_schema()
     return projection
 
@@ -85,3 +89,20 @@ class RuntimeGraphProjection:
 
     def _graph(self) -> GraphProjection:
         return self._store.get() or _NoGraph()
+
+
+class RuntimeGraphReader:
+    """Finds graph paths with the saved Neo4j settings. `get()` is None until they are saved."""
+
+    def __init__(self, reader: SecretReader) -> None:
+        self._store: RuntimeStore[Neo4jConfig, GraphReader] = RuntimeStore(
+            lambda: current_config(reader),
+            lambda config: Neo4jGraphReader(_driver(config)),
+            "Neo4j",
+        )
+
+    def get(self) -> GraphReader | None:
+        return self._store.get()
+
+    def enabled(self) -> bool:
+        return self.get() is not None

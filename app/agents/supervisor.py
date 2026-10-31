@@ -1,6 +1,7 @@
 """Decide how a question will be searched. It routes; it never grants or widens access."""
 
 import logging
+from collections.abc import Callable
 from typing import Any
 
 from pydantic import BaseModel
@@ -26,7 +27,7 @@ class RouteDecision(BaseModel):
 class Supervisor:
     """Classifies a question. Without a model it searches the text, which is the safe default."""
 
-    def __init__(self, runner: Invoker, graph_enabled: bool = False) -> None:
+    def __init__(self, runner: Invoker, graph_enabled: Callable[[], bool] = lambda: False) -> None:
         self._runner = runner
         self._graph_enabled = graph_enabled
 
@@ -39,7 +40,7 @@ class Supervisor:
 
     def _available(self, route: Route) -> StateUpdate:
         """Without a graph, relationship questions are answered from the text, with a warning."""
-        if route in GRAPH_ROUTES and not self._graph_enabled:
+        if route in GRAPH_ROUTES and not self._graph_enabled():
             return {"route": Route.HYBRID, "warnings": [GRAPH_UNAVAILABLE]}
         return {"route": route}
 

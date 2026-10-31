@@ -77,7 +77,7 @@ def test_without_a_graph_relationship_questions_fall_back_to_text_search_with_a_
 
 
 def test_with_a_graph_the_route_is_kept():
-    update = Supervisor(FakeRunner(RouteDecision(route=Route.BOTH)), graph_enabled=True)(
+    update = Supervisor(FakeRunner(RouteDecision(route=Route.BOTH)), graph_enabled=lambda: True)(
         {"question": "q"}
     )
     assert update == {"route": Route.BOTH}

@@ -65,6 +65,12 @@ class GraphAssertionRepository:
         self.add_many(fresh)
         return len(fresh)
 
+    def get_many(self, assertion_ids: list[str]) -> dict[str, GraphAssertion]:
+        if not assertion_ids:
+            return {}
+        query = select(GraphAssertionRow).where(GraphAssertionRow.id.in_(assertion_ids))
+        return {row.id: _to_assertion(row) for row in self._session.scalars(query)}
+
     def approved_for(self, recording_id: str) -> list[GraphAssertion]:
         query = (
             select(GraphAssertionRow)

@@ -91,6 +91,23 @@ class ChunkRepository:
         )
         return {row.recording_id: _to_chunk(row) for row in self._session.scalars(query)}
 
+    def segment_index(self, recording_id: str, version: int) -> dict[str, str]:
+        """For one transcript version: each segment ID and the first chunk that contains it."""
+        query = (
+            select(EvidenceChunkRow)
+            .where(
+                EvidenceChunkRow.recording_id == recording_id,
+                EvidenceChunkRow.kind == ChunkKind.TRANSCRIPT,
+                EvidenceChunkRow.version == version,
+            )
+            .order_by(EvidenceChunkRow.chunk_index)
+        )
+        index: dict[str, str] = {}
+        for row in self._session.scalars(query):
+            for segment_id in row.segment_ids:
+                index.setdefault(segment_id, row.evidence_id)
+        return index
+
     def recording_ids(self) -> list[str]:
         """Recordings that currently have indexed chunks."""
         return sorted(set(self._session.scalars(select(EvidenceChunkRow.recording_id))))

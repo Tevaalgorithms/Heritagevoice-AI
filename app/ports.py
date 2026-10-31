@@ -9,6 +9,7 @@ from typing import Any, Protocol, runtime_checkable
 from pydantic import SecretStr
 
 from app.models.evidence import Evidence
+from app.models.graph_path import GraphPath
 from app.models.llm import ModelParams, ProbeResult
 from app.models.records import GraphAssertion, Visibility
 from app.models.transcript import Segment
@@ -35,6 +36,13 @@ class GraphStore(Protocol):
     """Relationship search over the reviewed knowledge graph."""
 
     def traverse(self, query: str, principal: Principal, max_hops: int = 2) -> list[Evidence]: ...
+
+
+@runtime_checkable
+class GraphReader(Protocol):
+    """Finds candidate paths in the knowledge graph. A path is a lead, never evidence by itself."""
+
+    def paths(self, question: str, communities: frozenset[str], limit: int) -> list[GraphPath]: ...
 
 
 @runtime_checkable

@@ -1,7 +1,7 @@
 from pydantic import SecretStr
 
 from app.fakes import FakeGraphProjection
-from app.graph_setup import Neo4jConfig, RuntimeGraphProjection
+from app.graph_setup import Neo4jConfig, RuntimeGraphProjection, RuntimeGraphReader
 from app.models.records import Visibility
 
 
@@ -62,3 +62,8 @@ def test_a_setup_failure_is_swallowed_so_publishing_keeps_working():
     graph = RuntimeGraphProjection(Reader(dict(FULL)), broken)
     graph.delete_recording("r1")
     assert graph.recording_ids() == []
+
+
+def test_the_reader_is_available_only_once_neo4j_is_configured():
+    assert RuntimeGraphReader(Reader({"NEO4J_URI": "neo4j+s://x"})).enabled() is False
+    assert RuntimeGraphReader(Reader(dict(FULL))).enabled() is True
