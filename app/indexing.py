@@ -16,12 +16,14 @@ from sqlalchemy.orm import Session
 from app.db.repositories import (
     ChunkRepository,
     ConsentRepository,
+    GraphAssertionRepository,
     RecordingRepository,
     VersionRepository,
 )
 from app.models.index import ChunkKind, ChunkRecord
 from app.models.job import Job, JobStatus, Outcome
 from app.models.records import (
+    GraphAssertion,
     Recording,
     RecordingStatus,
     Right,
@@ -29,7 +31,7 @@ from app.models.records import (
     VersionRef,
     Visibility,
 )
-from app.ports import VectorStore
+from app.ports import GraphProjection, VectorStore
 from app.retrieval.chunker import chunk_segments
 from app.retrieval.evidence_store import to_evidence
 
@@ -54,6 +56,7 @@ class IndexDeps:
 
     sessions: SessionFactory
     vectors: VectorStore | None = None
+    graph: GraphProjection | None = None
 
 
 def _records(
@@ -83,7 +86,7 @@ def _records(
     return records
 
 
-def _consented(session: Session, recording: Recording) -> Recording:
+def consented(session: Session, recording: Recording) -> Recording:
     """The recording as it may be indexed: public only if the consent allows public sharing."""
     consent = ConsentRepository(session).get(recording.consent_id)
     if consent is not None and consent.permits(Right.PUBLIC_SHARING):
@@ -93,7 +96,7 @@ def _consented(session: Session, recording: Recording) -> Recording:
 
 def build_records(session: Session, original: Recording) -> list[ChunkRecord]:
     """Chunks of the approved transcript, plus the approved translation if it matches it."""
-    recording = _consented(session, original)
+    recording = consented(session, original)
     versions = VersionRepository(session)
     transcript = versions.approved(recording.id, Subject.TRANSCRIPT)
     if transcript is None:
@@ -105,7 +108,7 @@ def build_records(session: Session, original: Recording) -> list[ChunkRecord]:
     return records
 
 
-def _indexable(session: Session, recording_id: str) -> Recording:
+def indexable(session: Session, recording_id: str) -> Recording:
     recording = RecordingRepository(session).get(recording_id)
     if recording is None:
         raise IndexRefusedError("missing")
@@ -124,13 +127,41 @@ def _sync_vectors(deps: IndexDeps, recording: Recording, records: list[ChunkReco
     deps.vectors.upsert([to_evidence(record, "vector") for record in records])
 
 
+def _current_assertions(session: Session, recording: Recording) -> list[GraphAssertion]:
+    """Approved assertions about the transcript that is approved now; older ones are stale."""
+    transcript = VersionRepository(session).approved(recording.id, Subject.TRANSCRIPT)
+    if transcript is None:
+        return []
+    approved = GraphAssertionRepository(session).approved_for(recording.id)
+    return [a for a in approved if a.transcript_version == transcript.version]
+
+
+def project_graph(deps: IndexDeps, recording_id: str) -> int:
+    """Make the knowledge graph hold this recording's approved assertions, or nothing if it may
+    not be read. Returns how many assertions were written. Safe to repeat."""
+    if deps.graph is None:
+        return 0
+    with deps.sessions() as session:
+        try:
+            recording = consented(session, indexable(session, recording_id))
+        except IndexRefusedError:
+            deps.graph.delete_recording(recording_id)
+            return 0
+        assertions = _current_assertions(session, recording)
+    deps.graph.replace_recording(
+        recording.id, recording.community_id, recording.visibility, assertions
+    )
+    return len(assertions)
+
+
 def index_one(deps: IndexDeps, recording_id: str) -> int:
     """(Re)build the index of one published recording; returns the number of chunks."""
     with deps.sessions() as session:
-        recording = _indexable(session, recording_id)
+        recording = indexable(session, recording_id)
         records = build_records(session, recording)
         ChunkRepository(session).replace_for_recording(recording.id, records)
     _sync_vectors(deps, recording, records)
+    project_graph(deps, recording_id)
     return len(records)
 
 
@@ -151,6 +182,8 @@ def remove_recording(deps: IndexDeps, recording_id: str) -> bool:
         ChunkRepository(session).delete_for_recording(recording.id)
     if deps.vectors is not None:
         deps.vectors.delete_recording(recording.id, recording.community_id)
+    if deps.graph is not None:
+        deps.graph.delete_recording(recording.id)
     return True
 
 

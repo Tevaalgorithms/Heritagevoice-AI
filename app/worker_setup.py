@@ -11,6 +11,7 @@ from app.adapters.transcribe import AmazonTranscribe, TranscribeConfig
 from app.config import Settings
 from app.db.session import session_scope
 from app.fakes import FakeTranscriber
+from app.graph_setup import RuntimeGraphProjection
 from app.indexing import INDEX_KIND, UNINDEX_KIND, IndexDeps, index_recording, unindex_recording
 from app.ingest import IngestDeps, ingest_handler
 from app.model_registry import ModelRegistry
@@ -42,7 +43,11 @@ def _transcriber(settings: Settings) -> Transcriber | None:
 
 
 def index_deps(settings: Settings, engine: Engine) -> IndexDeps:
-    return IndexDeps(lambda: session_scope(engine), vector_store_for(settings, engine))
+    return IndexDeps(
+        lambda: session_scope(engine),
+        vector_store_for(settings, engine),
+        RuntimeGraphProjection(secrets_for(settings)),
+    )
 
 
 def _ingest_handlers(settings: Settings, engine: Engine) -> dict[str, Handler]:

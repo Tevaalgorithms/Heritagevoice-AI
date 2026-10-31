@@ -2,6 +2,7 @@
 
 Run with: uv run python -m app.worker   (add --once to process the queue and exit)
 Rebuild the search indexes: uv run python -m app.worker rebuild-index
+Rebuild the knowledge graph: uv run python -m app.worker rebuild-graph
 
 The claim is committed before the handler runs, so a handler can update the job's progress from
 its own transaction without waiting on the worker's lock. A provider failure puts the job back
@@ -21,6 +22,7 @@ from app.db.engine import engine_from_settings
 from app.db.repositories import JobRepository
 from app.db.session import session_scope
 from app.errors import ProviderError
+from app.graph_projection import rebuild_graph
 from app.index_rebuild import rebuild_all
 from app.models.job import Job, JobStatus, Outcome
 from app.worker_setup import build_handlers, index_deps
@@ -82,9 +84,9 @@ def main(argv: Sequence[str] | None = None) -> None:
     parser.add_argument(
         "command",
         nargs="?",
-        choices=["run", "rebuild-index"],
+        choices=["run", "rebuild-index", "rebuild-graph"],
         default="run",
-        help="run the worker (default), or rebuild the search indexes from PostgreSQL",
+        help="run the worker (default), or rebuild the search indexes or the graph from PostgreSQL",
     )
     parser.add_argument("--once", action="store_true", help="process queued jobs, then exit")
     args = parser.parse_args(argv)
@@ -94,6 +96,10 @@ def main(argv: Sequence[str] | None = None) -> None:
     if args.command == "rebuild-index":
         result = rebuild_all(index_deps(settings, engine))
         print(f"indexed {result.indexed} recordings, removed {result.removed}")
+        return
+    if args.command == "rebuild-graph":
+        outcome = rebuild_graph(index_deps(settings, engine))
+        print(f"projected {outcome.projected} recordings, removed {outcome.removed}")
         return
     drain(engine, args.once, build_handlers(settings, engine))
 

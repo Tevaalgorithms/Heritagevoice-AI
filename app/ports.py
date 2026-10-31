@@ -10,6 +10,7 @@ from pydantic import SecretStr
 
 from app.models.evidence import Evidence
 from app.models.llm import ModelParams, ProbeResult
+from app.models.records import GraphAssertion, Visibility
 from app.models.transcript import Segment
 from app.models.users import Signup
 from app.security.permissions import Principal
@@ -34,6 +35,23 @@ class GraphStore(Protocol):
     """Relationship search over the reviewed knowledge graph."""
 
     def traverse(self, query: str, principal: Principal, max_hops: int = 2) -> list[Evidence]: ...
+
+
+@runtime_checkable
+class GraphProjection(Protocol):
+    """The writable side of the knowledge graph: a rebuildable copy of approved assertions."""
+
+    def replace_recording(
+        self,
+        recording_id: str,
+        community_id: str,
+        visibility: Visibility,
+        assertions: list[GraphAssertion],
+    ) -> None: ...
+
+    def delete_recording(self, recording_id: str) -> None: ...
+
+    def recording_ids(self) -> list[str]: ...
 
 
 @runtime_checkable
