@@ -176,6 +176,22 @@ class MyGroupView(BaseModel):
     consents: list[ConsentChoiceView] = []
 
 
+class ReportView(BaseModel):
+    """A report about a recording, as an admin sees it."""
+
+    id: str
+    recording_id: str
+    reason: str
+    note: str | None = None
+    reporter: str
+    heritage_kind: str
+    language: str
+    community: str
+    recording_status: str
+    opening: str = ""
+    reports_for_recording: int = 1
+
+
 class AssertionView(BaseModel):
     """A relationship proposed from a recording, with the words it came from."""
 

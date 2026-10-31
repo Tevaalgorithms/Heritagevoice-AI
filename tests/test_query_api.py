@@ -1,6 +1,7 @@
 """POST /v1/query: who may ask, what comes back, and what never leaves."""
 
 import time
+from dataclasses import replace
 
 import pytest
 from fastapi.testclient import TestClient
@@ -221,3 +222,23 @@ def test_an_outsider_is_told_there_is_not_enough_and_no_model_is_asked(database_
     body = ask_as(("c9",))
     assert body["status"] == "insufficient_evidence"
     assert (verifier.calls, writer.calls) == ([], [])
+
+
+def test_the_chosen_answer_language_reaches_the_answer_writer(client):
+    writer = Script(AnswerDraft(answer="Water was shared [1].", claims_used=[1]))
+    agents = agents_object([passage("e1")])
+    serving(replace(agents, answer=_answer_with(writer)))
+    assert client.post(URL, json={**ASK, "response_language": "fr"}).status_code == 200
+    assert writer.calls[0]["answer_language"] == "French (Français)"
+
+
+def _answer_with(writer):
+    from app.agents.answer_agent import AnswerAgent  # noqa: PLC0415
+
+    return AnswerAgent(writer)
+
+
+@pytest.mark.parametrize("language", ["xx", "english", 5, ""])
+def test_an_unsupported_answer_language_is_refused(client, language):
+    serving(agents_object([passage("e1")]))
+    assert client.post(URL, json={**ASK, "response_language": language}).status_code == 422

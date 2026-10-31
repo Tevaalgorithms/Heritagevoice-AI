@@ -12,17 +12,19 @@ import streamlit as st
 from app.languages import LANGUAGES as ALL_LANGUAGES
 from app.models.groups import OPEN_COMMUNITY
 from frontend import theme
-from frontend.api_client import ApiClient, ApiError, MyGroupView, RecordingView, UploadSpec
-from frontend.format import failure_message, progress_for, segment_rows
-from frontend.kinds import BY_KEY, KINDS, REMEDY_NOTICE
+from frontend.api_client import ApiClient, ApiError, MyGroupView, RecordingSummary, UploadSpec
+from frontend.format import failure_message, progress_for
+from frontend.kinds import BY_KEY, KINDS, REMEDY_NOTICE, label_for
 from frontend.messages import message_for
 from frontend.rights import describe
 from frontend.upload_input import idempotency_key, pick_audio
+from frontend.views.transcript_editor import render_editor
 
 AUDIO_TYPES = ["wav", "mp3", "flac", "ogg", "m4a", "mp4"]
 LANGUAGES = {f"{lang.name} · {lang.native_name}": lang.code for lang in ALL_LANGUAGES}
 POLL_SECONDS = 2.0
 MAX_POLLS = 150
+FOCUS = "focus-recording"  # the recording just uploaded, so its transcript opens for editing
 DONE = {"review", "published", "failed"}
 
 
@@ -41,15 +43,6 @@ def follow_job(client: ApiClient, job_id: str) -> str | None:
     return None
 
 
-def show_transcript(recording: RecordingView) -> None:
-    if recording.transcript is None:
-        st.info("No transcript yet.")
-        return
-    st.subheader(f"Draft transcript (version {recording.transcript.version})")
-    st.caption("This draft is not searchable until a reviewer approves it.")
-    st.dataframe(segment_rows(recording.transcript.segments), hide_index=True)
-
-
 def submit(client: ApiClient, spec: UploadSpec) -> None:
     """Send the audio, follow its processing, then show the draft transcript."""
     try:
@@ -59,7 +52,8 @@ def submit(client: ApiClient, spec: UploadSpec) -> None:
         if error:
             st.error(failure_message(error))
             return
-        show_transcript(client.get_recording(result.recording_id))
+        st.session_state[FOCUS] = result.recording_id
+        st.rerun()
     except ApiError as error:
         st.error(message_for(error))
 
@@ -248,3 +242,37 @@ def render(client: ApiClient) -> None:
             heritage_kind=kind,
         )
         _send(client, spec, destination)
+    _your_recordings(client)
+
+
+def _recording_label(recording: RecordingSummary) -> str:
+    return f"{label_for(recording.heritage_kind)} · {recording.language} · {recording.status}"
+
+
+def _mine(client: ApiClient) -> list[RecordingSummary]:
+    try:
+        return client.list_recordings()
+    except ApiError:
+        return []
+
+
+def _open_recording(client: ApiClient, recording_id: str) -> None:
+    try:
+        recording = client.get_recording(recording_id)
+    except ApiError as error:
+        st.error(message_for(error))
+        return
+    render_editor(client, recording)
+
+
+def _your_recordings(client: ApiClient) -> None:
+    """Recordings you have uploaded: open one to read or correct its transcript."""
+    mine = _mine(client)
+    if not mine:
+        return
+    st.divider()
+    st.subheader("Your recordings")
+    focus = st.session_state.get(FOCUS)
+    start = next((i for i, r in enumerate(mine) if r.id == focus), 0)
+    chosen = st.selectbox("Recording", mine, index=start, format_func=_recording_label)
+    _open_recording(client, chosen.id)

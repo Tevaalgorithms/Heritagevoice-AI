@@ -10,8 +10,10 @@ from app.agents.answer_agent import AnswerAgent, AnswerDraft
 from app.agents.graph_rag import GraphRetriever
 from app.agents.hybrid_rag import HybridRetriever
 from app.agents.prompts.answer import ANSWER_PROMPT
+from app.agents.prompts.rewrite import REWRITE_PROMPT
 from app.agents.prompts.supervisor import SUPERVISOR_PROMPT
 from app.agents.prompts.verifier import VERIFIER_PROMPT
+from app.agents.rewriter import QuestionRewriter, Standalone
 from app.agents.supervisor import RouteDecision, Supervisor
 from app.agents.verifier import Verification, Verifier
 from app.config import Settings
@@ -47,4 +49,5 @@ def build_agents(
         graph=GraphRetriever(sessions, graph.get),
         verify=Verifier(runner(ModelRole.VERIFIER, VERIFIER_PROMPT, Verification)),
         answer=AnswerAgent(runner(ModelRole.ANSWER, ANSWER_PROMPT, AnswerDraft)),
+        rewrite=QuestionRewriter(runner(ModelRole.SUPERVISOR, REWRITE_PROMPT, Standalone)),
     )

@@ -2,12 +2,12 @@
 
 from langchain_core.prompts import ChatPromptTemplate
 
-PROMPT_VERSION = "answer-v1"
+PROMPT_VERSION = "answer-v2"
 
 SYSTEM = """You write a short answer to a question for someone reading community oral history.
 
 Use only the numbered claims you are given. Each claim has already been checked against its
-sources. Do not add facts, opinions or advice. Write in the language of the question. After a
+sources. Do not add facts, opinions or advice. Write the answer in {answer_language}. After a
 statement, cite the claim numbers it relies on like [1] or [2][3]. Where the claims show uncertainty
 or only partly answer the question, say so plainly. Keep culturally specific terms as they appear.
 

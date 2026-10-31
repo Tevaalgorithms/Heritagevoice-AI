@@ -54,7 +54,7 @@ class PublicQuery(BaseModel):
     limit: Annotated[int, Field(ge=1, le=MAX_LIMIT)] = 10
 
 
-def _visitor(request: Request) -> str:
+def visitor_key(request: Request) -> str:
     """Who is asking, for the rate limit. The API is only reachable through the web server, which
     sets the first X-Forwarded-For entry to the real client address."""
     forwarded = request.headers.get("x-forwarded-for", "").split(",")[0].strip()
@@ -65,7 +65,7 @@ def throttle(
     request: Request, limiter: Annotated[SlidingWindowLimiter, Depends(get_limiter)]
 ) -> None:
     """Refuse a visitor who has asked too often. Runs before anything is searched."""
-    visitor = _visitor(request)
+    visitor = visitor_key(request)
     if not limiter.allow(visitor):
         retry = str(limiter.retry_after(visitor))
         raise HTTPException(

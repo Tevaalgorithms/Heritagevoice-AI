@@ -182,3 +182,33 @@ class GraphAssertion(BaseModel):
     transcript_version: int = Field(ge=1)
     confidence: float = Field(ge=0, le=1)
     policy_ref: str
+
+
+class ReportReason(StrEnum):
+    """Why someone reported a recording."""
+
+    PRIVATE = "private"
+    HARMFUL = "harmful"
+    HEALTH = "health"
+    COPYRIGHT = "copyright"
+    OTHER = "other"
+
+
+class ReportStatus(StrEnum):
+    """Where a report is: waiting for an admin, or decided."""
+
+    OPEN = "open"
+    TAKEN_DOWN = "taken_down"
+    DISMISSED = "dismissed"
+
+
+class ItemReport(BaseModel):
+    """A report about a recording. The reporter's identity is for admins only."""
+
+    model_config = ConfigDict(frozen=True)
+    id: str
+    recording_id: str
+    reason: ReportReason
+    note: str | None = None
+    reporter: str | None = None  # the signed-in account, or None for a visitor
+    status: ReportStatus = ReportStatus.OPEN

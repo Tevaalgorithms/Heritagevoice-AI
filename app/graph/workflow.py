@@ -16,7 +16,7 @@ from langgraph.graph.state import CompiledStateGraph
 
 from app.agents import answer_agent, evidence_merger, graph_rag, hybrid_rag, supervisor, verifier
 from app.graph.state import StateUpdate, WorkflowState
-from app.models.evidence import Route
+from app.models.evidence import Route, Turn
 from app.security.permissions import Principal, require_permitted
 
 
@@ -38,6 +38,7 @@ class Agents:
     graph: Retriever
     verify: Node
     answer: Node
+    rewrite: Callable[[str, list[Turn]], str] | None = None  # follow-up questions; optional
 
 
 def default_agents() -> Agents:
