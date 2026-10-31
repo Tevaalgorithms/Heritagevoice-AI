@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.db.repositories import ChunkRepository, JobRepository
 from app.graph_extraction import EXTRACT_KIND
+from app.graph_projection import PROJECT_KIND
 from app.indexing import INDEX_KIND, UNINDEX_KIND
 
 
@@ -17,6 +18,11 @@ def queue_index(session: Session, recording_id: str) -> None:
 def queue_graph_extraction(session: Session, recording_id: str) -> None:
     """Content was published: ask the worker to propose graph relationships for review."""
     JobRepository(session).create(uuid4().hex, EXTRACT_KIND, recording_id)
+
+
+def queue_graph_projection(session: Session, recording_id: str) -> None:
+    """A relationship was approved, edited or withdrawn: refresh this recording in the graph."""
+    JobRepository(session).create(uuid4().hex, PROJECT_KIND, recording_id)
 
 
 def drop_index(session: Session, recording_id: str) -> None:

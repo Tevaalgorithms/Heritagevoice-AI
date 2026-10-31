@@ -252,7 +252,7 @@ def engine():
     return engine
 
 
-INDEX_HANDLERS = {"index_recording", "unindex_recording", "extract_graph"}
+INDEX_HANDLERS = {"index_recording", "unindex_recording", "extract_graph", "project_graph"}
 
 
 def test_no_speech_service_means_no_ingest_handler_but_indexing_still_runs(engine):

@@ -44,6 +44,7 @@ CODE_MESSAGES = {
     ),
     "write_failed": "The key could not be saved. Try again in a minute.",
     "not_configured": "Saving is not set up on this server.",
+    "invalid_edit": "The two sides of a relationship must be different.",
     "deadline": "That took too long to answer. Try a shorter or simpler question.",
 }
 

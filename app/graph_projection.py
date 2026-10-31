@@ -8,7 +8,10 @@ from dataclasses import dataclass
 
 from app.db.repositories import GraphAssertionRepository, RecordingRepository
 from app.indexing import IndexDeps, project_graph
+from app.models.job import Job, JobStatus, Outcome
 from app.models.records import RecordingStatus
+
+PROJECT_KIND = "project_graph"
 
 
 @dataclass(frozen=True)
@@ -38,3 +41,9 @@ def rebuild_graph(deps: IndexDeps) -> GraphRebuildResult:
     for recording_id in sorted(leftovers):
         deps.graph.delete_recording(recording_id)
     return GraphRebuildResult(projected=len(wanted), removed=len(leftovers))
+
+
+def project_recording(job: Job, deps: IndexDeps) -> Outcome:
+    """The job queued after a review decision: bring the graph in line with the database."""
+    project_graph(deps, job.recording_id or "")
+    return Outcome(status=JobStatus.PUBLISHED)
