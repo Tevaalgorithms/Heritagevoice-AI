@@ -1,6 +1,6 @@
 ## What and why
 
-<!-- One or two sentences. Link the TODO task or issue. -->
+<!-- One or two sentences. Link the issue this closes. -->
 
 ## Checklist
 
@@ -11,3 +11,4 @@
 - [ ] No restricted data: no recordings, community material or private transcripts in code, fixtures, logs or traces
 - [ ] Permissions: authorization still comes from the server-side `Principal`, never from model output or client input
 - [ ] Dependencies: if `pyproject.toml` changed, `uv lock` was run and `requirements.txt` regenerated
+- [ ] Infra or workflow changes (`infra/`, `.github/`, `deploy/`): explained above, and nothing here can reach AWS without a maintainer's approval

@@ -16,7 +16,7 @@ variable "domain" {
 variable "route53_zone_name" {
   type        = string
   default     = ""
-  description = "Optional name of an existing public Route 53 zone (for example tevaalgorithms.com). If set, Terraform adds only the A record for the domain to it."
+  description = "Optional name of an existing public Route 53 zone (for example example.org). If set, Terraform adds only the A record for the domain to it."
 }
 
 variable "instance_type" {

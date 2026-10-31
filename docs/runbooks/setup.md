@@ -54,8 +54,9 @@ curl -i http://127.0.0.1:8000/ready       # 200 when PostgreSQL is reachable, ot
 - Every response carries an `X-Trace-ID` header; the same ID appears in the API logs.
 - `/ready` lists each configured dependency (`ok`, `failed`, `not_configured` or `skipped`).
   Unconfigured optional services (for example the audio bucket) are skipped, not failed.
-- The UI is at <http://127.0.0.1:8501>; the sidebar shows the API status. Upload and Review are
-  placeholders until segments 03 and 04. `/query` stays closed (503) until the agents are built.
+- The UI is at <http://127.0.0.1:8501>; the sidebar shows the API status. Locally the UI signs in
+  with the development token (see below). `/query` answers "not enough" until a model key is saved
+  on the Settings page.
 
 ## Uploading and transcribing a recording
 
@@ -75,7 +76,7 @@ curl -i http://127.0.0.1:8000/ready       # 200 when PostgreSQL is reachable, ot
 
 4. Run the worker (`uv run python -m app.worker`); poll `GET /v1/jobs/{job_id}`. A finished job
    is `review`: the draft transcript is visible at `GET /v1/recordings/{id}` but stays out of
-   search until a reviewer approves it (segment 04).
+   search until an administrator approves it.
 
 Deployed, the worker uses Amazon Transcribe (Tamil `ta-IN`, English `en-US`) on the audio already
 in the private bucket; set `HERITAGEVOICE_AWS_REGION` (the region comes from settings, not from the

@@ -1,8 +1,8 @@
 # Copy to prod.tfvars (git-ignored) and fill in. Values here are placeholders.
 region                = "us-west-2"
 environment           = "prod"
-domain                = "heritagevoice.tevaalgorithms.com"
-route53_zone_name     = "tevaalgorithms.com"
+domain                = "heritagevoice.example.org"
+route53_zone_name     = "example.org"
 cognito_user_pool_id  = "<from infra/cognito output>"
 cognito_app_client_id = "<from infra/cognito output>"
 budget_email          = "<your email>"

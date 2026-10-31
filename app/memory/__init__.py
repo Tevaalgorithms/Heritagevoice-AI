@@ -1,5 +1,6 @@
 """Conversation memory.
 
-Today only an in-memory development checkpointer; durable, owner-checked storage comes with the
-workflow (segment 09).
+Only an in-memory development checkpointer lives here. The Ask page remembers the chat itself and
+sends the last few exchanges with each question, so nothing about a conversation is stored on the
+server.
 """
