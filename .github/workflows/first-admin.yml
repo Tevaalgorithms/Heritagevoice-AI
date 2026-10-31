@@ -33,7 +33,7 @@ jobs:
       EMAIL: ${{ inputs.email }}
       USER_POOL_ID: ${{ vars.COGNITO_USER_POOL_ID }}
     steps:
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ vars.AWS_TF_APPLY_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
@@ -68,7 +68,7 @@ jobs:
       INSTANCE_ID: ${{ vars.INSTANCE_ID }}
       SUB: ${{ needs.cognito-user.outputs.sub }}
     steps:
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}

@@ -80,7 +80,7 @@ jobs:
         if: steps.ready.outputs.run == 'true'
         with:
           terraform_version: 1.9.8
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@v6
         if: steps.ready.outputs.run == 'true'
         with:
           role-to-assume: ${{ vars.AWS_TF_PLAN_ROLE_ARN }}
@@ -110,7 +110,7 @@ jobs:
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.9.8
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ vars.AWS_TF_APPLY_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
