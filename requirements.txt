@@ -817,9 +817,15 @@ pillow==13.0.0 \
     --hash=sha256:fc481f742ccda20e9ed760b8f978dff50f2a4e9bc253ac167fb0a05b0783ef52 \
     --hash=sha256:ff3fe9eb621fbb9db4c4be33ab946f6bac5f98ab50ca8d3260503653656c961b
     # via streamlit
-pinecone==7.3.0 \
-    --hash=sha256:307edc155621d487c20dc71b76c3ad5d6f799569ba42064190d03917954f9a7b \
-    --hash=sha256:315b8fef20320bef723ecbb695dec0aafa75d8434d86e01e5a0e85933e1009a8
+pinecone==10.2.0 \
+    --hash=sha256:445ef65017bbc38e94c0246e1a76ea318f51e997494d1072bcc7921a4c99fd73 \
+    --hash=sha256:4aeaa49cea93a0ac4ec754d9619b0c89bf5e151680b0e76445bfa2e47181b9ad \
+    --hash=sha256:62fefd39f6c04d24090db9a29f05ad03570618b93e77b194d576727537d4c794 \
+    --hash=sha256:6b18f222f9d54a7310fc6c9d3a979d7531cc0e325fa18b6b1f5ad094e30ad48f \
+    --hash=sha256:747d646579db7315fc5a6689336d9d22406c2674163d02c511d5fb39ab1d7744 \
+    --hash=sha256:abcc0bd4b0f1a695b70049220ead80cc9ce3736d7c06708b9a21772ccf09294f \
+    --hash=sha256:b09a4eb11df6fdf50fb825f2f6f2bcd6dce6bfdaeab09c683e48d7a98c4fd339 \
+    --hash=sha256:c597303da794a0b6c273f675b52fc8f2d071ba4bde79570600afea73c5d366bc
     # via
     #   heritagevoice-ai
     #   langchain-pinecone
