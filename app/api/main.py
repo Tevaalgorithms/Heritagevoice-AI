@@ -11,6 +11,7 @@ from app.api.groups import router as groups_router
 from app.api.integrations import router as integrations_router
 from app.api.library import router as library_router
 from app.api.me import router as me_router
+from app.api.media import router as media_router
 from app.api.model_settings import router as model_settings_router
 from app.api.public import router as public_router
 from app.api.query import router as query_router
@@ -35,6 +36,7 @@ def validation_error(request: Request, error: RequestValidationError) -> JSONRes
 app.include_router(admin_router)
 app.include_router(consents_router)
 app.include_router(groups_router)
+app.include_router(media_router)
 app.include_router(my_groups_router)
 app.include_router(integrations_router)
 app.include_router(library_router)

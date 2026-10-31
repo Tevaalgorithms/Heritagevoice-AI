@@ -187,6 +187,11 @@ class ApiClient:
         )
         return VisibilityResult.model_validate(response.json())
 
+    def recording_media(self, recording_id: str) -> tuple[bytes, str]:
+        """The recording's audio and its type, if you may play it (otherwise the call fails)."""
+        response = self._send("GET", f"/v1/recordings/{recording_id}/media", auth=True)
+        return response.content, response.headers.get("content-type", "audio/wav")
+
     def publish(self, recording_id: str) -> str:
         response = self._send("POST", f"/v1/recordings/{recording_id}/publish", auth=True)
         return str(response.json()["status"])

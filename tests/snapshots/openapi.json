@@ -3213,6 +3213,52 @@
         ]
       }
     },
+    "/v1/recordings/{recording_id}/media": {
+      "get": {
+        "operationId": "recording_media_v1_recordings__recording_id__media_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recording_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "title": "Recording Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Recording Media",
+        "tags": [
+          "recordings"
+        ]
+      }
+    },
     "/v1/recordings/{recording_id}/publish": {
       "post": {
         "operationId": "publish_recording_endpoint_v1_recordings__recording_id__publish_post",
