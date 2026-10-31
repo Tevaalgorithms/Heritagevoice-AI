@@ -21,7 +21,7 @@ from app.db.repositories import (
     ReviewDecisionRepository,
     VersionRepository,
 )
-from app.index_sync import drop_index, queue_index
+from app.index_sync import drop_index, queue_graph_extraction, queue_index
 from app.models.records import (
     Recording,
     RecordingStatus,
@@ -172,4 +172,5 @@ def publish(session: Session, recording: Recording) -> RecordingStatus:
         raise _transcript_not_approved()
     RecordingRepository(session).set_status(recording.id, RecordingStatus.PUBLISHED)
     queue_index(session, recording.id)
+    queue_graph_extraction(session, recording.id)
     return RecordingStatus.PUBLISHED

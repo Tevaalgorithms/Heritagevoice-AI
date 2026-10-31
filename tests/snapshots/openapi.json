@@ -727,7 +727,8 @@
           "translation",
           "supervisor",
           "verifier",
-          "answer"
+          "answer",
+          "graph"
         ],
         "title": "ModelRole",
         "type": "string"

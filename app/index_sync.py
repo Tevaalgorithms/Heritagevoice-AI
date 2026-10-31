@@ -5,12 +5,18 @@ from uuid import uuid4
 from sqlalchemy.orm import Session
 
 from app.db.repositories import ChunkRepository, JobRepository
+from app.graph_extraction import EXTRACT_KIND
 from app.indexing import INDEX_KIND, UNINDEX_KIND
 
 
 def queue_index(session: Session, recording_id: str) -> None:
     """Content was published: ask the worker to index it."""
     JobRepository(session).create(uuid4().hex, INDEX_KIND, recording_id)
+
+
+def queue_graph_extraction(session: Session, recording_id: str) -> None:
+    """Content was published: ask the worker to propose graph relationships for review."""
+    JobRepository(session).create(uuid4().hex, EXTRACT_KIND, recording_id)
 
 
 def drop_index(session: Session, recording_id: str) -> None:
