@@ -57,10 +57,9 @@ def _request_card(client: ApiClient, person: SignupView, options: list[GroupView
         chosen = _pick_groups(
             "Groups they may add recordings to", options, f"communities-{person.sub}"
         )
+        st.caption("No group is needed: an approved person can always share openly.")
         approve, decline, _ = st.columns([1, 1, 3])
-        if approve.button(
-            "Approve", type="primary", key=f"approve-{person.sub}", disabled=not chosen
-        ):
+        if approve.button("Approve", type="primary", key=f"approve-{person.sub}"):
             _decide("approve", client, person.sub, chosen)
         if decline.button("Decline", key=f"decline-{person.sub}"):
             _decide("decline", client, person.sub, [])

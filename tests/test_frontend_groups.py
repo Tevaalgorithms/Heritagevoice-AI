@@ -70,3 +70,36 @@ def test_consents_are_listed_for_one_group_created_and_revoked():
     client.revoke_consent("consent-1")
     assert seen[0] == ("GET", "/admin/consents", "community_id=my-family")
     assert seen[2] == ("POST", "/admin/consents/consent-1/revoke", "")
+
+
+def test_members_can_be_listed_added_and_removed():
+    seen = []
+
+    def handler(request):
+        seen.append((request.method, request.url.path))
+        if request.method == "DELETE":
+            return httpx.Response(200, json={"sub": "aunt-1"})
+        item = {"sub": "aunt-1", "email": "aunt@example.org"}
+        return httpx.Response(200, json=[item] if request.method == "GET" else item)
+
+    client = client_for(handler)
+    assert client.members("my-family")[0].email == "aunt@example.org"
+    assert client.add_member("my-family", "aunt@example.org").sub == "aunt-1"
+    client.remove_member("my-family", "aunt-1")
+    assert seen == [
+        ("GET", "/admin/groups/my-family/members"),
+        ("POST", "/admin/groups/my-family/members"),
+        ("DELETE", "/admin/groups/my-family/members/aunt-1"),
+    ]
+
+
+def test_open_consent_sends_the_confirmation_and_returns_the_reference():
+    sent = {}
+
+    def handler(request):
+        sent["body"] = request.content
+        return httpx.Response(201, json={"consent_id": "consent-1", "community_id": "everyone"})
+
+    assert client_for(handler).give_open_consent(True, False) == "consent-1"
+    assert b'"confirm":true' in sent["body"]
+    assert b'"attribution":false' in sent["body"]

@@ -1,9 +1,26 @@
 {
   "components": {
     "schemas": {
+      "AddMember": {
+        "additionalProperties": false,
+        "description": "The email address of an existing, approved account.",
+        "properties": {
+          "email": {
+            "maxLength": 254,
+            "pattern": "^[^@\\s\\\"\\\\]+@[^@\\s\\\"\\\\]+\\.[^@\\s\\\"\\\\]+$",
+            "title": "Email",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "title": "AddMember",
+        "type": "object"
+      },
       "ApproveRequest": {
         "additionalProperties": false,
-        "description": "Request body to approve a sign-up: the communities they may add recordings to.",
+        "description": "Request body to approve a sign-up: the groups they join. None is fine.",
         "properties": {
           "communities": {
             "items": {
@@ -11,14 +28,10 @@
               "type": "string"
             },
             "maxItems": 20,
-            "minItems": 1,
             "title": "Communities",
             "type": "array"
           }
         },
-        "required": [
-          "communities"
-        ],
         "title": "ApproveRequest",
         "type": "object"
       },
@@ -766,6 +779,25 @@
         "title": "Me",
         "type": "object"
       },
+      "MemberView": {
+        "description": "A member of the group.",
+        "properties": {
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "sub": {
+            "title": "Sub",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sub",
+          "email"
+        ],
+        "title": "MemberView",
+        "type": "object"
+      },
       "ModelParams": {
         "additionalProperties": false,
         "description": "What an admin can set for a role: a primary model, fall-backs in order, and limits. The\nmodel names are checked against the catalogue when saved.",
@@ -991,6 +1023,51 @@
           "value"
         ],
         "title": "NewValue",
+        "type": "object"
+      },
+      "OpenConsent": {
+        "description": "The consent that was recorded, to send with the upload.",
+        "properties": {
+          "community_id": {
+            "title": "Community Id",
+            "type": "string"
+          },
+          "consent_id": {
+            "title": "Consent Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "consent_id",
+          "community_id"
+        ],
+        "title": "OpenConsent",
+        "type": "object"
+      },
+      "OpenConsentRequest": {
+        "additionalProperties": false,
+        "description": "What the contributor agrees to. `confirm` must be true: they have the right to share.",
+        "properties": {
+          "attribution": {
+            "default": false,
+            "title": "Attribution",
+            "type": "boolean"
+          },
+          "confirm": {
+            "const": true,
+            "title": "Confirm",
+            "type": "boolean"
+          },
+          "playback": {
+            "default": true,
+            "title": "Playback",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "confirm"
+        ],
+        "title": "OpenConsentRequest",
         "type": "object"
       },
       "ProbeResult": {
@@ -2020,6 +2097,176 @@
           }
         ],
         "summary": "Create Group",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/groups/{group_id}/members": {
+      "get": {
+        "operationId": "list_members_admin_groups__group_id__members_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "group_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "title": "Group Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MemberView"
+                  },
+                  "title": "Response List Members Admin Groups  Group Id  Members Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Members",
+        "tags": [
+          "admin"
+        ]
+      },
+      "post": {
+        "operationId": "add_member_admin_groups__group_id__members_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "group_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "title": "Group Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddMember"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Add Member",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/groups/{group_id}/members/{sub}": {
+      "delete": {
+        "operationId": "remove_member_admin_groups__group_id__members__sub__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "group_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "title": "Group Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "sub",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9-]{1,64}$",
+              "title": "Sub",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Remove Member Admin Groups  Group Id  Members  Sub  Delete",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Remove Member",
         "tags": [
           "admin"
         ]
@@ -3188,6 +3435,52 @@
         "summary": "Me",
         "tags": [
           "me"
+        ]
+      }
+    },
+    "/v1/open-sharing/consent": {
+      "post": {
+        "operationId": "give_consent_v1_open_sharing_consent_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenConsentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenConsent"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Give Consent",
+        "tags": [
+          "open-sharing"
         ]
       }
     },

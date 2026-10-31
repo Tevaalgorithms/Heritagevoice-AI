@@ -4,10 +4,13 @@ Editing the transcript and seeking the audio from a segment arrive with segments
 """
 
 import time
+from collections.abc import Callable
+from dataclasses import dataclass
 
 import streamlit as st
 
 from app.languages import LANGUAGES as ALL_LANGUAGES
+from app.models.groups import OPEN_COMMUNITY
 from frontend import theme
 from frontend.api_client import ApiClient, ApiError, MyGroupView, RecordingView, UploadSpec
 from frontend.format import failure_message, progress_for, segment_rows
@@ -158,6 +161,72 @@ def _choose_group(client: ApiClient) -> tuple[str, str] | None:
     return group.id, consent.id
 
 
+OPEN = "Everyone (open sharing)"
+GROUP = "Only my family or group"
+OPEN_TERMS = (
+    "Sharing openly means anyone who searches can find this recording once an administrator has "
+    "approved it. AI will write it down (transcribe), translate it, and use it to answer questions."
+)
+
+
+@dataclass(frozen=True)
+class Destination:
+    """Where the recording goes. `consent` gives the consent reference when the upload is sent."""
+
+    community_id: str
+    visibility: str
+    consent: Callable[[], str]
+
+
+def _open_destination(client: ApiClient) -> Destination | None:
+    """Open sharing: no group. The contributor gives the consent here, on the form."""
+    st.info(OPEN_TERMS)
+    playback = st.checkbox("People may listen to the recording, not only read it", value=True)
+    credit = st.checkbox("Credit the speaker by name when it is shown", value=False)
+    sure = st.checkbox("I have the right to share this recording, and I agree to the above.")
+    if not sure:
+        return None
+    return Destination(OPEN_COMMUNITY, "public", lambda: client.give_open_consent(playback, credit))
+
+
+def _group_destination(client: ApiClient, kind: str) -> Destination | None:
+    visibility = _choose_visibility(kind)
+    chosen = _choose_group(client)
+    if chosen is None:
+        return None
+    community, consent = chosen
+    return Destination(community, visibility, lambda: consent)
+
+
+def _choose_destination(client: ApiClient, kind: str) -> Destination | None:
+    audience = st.radio(
+        "Who is this for?",
+        [OPEN, GROUP],
+        help="Open sharing needs no group. A family or group keeps it to the people in it.",
+    )
+    if audience == OPEN:
+        return _open_destination(client)
+    return _group_destination(client, kind)
+
+
+def _send(client: ApiClient, spec: UploadSpec, destination: Destination) -> None:
+    try:
+        consent_id = destination.consent()
+    except ApiError as error:
+        st.error(message_for(error))
+        return
+    submit(
+        client,
+        spec.model_copy(
+            update={
+                "community_id": destination.community_id,
+                "consent_id": consent_id,
+                "visibility": destination.visibility,
+            }
+        ),
+    )
+
+
 def render(client: ApiClient) -> None:
     """The Upload page: record or upload audio, say what it is, and send it for review."""
     theme.page_header(
@@ -169,18 +238,13 @@ def render(client: ApiClient) -> None:
     audio = _record_or_upload()
     kind = _choose_kind()
     language = _choose_language()
-    visibility = _choose_visibility(kind)
-    chosen = _choose_group(client)
-    if st.button("Send for review", disabled=not (audio and chosen)):
-        community, consent = chosen or ("", "")
-        submit(
-            client,
-            UploadSpec(
-                data=audio or b"",
-                language=language,
-                community_id=community,
-                consent_id=consent,
-                heritage_kind=kind,
-                visibility=visibility,
-            ),
+    destination = _choose_destination(client, kind)
+    if st.button("Send for review", disabled=not (audio and destination)) and destination:
+        spec = UploadSpec(
+            data=audio or b"",
+            language=language,
+            community_id="",
+            consent_id="",
+            heritage_kind=kind,
         )
+        _send(client, spec, destination)

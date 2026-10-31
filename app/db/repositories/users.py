@@ -49,6 +49,18 @@ class UserRepository:
         held = self._require(sub).communities
         self.set_communities(sub, held | {community})
 
+    def remove_community(self, sub: str, community: str) -> None:
+        """Leave a group, keeping the others."""
+        held = self._require(sub).communities
+        self.set_communities(sub, held - {community})
+
+    def members_of(self, community: str) -> list[str]:
+        """The accounts that belong to this group, in a stable order."""
+        query = select(CommunityMemberRow.user_sub).where(
+            CommunityMemberRow.community_id == community
+        )
+        return sorted(self._session.scalars(query))
+
     def _row(self, sub: str) -> AppUserRow:
         row = self._session.get(AppUserRow, sub)
         if row is None:

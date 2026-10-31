@@ -5,7 +5,7 @@ recording, so nobody types an ID. A coordinator sees only the groups they belong
 import streamlit as st
 
 from frontend import theme
-from frontend.api_client import ApiClient, ApiError, ConsentView, GroupView
+from frontend.api_client import ApiClient, ApiError, ConsentView, GroupView, MemberView
 from frontend.messages import message_for
 from frontend.rights import EVERYDAY, RIGHTS, describe
 
@@ -104,20 +104,84 @@ def _consent_tab(client: ApiClient, groups: list[GroupView]) -> None:
     _new_consent(client, group)
 
 
+def _add_member(client: ApiClient, group: GroupView, email: str) -> None:
+    try:
+        client.add_member(group.id, email)
+    except ApiError as error:
+        st.error(message_for(error))
+        return
+    st.rerun()
+
+
+def _remove_member(client: ApiClient, group: GroupView, member: MemberView) -> None:
+    try:
+        client.remove_member(group.id, member.sub)
+    except ApiError as error:
+        st.error(message_for(error))
+        return
+    st.rerun()
+
+
+def _member_row(client: ApiClient, group: GroupView, member: MemberView) -> None:
+    name, action = st.columns([4, 1])
+    name.markdown(member.email)
+    if action.button("Remove", key=f"remove-{group.id}-{member.sub}"):
+        _remove_member(client, group, member)
+
+
+def _member_list(client: ApiClient, group: GroupView) -> bool:
+    """Show who is in the group. False if they could not be loaded."""
+    try:
+        members = client.members(group.id)
+    except ApiError as error:
+        st.error(message_for(error))
+        return False
+    for member in members:
+        _member_row(client, group, member)
+    return True
+
+
+def _member_form(client: ApiClient, group: GroupView) -> None:
+    with st.form(f"add-member-{group.id}", clear_on_submit=True, border=True):
+        email = st.text_input("Add a person by email", placeholder="aunt@example.org")
+        added = st.form_submit_button("Add to this group", type="primary")
+    if added and email.strip():
+        _add_member(client, group, email.strip())
+
+
+def _members_tab(client: ApiClient, groups: list[GroupView]) -> None:
+    st.caption(
+        "Add the people of a family or group by email. They need an account that an administrator "
+        "has approved, but they create nothing: you set the group up for them."
+    )
+    if not groups:
+        st.info("Create a group first.")
+        return
+    group = st.selectbox("Group", groups, format_func=lambda g: g.name, key="members-group")
+    if _member_list(client, group):
+        _member_form(client, group)
+
+
 def render(client: ApiClient) -> None:
     """The Groups page."""
     theme.page_header(
         "Groups and consent",
-        "Set up the groups people belong to, and record what each group has allowed.",
+        "Set up the groups people belong to, add their people, and record what each allows.",
         "people",
     )
     groups = _load_groups(client)
     if groups is None:
         return
-    tab_groups, tab_consent = st.tabs(
-        [":material/groups: Groups", ":material/verified_user: Consent"]
+    tab_groups, tab_people, tab_consent = st.tabs(
+        [
+            ":material/groups: Groups",
+            ":material/group_add: People",
+            ":material/verified_user: Consent",
+        ]
     )
     with tab_groups:
         _groups_tab(client, groups)
+    with tab_people:
+        _members_tab(client, groups)
     with tab_consent:
         _consent_tab(client, groups)

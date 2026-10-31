@@ -10,6 +10,7 @@ from collections.abc import Callable
 import streamlit as st
 
 from app.languages import BY_CODE, LANGUAGES
+from app.models.groups import OPEN_COMMUNITY
 from frontend import theme
 from frontend.api_client import ApiClient, ApiError, LibraryItem, LibraryResult, LibrarySpec
 from frontend.format import format_time
@@ -53,10 +54,16 @@ def _filters() -> LibrarySpec:
     )
 
 
+def _source(community: str) -> str:
+    if community == OPEN_COMMUNITY:
+        return " · shared openly"
+    return f" · from the {community} community" if community else ""
+
+
 def _heading(item: LibraryItem) -> str:
     language = BY_CODE.get(item.language)
     spoken = language.native_name if language else item.language
-    source = f" · from the {item.community} community" if item.community else ""
+    source = _source(item.community)
     return f"{label_for(item.heritage_kind)} · {spoken}{source}"
 
 

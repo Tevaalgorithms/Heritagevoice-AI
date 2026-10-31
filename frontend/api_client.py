@@ -30,6 +30,7 @@ from frontend.api_models import (
     LibraryItem,
     LibraryResult,
     LibrarySpec,
+    MemberView,
     MeView,
     ModelParamsSpec,
     ModelsOverview,
@@ -75,6 +76,7 @@ __all__ = [
     "Health",
     "JobView",
     "MeView",
+    "MemberView",
     "ModelParamsSpec",
     "ModelView",
     "ModelsOverview",
@@ -235,6 +237,25 @@ class ApiClient:
             "GET", "/admin/consents", auth=True, params={"community_id": community_id}
         )
         return [ConsentView.model_validate(item) for item in response.json()]
+
+    def members(self, group_id: str) -> list[MemberView]:
+        response = self._send("GET", f"/admin/groups/{group_id}/members", auth=True)
+        return [MemberView.model_validate(item) for item in response.json()]
+
+    def add_member(self, group_id: str, email: str) -> MemberView:
+        response = self._send(
+            "POST", f"/admin/groups/{group_id}/members", auth=True, json={"email": email}
+        )
+        return MemberView.model_validate(response.json())
+
+    def remove_member(self, group_id: str, sub: str) -> None:
+        self._send("DELETE", f"/admin/groups/{group_id}/members/{sub}", auth=True)
+
+    def give_open_consent(self, playback: bool, attribution: bool) -> str:
+        """Record the contributor's own consent for open sharing; returns the consent reference."""
+        body = {"confirm": True, "playback": playback, "attribution": attribution}
+        response = self._send("POST", "/v1/open-sharing/consent", auth=True, json=body)
+        return str(response.json()["consent_id"])
 
     def create_consent(self, community_id: str, rights: list[str]) -> ConsentView:
         body = {"community_id": community_id, "rights": rights}

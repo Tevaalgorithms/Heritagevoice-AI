@@ -17,7 +17,7 @@ from app.db.repositories import (
     ConsentRepository,
     UserRepository,
 )
-from app.models.groups import Group
+from app.models.groups import OPEN_COMMUNITY, Group
 from app.models.records import Right
 from app.security.permissions import Principal
 from app.security.roles import Action, Role
@@ -51,9 +51,12 @@ class MyGroup(BaseModel):
 
 
 def _visible(principal: Principal, session_groups: CommunityRepository) -> list[Group]:
+    """The groups this person manages. The open-sharing space is not a group and is never listed."""
     if principal.role is Role.ADMIN:
-        return session_groups.all()
-    return session_groups.among(sorted(principal.communities))
+        found = session_groups.all()
+    else:
+        found = session_groups.among(sorted(principal.communities))
+    return [group for group in found if group.id != OPEN_COMMUNITY]
 
 
 @router.get("")

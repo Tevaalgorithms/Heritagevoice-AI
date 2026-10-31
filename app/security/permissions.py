@@ -7,6 +7,7 @@ from enum import StrEnum
 from pydantic import BaseModel, ConfigDict
 
 from app.models.evidence import Evidence
+from app.models.groups import OPEN_COMMUNITY
 from app.security.roles import (
     ADMIN_ACROSS_COMMUNITIES,
     ANY_COMMUNITY,
@@ -92,12 +93,20 @@ def _exempt_from_membership(principal: Principal, action: Action) -> bool:
     return admin_wide or action not in COMMUNITY_SCOPED
 
 
+def _belongs(principal: Principal, resource: Resource) -> bool:
+    """A member of the community. In the open-sharing space nobody is a member: you only have
+    access to your own recordings there."""
+    if resource.community_id == OPEN_COMMUNITY:
+        return resource.owner_id == principal.user_id
+    return resource.community_id in principal.communities
+
+
 def _community_rule(principal: Principal, action: Action, resource: Resource) -> Reason | None:
     if action in ANY_COMMUNITY:
         return None if principal.communities else Reason.COMMUNITY
     if _exempt_from_membership(principal, action):
         return None
-    return None if resource.community_id in principal.communities else Reason.COMMUNITY
+    return None if _belongs(principal, resource) else Reason.COMMUNITY
 
 
 def _self_approval_rule(principal: Principal, action: Action, resource: Resource) -> Reason | None:

@@ -147,10 +147,10 @@ def disable_user(sub: Annotated[str, SUB], ctx: Ctx, identity: Identity) -> dict
 
 
 class ApproveRequest(BaseModel):
-    """Request body to approve a sign-up: the communities they may add recordings to."""
+    """Request body to approve a sign-up: the groups they join. None is fine."""
 
     model_config = ConfigDict(extra="forbid")
-    communities: list[Annotated[str, COMMUNITY_ID]] = Field(min_length=1, max_length=20)
+    communities: list[Annotated[str, COMMUNITY_ID]] = Field(default_factory=list, max_length=20)
 
 
 class SignupView(BaseModel):

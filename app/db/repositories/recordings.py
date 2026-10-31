@@ -64,6 +64,16 @@ class RecordingRepository:
         query = query.order_by(RecordingRow.created_at.desc()).limit(200)
         return [_to_recording(r) for r in self._session.scalars(query)]
 
+    def list_owned_in(self, owner_id: str, community: str) -> list[Recording]:
+        """One person's own recordings in one community (used for open sharing)."""
+        query = (
+            select(RecordingRow)
+            .where(RecordingRow.community_id == community, RecordingRow.uploader_id == owner_id)
+            .order_by(RecordingRow.created_at.desc())
+            .limit(200)
+        )
+        return [_to_recording(r) for r in self._session.scalars(query)]
+
     def get_many(self, recording_ids: list[str]) -> dict[str, Recording]:
         if not recording_ids:
             return {}

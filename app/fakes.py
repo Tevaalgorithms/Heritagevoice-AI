@@ -140,6 +140,7 @@ class FakeIdentityProvider:
     def __init__(self) -> None:
         self.calls: list[tuple[str, ...]] = []
         self.signups: list[Signup] = []
+        self.emails: dict[str, str] = {}  # sub -> email, for lookups
 
     def invite_user(self, email: str, role: Role) -> str:
         sub = f"sub-{len(self.calls) + 1}"
@@ -154,6 +155,12 @@ class FakeIdentityProvider:
 
     def list_signups(self) -> list[Signup]:
         return list(self.signups)
+
+    def find_sub(self, email: str) -> str | None:
+        return next((sub for sub, known in self.emails.items() if known == email), None)
+
+    def email_of(self, sub: str) -> str | None:
+        return self.emails.get(sub)
 
 
 class FakeAudioStore:

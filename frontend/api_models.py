@@ -143,6 +143,13 @@ class GroupView(BaseModel):
     name: str
 
 
+class MemberView(BaseModel):
+    """A person in a group."""
+
+    sub: str
+    email: str
+
+
 class ConsentView(BaseModel):
     """What a group has allowed, and whether it was withdrawn."""
 
