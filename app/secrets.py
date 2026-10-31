@@ -34,6 +34,12 @@ class SecretReader(Protocol):
     def is_configured(self, name: str) -> bool: ...
 
 
+def secret_text(reader: SecretReader, name: str) -> str | None:
+    """The saved value as plain text, or None if it is not set."""
+    value = reader.get(name)
+    return value.get_secret_value() if value else None
+
+
 @dataclass
 class SecretsConfig:
     """Where values come from. The client and clock can be replaced in tests."""

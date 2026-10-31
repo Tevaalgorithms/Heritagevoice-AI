@@ -42,18 +42,16 @@ class GraphAssertionRepository:
         row = self._session.get(GraphAssertionRow, assertion_id)
         return None if row is None else _to_assertion(row)
 
-    def for_recording(self, recording_id: str) -> list[GraphAssertion]:
+    def approved_for(self, recording_id: str) -> list[GraphAssertion]:
         query = (
             select(GraphAssertionRow)
-            .where(GraphAssertionRow.recording_id == recording_id)
+            .where(
+                GraphAssertionRow.recording_id == recording_id,
+                GraphAssertionRow.review_state == ReviewState.APPROVED.value,
+            )
             .order_by(GraphAssertionRow.id)
         )
         return [_to_assertion(row) for row in self._session.scalars(query)]
-
-    def approved_for(self, recording_id: str) -> list[GraphAssertion]:
-        return [
-            a for a in self.for_recording(recording_id) if a.review_state is ReviewState.APPROVED
-        ]
 
     def with_state(self, state: ReviewState, limit: int = 200) -> list[GraphAssertion]:
         query = (

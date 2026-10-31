@@ -1,7 +1,7 @@
 from pydantic import SecretStr
 
 from app.fakes import FakeGraphProjection
-from app.graph_setup import RuntimeGraphProjection
+from app.graph_setup import Neo4jConfig, RuntimeGraphProjection
 from app.models.records import Visibility
 
 
@@ -39,13 +39,20 @@ def test_until_neo4j_is_configured_nothing_happens():
 def test_it_builds_once_and_again_when_the_password_changes():
     built = []
     reader = Reader(dict(FULL))
-    graph = RuntimeGraphProjection(reader, lambda c: built.append(c) or FakeGraphProjection())
+    graph = RuntimeGraphProjection(
+        reader, lambda config: built.append(config) or FakeGraphProjection()
+    )
     graph.replace_recording("r1", "c1", Visibility.COMMUNITY, [])
     graph.replace_recording("r2", "c1", Visibility.COMMUNITY, [])
     assert len(built) == 1
     reader.values["NEO4J_PASSWORD"] = "new"
     graph.recording_ids()
     assert len(built) == 2
+
+
+def test_the_password_never_shows_in_the_config_repr():
+    config = Neo4jConfig("neo4j+s://x", "neo4j", "pw-secret")
+    assert "pw-secret" not in repr(config)
 
 
 def test_a_setup_failure_is_swallowed_so_publishing_keeps_working():

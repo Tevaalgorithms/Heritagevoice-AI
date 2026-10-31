@@ -9,7 +9,6 @@ from dataclasses import dataclass
 from app.db.repositories import GraphAssertionRepository, RecordingRepository
 from app.indexing import IndexDeps, project_graph
 from app.models.records import RecordingStatus
-from app.ports import GraphProjection
 
 
 @dataclass(frozen=True)
@@ -20,26 +19,22 @@ class GraphRebuildResult:
     removed: int
 
 
-def _wanted(deps: IndexDeps) -> list[str]:
+def _wanted(deps: IndexDeps) -> set[str]:
     """Published recordings that have approved assertions."""
     with deps.sessions() as session:
         published = set(RecordingRepository(session).ids_by_status(RecordingStatus.PUBLISHED))
         approved = GraphAssertionRepository(session).recording_ids_with_approved()
-    return [recording_id for recording_id in approved if recording_id in published]
-
-
-def _leftovers(graph: GraphProjection, wanted: list[str]) -> list[str]:
-    """Recordings in the graph that should no longer be there."""
-    return [recording_id for recording_id in graph.recording_ids() if recording_id not in wanted]
+    return published.intersection(approved)
 
 
 def rebuild_graph(deps: IndexDeps) -> GraphRebuildResult:
+    """Project every wanted recording again and remove whatever else is in the graph."""
     if deps.graph is None:
         return GraphRebuildResult(projected=0, removed=0)
     wanted = _wanted(deps)
-    leftovers = _leftovers(deps.graph, wanted)
-    for recording_id in wanted:
+    leftovers = set(deps.graph.recording_ids()) - wanted
+    for recording_id in sorted(wanted):
         project_graph(deps, recording_id)
-    for recording_id in leftovers:
+    for recording_id in sorted(leftovers):
         deps.graph.delete_recording(recording_id)
     return GraphRebuildResult(projected=len(wanted), removed=len(leftovers))

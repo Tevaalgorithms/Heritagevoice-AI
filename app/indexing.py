@@ -86,7 +86,7 @@ def _records(
     return records
 
 
-def consented(session: Session, recording: Recording) -> Recording:
+def _consented(session: Session, recording: Recording) -> Recording:
     """The recording as it may be indexed: public only if the consent allows public sharing."""
     consent = ConsentRepository(session).get(recording.consent_id)
     if consent is not None and consent.permits(Right.PUBLIC_SHARING):
@@ -96,7 +96,7 @@ def consented(session: Session, recording: Recording) -> Recording:
 
 def build_records(session: Session, original: Recording) -> list[ChunkRecord]:
     """Chunks of the approved transcript, plus the approved translation if it matches it."""
-    recording = consented(session, original)
+    recording = _consented(session, original)
     versions = VersionRepository(session)
     transcript = versions.approved(recording.id, Subject.TRANSCRIPT)
     if transcript is None:
@@ -108,7 +108,7 @@ def build_records(session: Session, original: Recording) -> list[ChunkRecord]:
     return records
 
 
-def indexable(session: Session, recording_id: str) -> Recording:
+def _indexable(session: Session, recording_id: str) -> Recording:
     recording = RecordingRepository(session).get(recording_id)
     if recording is None:
         raise IndexRefusedError("missing")
@@ -143,7 +143,7 @@ def project_graph(deps: IndexDeps, recording_id: str) -> int:
         return 0
     with deps.sessions() as session:
         try:
-            recording = consented(session, indexable(session, recording_id))
+            recording = _consented(session, _indexable(session, recording_id))
         except IndexRefusedError:
             deps.graph.delete_recording(recording_id)
             return 0
@@ -157,7 +157,7 @@ def project_graph(deps: IndexDeps, recording_id: str) -> int:
 def index_one(deps: IndexDeps, recording_id: str) -> int:
     """(Re)build the index of one published recording; returns the number of chunks."""
     with deps.sessions() as session:
-        recording = indexable(session, recording_id)
+        recording = _indexable(session, recording_id)
         records = build_records(session, recording)
         ChunkRepository(session).replace_for_recording(recording.id, records)
     _sync_vectors(deps, recording, records)

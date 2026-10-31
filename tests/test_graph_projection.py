@@ -2,7 +2,6 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-from app.adapters import neo4j_graph
 from app.adapters.neo4j_graph import Neo4jProjection, entity_key
 from app.db.repositories import GraphAssertionRepository, VersionRepository
 from app.db.session import session_scope
@@ -76,11 +75,10 @@ def test_only_approved_assertions_reach_the_graph(engine, deps, graph):
     assert (community, visibility, [a.id for a in written]) == ("c1", Visibility.COMMUNITY, ["a1"])
 
 
-def test_assertions_about_an_older_transcript_are_left_out(engine, deps, graph):
+def test_assertions_about_an_older_transcript_are_left_out(engine, deps):
     seed(engine, [assertion("old", version=1), assertion("new", version=2)])
     with session_scope(engine) as session:
-        versions = VersionRepository(session)
-        versions.set_status("r1", Subject.TRANSCRIPT, 1, "superseded")
+        VersionRepository(session).set_status("r1", Subject.TRANSCRIPT, 1, "superseded")
     assert project_graph(deps, "r1") == 0
 
 
@@ -110,8 +108,7 @@ def test_public_visibility_needs_the_public_sharing_consent(engine, deps, graph)
     assert graph.written["r1"][1] is Visibility.COMMUNITY
 
 
-def test_publishing_projects_and_removal_clears_it(engine, graph):
-    deps = IndexDeps(lambda: session_scope(engine), None, graph)
+def test_publishing_projects_and_removal_clears_it(engine, deps, graph):
     seed(engine, [assertion("a1")])
     index_one(deps, "r1")
     assert "r1" in graph.written
@@ -146,30 +143,80 @@ def test_repository_review_decisions(engine):
         assert repo.delete_for_recording("r1") == 1
 
 
+class FakeTransaction:
+    def __init__(self, driver):
+        self.driver = driver
+
+    def run(self, query, parameters):
+        self.driver.statements.append((query, parameters))
+        return self
+
+    def consume(self):
+        return None
+
+
+class FakeNeo4jSession:
+    def __init__(self, driver):
+        self.driver = driver
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+    def execute_write(self, work):
+        if self.driver.fail:
+            raise RuntimeError("secret detail")
+        self.driver.transactions += 1
+        work(FakeTransaction(self.driver))
+
+
 class Driver:
     def __init__(self, fail=False):
-        self.calls = []
+        self.statements = []
+        self.queries = []
+        self.transactions = 0
         self.fail = fail
+
+    def session(self):
+        return FakeNeo4jSession(self)
 
     def execute_query(self, query, parameters):
         if self.fail:
             raise RuntimeError("secret detail")
-        self.calls.append((query, parameters))
+        self.queries.append(query)
         return [{"id": "r1"}], None, None
 
 
-def test_neo4j_writes_use_parameters_and_a_fixed_relationship_type():
+def test_neo4j_replace_is_one_transaction_with_parameters_and_a_fixed_relationship_type():
     driver = Driver()
     Neo4jProjection(driver).replace_recording("r1", "c1", Visibility.PUBLIC, [assertion("a1")])
-    removal, orphans, write = driver.calls
+    assert driver.transactions == 1
+    removal, write = driver.statements
     assert removal[1] == {"recording_id": "r1"}
-    assert "DELETE e" in orphans[0]
     query, parameters = write
-    assert "[r:MENTIONS {assertion_id: $assertion_id}]" in query
-    assert parameters["skey"] == "c1:amma"
-    assert parameters["okey"] == "c1:the well"
+    assert "[r:MENTIONS {assertion_id: row.assertion_id}]" in query
     assert (parameters["visibility"], parameters["community_id"]) == ("public", "c1")
+    (row,) = parameters["rows"]
+    assert (row["skey"], row["okey"]) == ("c1:amma", "c1:the well")
     assert "Amma" not in query
+
+
+def test_many_assertions_cost_one_query_per_relationship_type():
+    driver = Driver()
+    many = [assertion(f"a{n}") for n in range(50)]
+    many.append(assertion("d1").model_copy(update={"relation": Relation.DESCRIBES}))
+    Neo4jProjection(driver).replace_recording("r1", "c1", Visibility.COMMUNITY, many)
+    assert len(driver.statements) == 3  # removal, MENTIONS (50 rows), DESCRIBES (1 row)
+
+
+def test_deleting_a_recording_is_one_scoped_statement():
+    driver = Driver()
+    Neo4jProjection(driver).delete_recording("r1")
+    ((query, parameters),) = driver.statements
+    assert parameters == {"recording_id": "r1"}
+    assert "DELETE e" in query
 
 
 def test_the_same_name_in_two_communities_is_two_nodes():
@@ -183,9 +230,11 @@ def test_neo4j_failures_become_provider_errors_without_their_text():
     assert "secret" not in str(caught.value)
 
 
-def test_the_schema_and_listing_queries():
+def test_the_schema_is_created_with_a_uniqueness_rule():
     driver = Driver()
-    projection = Neo4jProjection(driver)
-    projection.ensure_schema()
-    assert projection.recording_ids() == ["r1"]
-    assert driver.calls[0][0] == neo4j_graph.ENTITY_KEY
+    Neo4jProjection(driver).ensure_schema()
+    assert "REQUIRE e.key IS UNIQUE" in driver.queries[0]
+
+
+def test_recordings_in_the_graph_are_listed():
+    assert Neo4jProjection(Driver()).recording_ids() == ["r1"]
