@@ -1,8 +1,8 @@
 # Retrieval: how a question finds passages
 
-Segment 06 builds the step that turns a question into a short list of cited passages. It is the
-node `HybridRetriever` in `app/agents/hybrid_rag.py`. It is not yet connected to the question
-endpoint or the answer step (segment 09), so asking a question in the UI does not use it yet.
+The step that turns a question into a short list of cited passages is the node `HybridRetriever`
+in `app/agents/hybrid_rag.py`. The question endpoint (`POST /v1/query`) runs it, then the
+verification and answer steps (see `answering.md`).
 
 ## What it does
 

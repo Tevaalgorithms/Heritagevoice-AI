@@ -46,13 +46,13 @@ the server with every passage, so it cannot be left out by one screen.
   recording, and a search that works in every supported script.
 - The contributing community's name only if the consent allows attribution. Never the uploader,
   the audio location or the consent record.
-- Audio and video playback is not offered yet. It needs the playback right and short-lived links
-  (segment 10).
+- Audio playback of a cited passage on the Ask page, only for people who may view the recording
+  and only while its consent still allows playback. Library cards do not play audio yet.
 
 ## Known limits
 
 - Meaning-based (vector) search covers a reader's own communities only. Public recordings from
-  other communities are found by keyword search. A shared public index comes with segment 06.
+  other communities are found by keyword search. A shared public vector namespace is not built.
 - Video: the upload check accepts the MP4 container (the same check as m4a audio) and the sound
   is meant to be transcribed, but this has not been tried with a real video file yet. Other video
   formats are not accepted.

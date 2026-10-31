@@ -1,6 +1,6 @@
 """Upload page: send a recording, follow its processing, then read the draft transcript.
 
-Editing the transcript and seeking the audio from a segment arrive with segments 04 and 10.
+Seeking the audio from a segment is not offered here yet.
 """
 
 import time

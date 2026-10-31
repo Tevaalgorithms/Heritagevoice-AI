@@ -1,4 +1,4 @@
-"""Measure the whole retrieval step on the evaluation fixtures (task 6.6).
+"""Measure the whole retrieval step on the evaluation fixtures (retrieval check).
 
 For each answerable question we run the real retrieval node and record the rank of the first
 expected recording among the distinct recordings it returned (1 is best). The fixtures name

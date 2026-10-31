@@ -31,3 +31,7 @@ crash.log
 age-identity*
 credentials.json
 .DS_Store
+
+# maintainers' private working notes (never part of the project)
+/docs/planning/
+/docs/private/

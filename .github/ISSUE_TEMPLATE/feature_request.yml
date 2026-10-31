@@ -1,0 +1,19 @@
+name: Feature request
+description: Suggest an improvement
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve, and for whom?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What do you suggest?
+  - type: textarea
+    id: consent
+    attributes:
+      label: Does it touch consent, access or private material?
+      description: If so, say how it stays default-deny and under the community's control.
