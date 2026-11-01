@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 
 from app.api.auth import SessionFactory, current_principal, get_session_factory
-from app.api.recordings import NOT_FOUND, PathId, get_audio_store, viewable
+from app.api.recordings import NOT_FOUND, PathId, get_audio_store
 from app.audio import sniff_type
 from app.db.repositories import ConsentRepository, RecordingRepository
 from app.models.records import Consent, Recording, RecordingStatus, Right, Visibility
@@ -61,25 +61,35 @@ def audio_response(store: AudioStore, recording: Recording, headers: dict[str, s
     return Response(data, media_type=kind, headers=headers)
 
 
-def _members_may_play(principal: Principal, recording: Recording, allowed: bool) -> bool:
-    resource = Resource(recording.community_id, recording.uploader_id)
+def _playable_state(principal: Principal, recording: Recording, resource: Resource) -> bool:
+    """Anyone in the community may play what it has published; drafts only for those who may view
+    them (the uploader, coordinators and admins)."""
+    if recording.audio_key is None or recording.status is RecordingStatus.REVOKED:
+        return False
     return (
-        allowed
-        and recording.status != RecordingStatus.REVOKED
-        and recording.audio_key is not None
+        recording.status is RecordingStatus.PUBLISHED
+        or authorize(principal, Action.RECORDING_VIEW, resource).allowed
+    )
+
+
+def _members_may_play(session: Session, principal: Principal, recording: Recording) -> bool:
+    resource = Resource(recording.community_id, recording.uploader_id)
+    consent = ConsentRepository(session).get(recording.consent_id)
+    return (
+        consent is not None
+        and consent.permits(Right.PLAYBACK)
         and authorize(principal, Action.MEDIA_PLAY, resource).allowed
+        and _playable_state(principal, recording, resource)
     )
 
 
 def _playable(session: Session, principal: Principal, recording_id: str) -> Recording:
-    """Public recordings play for anyone signed in; otherwise the usual community checks apply."""
+    """Public recordings play for anyone signed in; otherwise the community's own rules apply."""
     public = public_playable(session, recording_id)
     if public is not None:
         return public
-    recording = viewable(session, principal, recording_id)
-    consent = ConsentRepository(session).get(recording.consent_id)
-    allowed = consent is not None and consent.permits(Right.PLAYBACK)
-    if not _members_may_play(principal, recording, allowed):
+    recording = RecordingRepository(session).get(recording_id)
+    if recording is None or not _members_may_play(session, principal, recording):
         raise NOT_FOUND
     return recording
 
