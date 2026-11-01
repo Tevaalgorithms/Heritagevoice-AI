@@ -1,8 +1,8 @@
-"""Compile the agent skeleton. Adapter exceptions intentionally propagate.
+"""Compile the question-answering workflow. Adapter exceptions intentionally propagate.
 
-Both retrieval branches run serially initially; the plan allows parallelization later.
-Authorization comes from the captured trusted principal, never from model output.
-The API does not expose this graph until identity, ownership and adapters are ready.
+Both retrieval branches run one after the other. Authorization comes from the captured trusted
+principal, never from model output. The caller supplies the agents (`Agents`), so tests and the
+skeleton can inject fakes and the service injects the real ones.
 """
 
 from collections.abc import Callable
@@ -14,7 +14,7 @@ from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
-from app.agents import answer_agent, evidence_merger, graph_rag, hybrid_rag, supervisor, verifier
+from app.agents import evidence_merger
 from app.graph.state import StateUpdate, WorkflowState
 from app.models.evidence import Route, Turn
 from app.security.permissions import Principal, require_permitted
@@ -31,7 +31,7 @@ Retriever = Callable[[WorkflowState, Principal], StateUpdate]
 
 @dataclass(frozen=True)
 class Agents:
-    """The model-backed steps. Tests and the skeleton inject fakes; production injects real ones."""
+    """The steps of the workflow. Tests inject fakes; the service injects the real ones."""
 
     classify: Node
     hybrid: Retriever
@@ -39,17 +39,6 @@ class Agents:
     verify: Node
     answer: Node
     rewrite: Callable[[str, list[Turn]], str] | None = None  # follow-up questions; optional
-
-
-def default_agents() -> Agents:
-    """Resolve the agent modules at call time so tests can monkeypatch them."""
-    return Agents(
-        classify=supervisor.classify,
-        hybrid=hybrid_rag.retrieve,
-        graph=graph_rag.retrieve,
-        verify=verifier.verify,
-        answer=answer_agent.synthesize,
-    )
 
 
 SUPERVISOR_ROUTES = {
@@ -148,11 +137,11 @@ def _wire(builder: StateGraph[WorkflowState]) -> None:
 
 def build_workflow(
     principal: Principal,
+    agents: Agents,
     checkpointer: BaseCheckpointSaver[Any] | None = None,
-    agents: Agents | None = None,
 ) -> CompiledStateGraph[WorkflowState]:
     builder = StateGraph(WorkflowState)
-    for name, node in _nodes(principal, agents or default_agents()).items():
+    for name, node in _nodes(principal, agents).items():
         builder.add_node(name, node)
     _wire(builder)
     return builder.compile(checkpointer=checkpointer)

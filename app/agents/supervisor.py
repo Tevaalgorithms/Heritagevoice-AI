@@ -6,7 +6,6 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from app.config import IntegrationNotConfiguredError
 from app.errors import ProviderError
 from app.graph.state import StateUpdate, WorkflowState
 from app.models.evidence import Route
@@ -49,8 +48,3 @@ def _decision(result: Any) -> RouteDecision:
     if not isinstance(result, RouteDecision):
         raise ProviderError("unexpected routing output", code="supervisor")
     return result
-
-
-def classify(state: WorkflowState) -> StateUpdate:
-    """The default node, used until the service wires in a `Supervisor` with a model."""
-    raise IntegrationNotConfiguredError("Question routing is not wired to a model yet")

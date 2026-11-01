@@ -11,7 +11,6 @@ from typing import Annotated, Any, Literal
 from pydantic import BaseModel, Field
 
 from app.agents.passages import label_passages
-from app.config import IntegrationNotConfiguredError
 from app.errors import ProviderError
 from app.graph.state import StateUpdate, WorkflowState
 from app.models.evidence import Claim, Evidence
@@ -92,8 +91,3 @@ class Verifier:
             "conflicts": found.conflicts,
             **_retry(found.model_copy(update={"coverage": coverage}), state),
         }
-
-
-def verify(state: WorkflowState) -> StateUpdate:
-    """The default node, used until the service wires in a `Verifier` with a model."""
-    raise IntegrationNotConfiguredError("Claim support verification is not wired to a model yet")

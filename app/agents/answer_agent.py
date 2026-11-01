@@ -13,7 +13,6 @@ from typing import Annotated, Any
 
 from pydantic import BaseModel, Field
 
-from app.config import IntegrationNotConfiguredError
 from app.errors import ProviderError
 from app.graph.state import StateUpdate, WorkflowState
 from app.languages import BY_CODE
@@ -146,8 +145,3 @@ class AnswerAgent:
             return (*_fallback(claims), [WRITER_UNAVAILABLE])
         used = _valid_used(draft, len(claims))
         return (draft.answer, used, []) if used else (*_fallback(claims), [WRITER_UNAVAILABLE])
-
-
-def synthesize(state: WorkflowState) -> StateUpdate:
-    """The default node, used until the service wires in an `AnswerAgent` with a model."""
-    raise IntegrationNotConfiguredError("Answer synthesis is not wired to a model yet")

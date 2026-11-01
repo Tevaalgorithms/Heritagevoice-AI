@@ -14,7 +14,6 @@ from contextlib import AbstractContextManager
 from sqlalchemy.orm import Session
 
 from app.agents.supervisor import GRAPH_UNAVAILABLE
-from app.config import IntegrationNotConfiguredError
 from app.db.repositories import ChunkRepository, GraphAssertionRepository, VersionRepository
 from app.errors import ProviderError
 from app.graph.state import StateUpdate, WorkflowState
@@ -104,8 +103,3 @@ class GraphRetriever:
             return {"graph_evidence": [], "warnings": [GRAPH_UNAVAILABLE]}
         with self._sessions() as session:
             return {"graph_evidence": supported_evidence(session, paths, principal)}
-
-
-def retrieve(state: WorkflowState, principal: Principal) -> StateUpdate:
-    """The default node, used until the service wires in a `GraphRetriever`."""
-    raise IntegrationNotConfiguredError("The knowledge graph is not wired to a reader yet")

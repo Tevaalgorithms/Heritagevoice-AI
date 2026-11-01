@@ -4,8 +4,7 @@ import pytest
 from sqlalchemy import create_engine
 
 from app.adapters.pinecone_store import PineconeVectorStore
-from app.agents.hybrid_rag import VECTOR_UNAVAILABLE, HybridRetriever, retrieve
-from app.config import IntegrationNotConfiguredError
+from app.agents.hybrid_rag import VECTOR_UNAVAILABLE, HybridRetriever
 from app.db.session import session_scope
 from app.db.tables import Base
 from app.fakes import FakeEmbedder, FakePineconeIndex
@@ -130,11 +129,6 @@ def test_the_limits_apply_to_what_the_node_returns(engine):
 def test_an_empty_question_returns_nothing(engine):
     add(engine, vector_store(engine))
     assert ask(HybridRetriever(sessions(engine), None), INSIDER, "  ")["hybrid_evidence"] == []
-
-
-def test_the_default_node_refuses_to_run_until_it_is_wired():
-    with pytest.raises(IntegrationNotConfiguredError):
-        retrieve({"question": "x"}, INSIDER)
 
 
 def test_a_remedy_passage_carries_its_notice_and_other_kinds_do_not(engine):
