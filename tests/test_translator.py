@@ -6,7 +6,8 @@ from pydantic import SecretStr
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-from app.adapters.llm_translator import (
+from app.agents.prompts.translation import PROMPT_VERSION, TRANSLATION_PROMPT
+from app.agents.translator import (
     BATCH_SIZE,
     ConfiguredTranslator,
     LangChainTranslator,
@@ -14,7 +15,6 @@ from app.adapters.llm_translator import (
     TranslationBatch,
     build_translator,
 )
-from app.agents.prompts.translation import PROMPT_VERSION, TRANSLATION_PROMPT
 from app.audio import AudioRules
 from app.config import Settings
 from app.db.repositories import (

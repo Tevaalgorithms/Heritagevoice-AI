@@ -7,10 +7,10 @@ from functools import partial
 from sqlalchemy import Engine
 
 from app.adapters.llm_runner import ModelRunner, structured_chain
-from app.adapters.llm_translator import build_translator
 from app.adapters.transcribe import AmazonTranscribe, TranscribeConfig
 from app.agents.graph_extractor import GraphExtractor, Proposals
 from app.agents.prompts.graph import GRAPH_PROMPT
+from app.agents.translator import build_translator
 from app.config import Settings
 from app.db.session import session_scope
 from app.fakes import FakeTranscriber
