@@ -46,8 +46,12 @@ the server with every passage, so it cannot be left out by one screen.
   recording, and a search that works in every supported script.
 - The contributing community's name only if the consent allows attribution. Never the uploader,
   the audio location or the consent record.
-- Audio playback of a cited passage on the Ask page, only for people who may view the recording
-  and only while its consent still allows playback. Library cards do not play audio yet.
+- Audio playback, on the Ask page, on Library cards (the cited time range) and on the Review page.
+  Anyone, with or without an account, may play a recording only while it is published, shared
+  publicly, and its consent allows both public sharing and playback. Everything else is "not
+  found". The check runs on every request, so withdrawing a consent or taking an item down
+  stops playback at once. Visitors without an account are limited to 10 plays a minute, and the
+  audio is never cached or given a storage address.
 
 ## Known limits
 
@@ -56,4 +60,6 @@ the server with every passage, so it cannot be left out by one screen.
 - Video: the upload check accepts the MP4 container (the same check as m4a audio) and the sound
   is meant to be transcribed, but this has not been tried with a real video file yet. Other video
   formats are not accepted.
-- There is no "report this item" button, rate limit on search, or anonymous browsing yet.
+- Audio is streamed through the API rather than from short-lived storage links, so a withdrawal
+  takes effect immediately. Storage links would reduce server traffic, at the cost of a link that
+  stays usable for a few minutes; reconsider if playback traffic grows.

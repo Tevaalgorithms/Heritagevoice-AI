@@ -1,24 +1,67 @@
 """Play a recording. The audio is read from private storage only after the same checks as reading
 the recording, plus two more: the recording is not revoked and its consent still allows playback.
-Nothing is cached, and the storage address is never given out."""
+Nothing is cached, and the storage address is never given out.
+
+Anyone may play a recording that its community has shared publicly (see `public_playable`); the
+open endpoint for visitors without an account is in `app/api/public.py`."""
 
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Response
+from sqlalchemy.orm import Session
 
 from app.api.auth import SessionFactory, current_principal, get_session_factory
 from app.api.recordings import NOT_FOUND, PathId, get_audio_store, viewable
 from app.audio import sniff_type
-from app.db.repositories import ConsentRepository
-from app.models.records import Recording, RecordingStatus, Right
+from app.db.repositories import ConsentRepository, RecordingRepository
+from app.models.records import Consent, Recording, RecordingStatus, Right, Visibility
 from app.ports import AudioStore
 from app.security.permissions import Principal, Resource, authorize
 from app.security.roles import Action
 
 router = APIRouter(prefix="/v1", tags=["recordings"])
+PRIVATE = {"Cache-Control": "private, no-store"}
 
 
-def _playable(principal: Principal, recording: Recording, allowed: bool) -> bool:
+def _published_with_audio(recording: Recording | None) -> bool:
+    return (
+        recording is not None
+        and recording.status is RecordingStatus.PUBLISHED
+        and recording.audio_key is not None
+    )
+
+
+def _shared_publicly(recording: Recording, consent: Consent | None) -> bool:
+    """Public playback needs the recording to be public and its consent, as it stands now, to
+    allow both public sharing and playback."""
+    return (
+        consent is not None
+        and recording.visibility is Visibility.PUBLIC
+        and consent.permits(Right.PUBLIC_SHARING)
+        and consent.permits(Right.PLAYBACK)
+    )
+
+
+def public_playable(session: Session, recording_id: str) -> Recording | None:
+    """The recording, if anyone may play it right now: published (so not revoked or taken down),
+    public, and its consent allows public sharing and playback. Otherwise None."""
+    recording = RecordingRepository(session).get(recording_id)
+    if not _published_with_audio(recording) or recording is None:
+        return None
+    consent = ConsentRepository(session).get(recording.consent_id)
+    return recording if _shared_publicly(recording, consent) else None
+
+
+def audio_response(store: AudioStore, recording: Recording, headers: dict[str, str]) -> Response:
+    """The recording's audio, read from private storage. Not found if it is not a known format."""
+    data = store.get(recording.audio_key or "")
+    kind = sniff_type(data[:16])
+    if kind is None:
+        raise HTTPException(status_code=404, detail="Not found")
+    return Response(data, media_type=kind, headers=headers)
+
+
+def _members_may_play(principal: Principal, recording: Recording, allowed: bool) -> bool:
     resource = Resource(recording.community_id, recording.uploader_id)
     return (
         allowed
@@ -26,6 +69,19 @@ def _playable(principal: Principal, recording: Recording, allowed: bool) -> bool
         and recording.audio_key is not None
         and authorize(principal, Action.MEDIA_PLAY, resource).allowed
     )
+
+
+def _playable(session: Session, principal: Principal, recording_id: str) -> Recording:
+    """Public recordings play for anyone signed in; otherwise the usual community checks apply."""
+    public = public_playable(session, recording_id)
+    if public is not None:
+        return public
+    recording = viewable(session, principal, recording_id)
+    consent = ConsentRepository(session).get(recording.consent_id)
+    allowed = consent is not None and consent.permits(Right.PLAYBACK)
+    if not _members_may_play(principal, recording, allowed):
+        raise NOT_FOUND
+    return recording
 
 
 @router.get("/recordings/{recording_id}/media")
@@ -36,13 +92,5 @@ def recording_media(
     store: Annotated[AudioStore, Depends(get_audio_store)],
 ) -> Response:
     with factory() as session:
-        recording = viewable(session, principal, recording_id)
-        consent = ConsentRepository(session).get(recording.consent_id)
-        allowed = consent is not None and consent.permits(Right.PLAYBACK)
-    if not _playable(principal, recording, allowed) or recording.audio_key is None:
-        raise NOT_FOUND
-    data = store.get(recording.audio_key)
-    kind = sniff_type(data[:16])
-    if kind is None:
-        raise HTTPException(status_code=404, detail="Not found")
-    return Response(data, media_type=kind, headers={"Cache-Control": "private, no-store"})
+        recording = _playable(session, principal, recording_id)
+    return audio_response(store, recording, PRIVATE)

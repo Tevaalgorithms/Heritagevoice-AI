@@ -57,7 +57,7 @@ def render(client: ApiClient, sign_in: Callable[[], None]) -> None:
     with search:
         st.markdown("### Search the shared heritage")
         st.caption(OPEN_NOTE)
-        library.search_and_show(client, client.public_library)
+        library.search_and_show(client, client.public_library, client.public_recording_media)
     with account:
         _account_card(sign_in)
     theme.landing_details()
