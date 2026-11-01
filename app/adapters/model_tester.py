@@ -16,6 +16,12 @@ ERROR_CODES = {
     "PermissionDeniedError": "bad_key",
     "NotFoundError": "unknown_model",
     "RateLimitError": "rate_limited",
+    "BadRequestError": "bad_request",
+    "UnprocessableEntityError": "bad_request",
+    "APITimeoutError": "timeout",
+    "APIConnectionError": "provider_unreachable",
+    "InternalServerError": "provider_down",
+    "OverloadedError": "provider_down",
 }
 
 

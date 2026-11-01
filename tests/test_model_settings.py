@@ -491,6 +491,15 @@ def test_provider_errors_map_to_short_codes():
     assert _code_for(RuntimeError("anything")) == "provider_error"
 
 
+def test_a_refused_request_and_a_timeout_get_their_own_codes():
+    request = httpx.Request("POST", "http://x")
+    bad = anthropic.BadRequestError(
+        "secret detail", response=httpx.Response(400, request=request), body=None
+    )
+    assert _code_for(bad) == "bad_request"
+    assert _code_for(anthropic.APITimeoutError(request=request)) == "timeout"
+
+
 def test_me_tells_the_ui_who_is_signed_in(client):
     assert client.get("/v1/me").json() == {"user_id": "admin-1", "role": "admin", "communities": []}
     act_as(person(Role.REVIEWER, user_id="r", communities=("c2", "c1")))
