@@ -1,7 +1,7 @@
 # One image, three commands: API (default), UI and worker (see deploy/docker-compose.yml).
 # Pin base image digests before a release; tags are used here so the file stays readable.
 
-FROM ghcr.io/astral-sh/uv:0.10.7 AS uv
+FROM ghcr.io/astral-sh/uv:0.10.12 AS uv
 
 FROM python:3.12-slim-bookworm AS build
 COPY --from=uv /uv /usr/local/bin/uv
