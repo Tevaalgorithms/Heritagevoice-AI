@@ -9,6 +9,7 @@ import re
 from dataclasses import dataclass, field
 from typing import cast
 
+from app.agents.answer_agent import INSUFFICIENT
 from app.graph.state import WorkflowState
 from app.graph.workflow import Agents, build_workflow
 from app.models.evidence import Citation, Evidence, Turn
@@ -16,6 +17,7 @@ from app.security.permissions import Principal
 
 TIMES = re.compile(r"\?t=([0-9.]+)-([0-9.]+)$")
 STATUSES = {"answered", "partial", "insufficient_evidence", "clarify", "refused"}
+SOURCES_CHANGED = "sources_changed"
 
 
 @dataclass(frozen=True)
@@ -67,9 +69,22 @@ def answer_question(ask: Ask, principal: Principal, agents: Agents) -> Outcome:
     if ask.language:
         start["response_language"] = ask.language
     final = cast(WorkflowState, build_workflow(principal, agents=agents).invoke(start))
-    return Outcome(
+    outcome = Outcome(
         status=_status(final),
         answer=final.get("answer", ""),
         citations=[to_citation(item) for item in final.get("citations", [])],
         warnings=list(dict.fromkeys(final.get("warnings", []))),
     )
+    return _still_valid(outcome, principal, agents)
+
+
+def _still_valid(outcome: Outcome, principal: Principal, agents: Agents) -> Outcome:
+    """Withdraw an answer whose sources can no longer be read (withdrawn, taken down, corrected
+    while the question ran). The whole answer goes, as one bad source may be what it rests on."""
+    if agents.still_readable is None or not outcome.citations:
+        return outcome
+    cited = [c.evidence_id for c in outcome.citations]
+    if set(cited) <= agents.still_readable(cited, principal):
+        return outcome
+    warnings = [*outcome.warnings, SOURCES_CHANGED]
+    return Outcome("insufficient_evidence", INSUFFICIENT, [], warnings)

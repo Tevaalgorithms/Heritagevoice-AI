@@ -39,6 +39,8 @@ class Agents:
     verify: Node
     answer: Node
     rewrite: Callable[[str, list[Turn]], str] | None = None  # follow-up questions; optional
+    # Asked just before an answer is returned: which cited sources can still be read?
+    still_readable: Callable[[list[str], Principal], set[str]] | None = None
 
 
 SUPERVISOR_ROUTES = {

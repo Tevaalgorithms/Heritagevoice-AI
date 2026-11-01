@@ -22,6 +22,7 @@ from app.graph_setup import RuntimeGraphReader
 from app.model_registry import ModelRegistry
 from app.models.llm import ModelRole
 from app.ports import VectorStore
+from app.retrieval.delivery import DeliveryCheck
 from app.secrets import SecretReader, secrets_for
 
 SessionFactory = Callable[[], AbstractContextManager[Session]]
@@ -50,4 +51,5 @@ def build_agents(
         verify=Verifier(runner(ModelRole.VERIFIER, VERIFIER_PROMPT, Verification)),
         answer=AnswerAgent(runner(ModelRole.ANSWER, ANSWER_PROMPT, AnswerDraft)),
         rewrite=QuestionRewriter(runner(ModelRole.SUPERVISOR, REWRITE_PROMPT, Standalone)),
+        still_readable=DeliveryCheck(sessions),
     )
