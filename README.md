@@ -284,7 +284,7 @@ uv run pytest
 
 ```text
 app/api/          HTTP endpoints
-app/agents/       Question rewrite, supervisor, retrieval, graph search, verifier, answer, extractor
+app/agents/       Translator, graph extractor, question rewrite, supervisor, retrieval, graph search, verifier, answer
 app/graph/        LangGraph workflows and typed state
 app/adapters/     Pinecone, Neo4j, Cognito, Transcribe, S3 and model providers
 app/db/           Tables and repositories
