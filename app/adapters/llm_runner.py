@@ -22,12 +22,20 @@ from app.errors import ProviderError
 from app.model_registry import ModelRegistry
 from app.models.llm import ModelRole, ModelSetting
 from app.secrets import SecretReader
+from app.usage import UsageCallback, UsageSink
 
 logger = logging.getLogger("heritagevoice.agents")
 ChainFactory = Callable[[ModelSetting, SecretStr], Runnable[dict[str, Any], Any]]
 
 
-def structured_chain(prompt: ChatPromptTemplate, schema: type[BaseModel]) -> ChainFactory:
+def counting(setting: ModelSetting, sink: UsageSink | None) -> tuple[UsageCallback, ...]:
+    """The token counter for one setting's calls, or nothing when no one is counting."""
+    return () if sink is None else (UsageCallback(setting.role.value, setting.model, sink),)
+
+
+def structured_chain(
+    prompt: ChatPromptTemplate, schema: type[BaseModel], sink: UsageSink | None = None
+) -> ChainFactory:
     """A factory for `prompt | model -> schema` using the model and limits of one setting."""
 
     def build(setting: ModelSetting, key: SecretStr) -> Runnable[dict[str, Any], Any]:
@@ -37,6 +45,7 @@ def structured_chain(prompt: ChatPromptTemplate, schema: type[BaseModel]) -> Cha
             setting.timeout_s,
             setting.max_retries,
             setting.temperature,
+            callbacks=counting(setting, sink),
         )
         return prompt | structured(chat_model(options, key), schema, setting.provider)
 

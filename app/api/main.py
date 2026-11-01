@@ -23,6 +23,7 @@ from app.api.recordings import router as recordings_router
 from app.api.reports import router as reports_router
 from app.api.review import router as review_router
 from app.api.tracing import install_trace_logging, trace_id_middleware
+from app.api.usage import router as usage_router
 from app.config import Settings
 
 app = FastAPI(title="HeritageVoice AI", version="0.1.0")
@@ -45,6 +46,7 @@ app.include_router(graph_review_router)
 app.include_router(media_router)
 app.include_router(open_sharing_router)
 app.include_router(reports_router)
+app.include_router(usage_router)
 app.include_router(my_groups_router)
 app.include_router(integrations_router)
 app.include_router(library_router)

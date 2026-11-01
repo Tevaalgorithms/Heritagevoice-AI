@@ -23,6 +23,7 @@ from app.models.llm import (
     ModelSetting,
     ModelStatus,
     NewModel,
+    PriceChange,
     ProbeResult,
     StatusChange,
 )
@@ -67,6 +68,8 @@ class CatalogView(BaseModel):
     key_name: str
     status: ModelStatus
     key_configured: bool
+    input_price: float | None = None  # US dollars per million tokens
+    output_price: float | None = None
 
 
 class ModelView(BaseModel):
@@ -139,6 +142,18 @@ def set_status(model_id: str, body: StatusChange, ctx: Ctx, secrets: Secrets) ->
         AuditRepository(session).record(
             ctx.entry("model:status", f"model:{model_id}", body.status.value)
         )
+    return _catalog_view(entry, secrets)
+
+
+@router.put("/catalog/{model_id}/price")
+def set_price(model_id: str, body: PriceChange, ctx: Ctx, secrets: Secrets) -> CatalogView:
+    """What the provider charges per million tokens, used for the cost estimate on Usage."""
+    with ctx.factory() as session:
+        entry = ModelCatalogRepository(session).set_price(model_id, body)
+        if entry is None:
+            raise _problem("unknown_model", 404)
+        detail = f"in={body.input_price} out={body.output_price}"
+        AuditRepository(session).record(ctx.entry("model:price", f"model:{model_id}", detail))
     return _catalog_view(entry, secrets)
 
 

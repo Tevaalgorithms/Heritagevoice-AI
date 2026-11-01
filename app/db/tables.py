@@ -215,6 +215,22 @@ class ModelCatalogRow(Base):
     status: Mapped[str] = mapped_column(String(16), default="active", server_default="active")
     created_by: Mapped[str] = mapped_column(String(64), default="system")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    # US dollars per million tokens, set by an admin; empty until they enter the provider's price.
+    input_price: Mapped[float | None] = mapped_column(Float, default=None)
+    output_price: Mapped[float | None] = mapped_column(Float, default=None)
+
+
+class ModelUsageRow(Base):
+    """One language-model call: which job and model, and how many tokens. Never any text."""
+
+    __tablename__ = "model_usage"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, index=True)
+    role: Mapped[str] = mapped_column(String(32))
+    model: Mapped[str] = mapped_column(String(64))
+    input_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    output_tokens: Mapped[int] = mapped_column(Integer, default=0)
 
 
 class ModelSettingRow(Base):

@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from langchain_anthropic import ChatAnthropic
+from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.language_models import BaseChatModel
 from langchain_core.runnables import Runnable
 from langchain_openai import ChatOpenAI
@@ -31,6 +32,7 @@ class ChatOptions:
     max_retries: int
     temperature: float
     max_tokens: int | None = None
+    callbacks: tuple[BaseCallbackHandler, ...] = ()  # e.g. the token counter
 
 
 def _anthropic(options: ChatOptions, key: SecretStr) -> BaseChatModel:
@@ -40,6 +42,7 @@ def _anthropic(options: ChatOptions, key: SecretStr) -> BaseChatModel:
         "timeout": options.timeout_s,
         "max_retries": options.max_retries,
         "temperature": options.temperature,
+        "callbacks": list(options.callbacks),
     }
     if options.max_tokens is not None:
         settings["max_tokens"] = options.max_tokens
@@ -53,6 +56,7 @@ def _openai(options: ChatOptions, key: SecretStr) -> BaseChatModel:
         "base_url": OPENAI_BASE_URL,
         "timeout": options.timeout_s,
         "max_retries": options.max_retries,
+        "callbacks": list(options.callbacks),
     }
     if options.max_tokens is not None:
         settings["max_completion_tokens"] = options.max_tokens

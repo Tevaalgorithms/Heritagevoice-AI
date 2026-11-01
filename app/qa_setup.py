@@ -24,6 +24,7 @@ from app.models.llm import ModelRole
 from app.ports import VectorStore
 from app.retrieval.delivery import DeliveryCheck
 from app.secrets import SecretReader, secrets_for
+from app.usage import UsageLog
 
 SessionFactory = Callable[[], AbstractContextManager[Session]]
 
@@ -36,11 +37,12 @@ def build_agents(
 ) -> Agents:
     """The real agents: each model call goes through the job's models and fall-backs."""
     registry = ModelRegistry(sessions, settings)
+    usage = UsageLog(sessions)
     keys = secrets or secrets_for(settings)
     graph = RuntimeGraphReader(keys)
 
     def runner(role: ModelRole, prompt, schema) -> ModelRunner:  # type: ignore[no-untyped-def]
-        return ModelRunner(registry, keys, role, structured_chain(prompt, schema))
+        return ModelRunner(registry, keys, role, structured_chain(prompt, schema, usage))
 
     return Agents(
         classify=Supervisor(

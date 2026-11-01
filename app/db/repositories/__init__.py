@@ -19,6 +19,7 @@ from app.db.repositories.transcripts import (
     TranscriptRepository,
     VersionRepository,
 )
+from app.db.repositories.usage import UsageRepository
 from app.db.repositories.users import UserRepository
 
 __all__ = [
@@ -31,6 +32,7 @@ __all__ = [
     "JobRepository",
     "ModelCatalogRepository",
     "ModelSettingRepository",
+    "UsageRepository",
     "NewVersion",
     "RecordingRepository",
     "ReportRepository",

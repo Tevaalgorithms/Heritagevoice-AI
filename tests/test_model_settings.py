@@ -286,7 +286,13 @@ def test_a_missing_key_is_reported_without_revealing_anything(client, fake_secre
 def test_adding_a_model_is_stored_audited_and_listed(client, engine):
     response = client.post("/admin/models/catalog", json=NEW)
     assert response.status_code == 201
-    assert response.json() == {**NEW, "status": "active", "key_configured": False}
+    assert response.json() == {
+        **NEW,
+        "status": "active",
+        "key_configured": False,
+        "input_price": None,
+        "output_price": None,
+    }
     assert len(client.get("/admin/models").json()["catalog"]) == CATALOG_SIZE + 1
     with Session(engine) as session:
         entry = session.scalars(select(AuditLogRow)).one()

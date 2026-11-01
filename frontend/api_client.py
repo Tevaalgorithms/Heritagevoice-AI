@@ -48,6 +48,7 @@ from frontend.api_models import (
     SignupView,
     UploadResult,
     UploadSpec,
+    UsageView,
     VersionResult,
     VersionView,
     VisibilityResult,
@@ -71,6 +72,7 @@ __all__ = [
     "ApiRequestError",
     "ApiUnavailableError",
     "CatalogView",
+    "UsageView",
     "ConsentView",
     "GroupView",
     "MyGroupView",
@@ -347,6 +349,17 @@ class ApiClient:
             "PUT", f"/admin/models/catalog/{model_id}", auth=True, json={"status": status}
         )
         return CatalogView.model_validate(response.json())
+
+    def set_model_price(self, model_id: str, price_in: float, price_out: float) -> CatalogView:
+        body = {"input_price": price_in, "output_price": price_out}
+        response = self._send(
+            "PUT", f"/admin/models/catalog/{model_id}/price", auth=True, json=body
+        )
+        return CatalogView.model_validate(response.json())
+
+    def usage(self, days: int) -> UsageView:
+        response = self._send("GET", "/admin/usage", auth=True, params={"days": days})
+        return UsageView.model_validate(response.json())
 
     def save_model_setting(self, role: str, params: ModelParamsSpec) -> ModelView:
         response = self._send("PUT", f"/admin/models/{role}", auth=True, json=params.model_dump())
