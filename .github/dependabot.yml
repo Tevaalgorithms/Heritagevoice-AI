@@ -1,14 +1,32 @@
 version: 2
+
+# One grouped pull request per ecosystem each week, for patch and minor updates only.
+# Major versions are skipped on purpose: they can change behavior (or, for Terraform and the base
+# image, production infrastructure), so a maintainer upgrades them by hand. Security updates are not
+# affected by `ignore` and still arrive on their own.
 updates:
-  - package-ecosystem: pip
+  # uv.lock is the source of truth. After merging or editing one of these pull requests, regenerate
+  # requirements.txt (see CONTRIBUTING.md); CI fails if the two disagree.
+  - package-ecosystem: uv
     directory: /
     schedule:
       interval: weekly
-    open-pull-requests-limit: 5
+    groups:
+      python-dependencies:
+        update-types: [minor, patch]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    groups:
+      github-actions:
+        update-types: [minor, patch]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: terraform
     directories:
       - /infra/cognito
@@ -16,7 +34,16 @@ updates:
       - /infra/single-instance
     schedule:
       interval: weekly
+    groups:
+      terraform-providers:
+        update-types: [minor, patch]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: docker
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
