@@ -488,9 +488,9 @@ langchain-classic==1.0.8 \
     --hash=sha256:1a11ea7fbe630c4f2af2f3873d27718ceac9488cf32d0821030be7cf039a6213 \
     --hash=sha256:ada0cc341a8a5b80fb24d73bdfaaeb849056ee2d8a41cc468355163fd3667484
     # via langchain-neo4j
-langchain-core==1.7.0 \
-    --hash=sha256:c34e53358b103cd73f43c63f5f46f9b5c6c3467efdffcdf134892b89020494e4 \
-    --hash=sha256:e82b24d7ac51fc74874baa29d6b3c0b8234880d4f3d897f8ff57fb80dfd9b07d
+langchain-core==1.7.1 \
+    --hash=sha256:2d668788945e824832e19bca05788a25dbb864197d63ec48b583057cf8d975fa \
+    --hash=sha256:5dc2a357e1aa40e84c7f29755182121b3acf04410e55fa3723915f645033fede
     # via
     #   heritagevoice-ai
     #   langchain
@@ -554,9 +554,9 @@ langgraph-sdk==0.4.9 \
     --hash=sha256:24d775ac1382b94c2595b8eb4eb4e0aa8dde95c905f18e017dc6574e1d79070d \
     --hash=sha256:c009243f4784758a07287fb2fd21fe47381c3d85f30479df2ae7f345c8703bb1
     # via langgraph
-langsmith==0.14.12 \
-    --hash=sha256:9dafba7f615afa77204dc8afbb9c803e4ba1b55e96249f12c8f9aafb23fae6d0 \
-    --hash=sha256:b4d6a24ed74333095da476803ad9d22ee35f9dae1052cebf1e366d3889a9b675
+langsmith==0.14.14 \
+    --hash=sha256:9265529ed9a592110cc75fa21f088ed34eb5f56ae680f6e9490e7f65e177386c \
+    --hash=sha256:fc28d1981656918f145d8d8089ed924dbf93d95e4959d0c1882cb5aec1563a0d
     # via
     #   heritagevoice-ai
     #   langchain-classic
