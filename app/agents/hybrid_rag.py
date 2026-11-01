@@ -13,7 +13,6 @@ from contextlib import AbstractContextManager
 
 from sqlalchemy.orm import Session
 
-from app.config import IntegrationNotConfiguredError
 from app.graph.state import StateUpdate, WorkflowState
 from app.models.evidence import Evidence
 from app.ports import VectorStore
@@ -72,8 +71,3 @@ class HybridRetriever:
         ) as error:  # an outside service: log its type only, keep the keyword results
             logger.warning("vector search failed: %s", type(error).__name__)
             return [], [VECTOR_UNAVAILABLE]
-
-
-def retrieve(state: WorkflowState, principal: Principal) -> StateUpdate:
-    """The default node, used until the service wires in a `HybridRetriever` with a database."""
-    raise IntegrationNotConfiguredError("Hybrid retrieval is not wired to a database yet")

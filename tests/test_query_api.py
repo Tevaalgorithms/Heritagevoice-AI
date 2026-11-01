@@ -14,6 +14,7 @@ from app.agents.verifier import ClaimCheck, Verification, Verifier
 from app.api.auth import current_principal
 from app.api.main import app
 from app.api.query import get_agents
+from app.config import IntegrationNotConfiguredError
 from app.db.session import session_scope
 from app.db.tables import Base
 from app.graph.workflow import Agents
@@ -163,7 +164,9 @@ def test_a_failed_permission_check_inside_the_graph_is_a_generic_503_that_leaks_
 
 def test_agents_that_are_not_wired_answer_503():
     app.dependency_overrides[current_principal] = lambda: READER
-    from app.agents.supervisor import classify  # noqa: PLC0415
+
+    def classify(state):
+        raise IntegrationNotConfiguredError("not wired")
 
     agents = agents_object([passage("e1")])
     serving(Agents(classify, agents.hybrid, agents.graph, agents.verify, agents.answer))
