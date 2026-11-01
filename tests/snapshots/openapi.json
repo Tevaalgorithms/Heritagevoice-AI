@@ -3911,6 +3911,48 @@
         ]
       }
     },
+    "/v1/public/recordings/{recording_id}/media": {
+      "get": {
+        "description": "Play a recording that its community shared publicly. Anything else is simply not found, so\na visitor cannot tell a private recording from one that does not exist.",
+        "operationId": "public_media_v1_public_recordings__recording_id__media_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recording_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "title": "Recording Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Public Media",
+        "tags": [
+          "public"
+        ]
+      }
+    },
     "/v1/public/report": {
       "post": {
         "operationId": "report_as_visitor_v1_public_report_post",

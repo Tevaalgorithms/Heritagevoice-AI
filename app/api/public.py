@@ -17,9 +17,12 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.api.auth import SessionFactory, get_session_factory
 from app.api.library import LibraryResponse, _item
+from app.api.media import audio_response, public_playable
+from app.api.recordings import NOT_FOUND, PathId, get_audio_store
 from app.library import browse, search
 from app.models.library import LibraryFilter, LibraryView
 from app.models.records import HeritageKind
+from app.ports import AudioStore
 from app.ratelimit import SlidingWindowLimiter
 from app.security.permissions import Principal
 from app.security.principal import POLICY_VERSION
@@ -28,6 +31,7 @@ from app.security.roles import Role
 router = APIRouter(prefix="/v1/public", tags=["public"])
 MAX_LIMIT = 20
 REQUESTS_PER_MINUTE = 30
+MEDIA_PER_MINUTE = 10
 ANONYMOUS = Principal(
     user_id="visitor",
     groups=frozenset({"public"}),
@@ -37,10 +41,16 @@ ANONYMOUS = Principal(
 )
 NO_KEEPING = {"Cache-Control": "no-store", "X-Robots-Tag": "noindex, nofollow"}
 _LIMITER = SlidingWindowLimiter(REQUESTS_PER_MINUTE, 60.0)
+_MEDIA_LIMITER = SlidingWindowLimiter(MEDIA_PER_MINUTE, 60.0)
 
 
 def get_limiter() -> SlidingWindowLimiter:
     return _LIMITER
+
+
+def get_media_limiter() -> SlidingWindowLimiter:
+    """Audio costs far more to serve than text, so it has its own, smaller allowance."""
+    return _MEDIA_LIMITER
 
 
 class PublicQuery(BaseModel):
@@ -61,16 +71,27 @@ def visitor_key(request: Request) -> str:
     return forwarded or (request.client.host if request.client else "unknown")
 
 
-def throttle(
-    request: Request, limiter: Annotated[SlidingWindowLimiter, Depends(get_limiter)]
-) -> None:
-    """Refuse a visitor who has asked too often. Runs before anything is searched."""
+def _refuse_if_too_often(request: Request, limiter: SlidingWindowLimiter) -> None:
     visitor = visitor_key(request)
     if not limiter.allow(visitor):
         retry = str(limiter.retry_after(visitor))
         raise HTTPException(
             status_code=429, detail={"code": "rate_limited"}, headers={"Retry-After": retry}
         )
+
+
+def throttle(
+    request: Request, limiter: Annotated[SlidingWindowLimiter, Depends(get_limiter)]
+) -> None:
+    """Refuse a visitor who has asked too often. Runs before anything is searched."""
+    _refuse_if_too_often(request, limiter)
+
+
+def throttle_media(
+    request: Request, limiter: Annotated[SlidingWindowLimiter, Depends(get_media_limiter)]
+) -> None:
+    """The same, with the smaller allowance for playing audio."""
+    _refuse_if_too_often(request, limiter)
 
 
 @router.get("/library", dependencies=[Depends(throttle)])
@@ -89,3 +110,18 @@ def public_library(
             else browse(session, ANONYMOUS, where)
         )
     return LibraryResponse(items=[_item(e) for e in found])
+
+
+@router.get("/recordings/{recording_id}/media", dependencies=[Depends(throttle_media)])
+def public_media(
+    recording_id: Annotated[str, PathId],
+    factory: Annotated[SessionFactory, Depends(get_session_factory)],
+    store: Annotated[AudioStore, Depends(get_audio_store)],
+) -> Response:
+    """Play a recording that its community shared publicly. Anything else is simply not found, so
+    a visitor cannot tell a private recording from one that does not exist."""
+    with factory() as session:
+        recording = public_playable(session, recording_id)
+    if recording is None:
+        raise NOT_FOUND
+    return audio_response(store, recording, NO_KEEPING)

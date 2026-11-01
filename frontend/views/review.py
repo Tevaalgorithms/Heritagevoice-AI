@@ -1,7 +1,4 @@
-"""Review page: compare transcript and translation, edit, approve or reject, then publish.
-
-Playing the audio next to each segment is not available on this page yet.
-"""
+"""Review page: compare transcript and translation, edit, approve or reject, then publish."""
 
 import streamlit as st
 
@@ -17,6 +14,7 @@ from frontend.api_client import (
 from frontend.format import changed_edits, editor_rows
 from frontend.kinds import label_for
 from frontend.messages import message_for
+from frontend.views.playback import listen_button
 
 REVIEWABLE = {"review", "published"}
 
@@ -82,7 +80,7 @@ def _review_recording(client: ApiClient, recording_id: str) -> None:
     except ApiError as error:
         st.error(message_for(error))
         return
-    st.caption("Audio playback next to each segment is not available on this page yet.")
+    listen_button(client.recording_media, recording.id, f"{recording.id}-listen")
     left, right = st.columns(2)
     with left:
         _version_panel(client, recording, "transcript")

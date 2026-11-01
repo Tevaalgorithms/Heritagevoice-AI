@@ -7,6 +7,7 @@ from frontend import theme
 from frontend.api_client import ApiClient, ApiError, CitationView, QueryResult
 from frontend.format import format_time
 from frontend.messages import message_for
+from frontend.views.playback import listen_button
 from frontend.views.report import report_button
 
 NO_ANSWER = "No answer was returned."
@@ -73,25 +74,18 @@ def answer_for(
     return {"role": "assistant", "content": result.answer or NO_ANSWER, "result": result}
 
 
-def _listen(client: ApiClient, citation: CitationView, key: str) -> None:
-    """Play the cited moment. Fails quietly when the recording is not playable for this reader."""
-    if not st.button("Listen", icon=":material/play_circle:", key=key):
-        return
-    try:
-        audio, kind = client.recording_media(citation.recording_id)
-    except ApiError:
-        st.caption("This recording cannot be played here.")
-        return
-    st.audio(audio, format=kind, start_time=int(citation.start_s), end_time=int(citation.end_s))
-
-
 def _source(client: ApiClient, number: int, citation: CitationView, scope: str) -> None:
     span = f"{format_time(citation.start_s)} to {format_time(citation.end_s)}"
     st.markdown(f"**[{number}]** {citation.title} · {span}")
     for notice in citation.notices:
         st.warning(notice, icon=":material/health_and_safety:")
     st.markdown(theme.passage_html(citation.passage), unsafe_allow_html=True)
-    _listen(client, citation, f"listen-{scope}-{number}")
+    listen_button(
+        client.recording_media,
+        citation.recording_id,
+        f"listen-{scope}-{number}",
+        (citation.start_s, citation.end_s),
+    )
     report_button(client, citation.recording_id, f"{scope}-{number}")
 
 

@@ -16,6 +16,7 @@ from frontend.api_client import ApiClient, ApiError, LibraryItem, LibraryResult,
 from frontend.format import format_time
 from frontend.kinds import KINDS, label_for
 from frontend.messages import message_for
+from frontend.views.playback import Fetch, listen_button
 from frontend.views.report import report_button
 
 ANY = "Any"
@@ -68,7 +69,7 @@ def _heading(item: LibraryItem) -> str:
     return f"{label_for(item.heritage_kind)} · {spoken}{source}"
 
 
-def _card(client: ApiClient, item: LibraryItem) -> None:
+def _card(client: ApiClient, play: Fetch, item: LibraryItem) -> None:
     with st.container(border=True):
         st.markdown(f"**{_heading(item)}**")
         for notice in item.notices:
@@ -77,6 +78,9 @@ def _card(client: ApiClient, item: LibraryItem) -> None:
         span = f"{format_time(item.start_s)} to {format_time(item.end_s)}"
         shown = "English translation" if item.view == "translation" else "Original words"
         st.caption(f"{shown} · {span}")
+        listen_button(
+            play, item.recording_id, f"listen-{item.evidence_id}", (item.start_s, item.end_s)
+        )
         report_button(client, item.recording_id, item.evidence_id)
 
 
@@ -89,9 +93,11 @@ def _empty(spec: LibrarySpec) -> None:
     )
 
 
-def search_and_show(client: ApiClient, fetch: Callable[[LibrarySpec], LibraryResult]) -> None:
-    """The search form and its results. `fetch` decides who is asking: a signed-in reader or an
-    open visitor, so the same page serves both and the server applies the right limits."""
+def search_and_show(
+    client: ApiClient, fetch: Callable[[LibrarySpec], LibraryResult], play: Fetch
+) -> None:
+    """The search form and its results. `fetch` and `play` decide who is asking: a signed-in
+    reader or an open visitor, so the same page serves both and the server applies the limits."""
     spec = _filters()
     try:
         items = fetch(spec).items
@@ -103,7 +109,7 @@ def search_and_show(client: ApiClient, fetch: Callable[[LibrarySpec], LibraryRes
         return
     st.caption(f"{len(items)} shown")
     for item in items:
-        _card(client, item)
+        _card(client, play, item)
 
 
 def render(client: ApiClient) -> None:
@@ -114,5 +120,5 @@ def render(client: ApiClient) -> None:
         "Choose a language, or search for what you want to find.",
         "library",
     )
-    search_and_show(client, client.library)
+    search_and_show(client, client.library, client.recording_media)
     theme.footer()
