@@ -76,6 +76,13 @@ PROBE_MESSAGES = {
     "bad_key": "The provider rejected the configured API key.",
     "unknown_model": "The provider does not know this model name.",
     "rate_limited": "The provider is rate limiting requests. Try again in a minute.",
+    "bad_request": (
+        "The provider refused the test request. The model may not accept these settings, "
+        "such as the temperature."
+    ),
+    "timeout": "The provider did not answer in time. Try again, or raise the timeout.",
+    "provider_unreachable": "The provider could not be reached from the server. Try again.",
+    "provider_down": "The provider is having trouble right now. Try again in a minute.",
     "provider_error": "The provider returned an error. Check the model and try again.",
 }
 
