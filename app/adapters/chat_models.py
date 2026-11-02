@@ -2,8 +2,8 @@
 
 Provider addresses are fixed here, never read from settings or the database, so an admin cannot
 point prompts at another server. Anthropic and OpenAI are supported; adding a provider means one
-builder below and one value in `Provider`. Temperature is sent to Anthropic but not to OpenAI, whose
-newer models reject anything but their default.
+builder below and one value in `Provider`. Temperature is sent to Anthropic (except models that
+fix their own) but not to OpenAI, whose newer models reject anything but their default.
 """
 
 from collections.abc import Callable
@@ -35,15 +35,20 @@ class ChatOptions:
     callbacks: tuple[BaseCallbackHandler, ...] = ()  # e.g. the token counter
 
 
+# These Claude models set their own sampling, and LangChain refuses any temperature for them.
+FIXED_SAMPLING = ("claude-fable-5", "claude-sonnet-5-5")
+
+
 def _anthropic(options: ChatOptions, key: SecretStr) -> BaseChatModel:
     settings: dict[str, Any] = {
         "model": options.model,
         "api_key": key,
         "timeout": options.timeout_s,
         "max_retries": options.max_retries,
-        "temperature": options.temperature,
         "callbacks": list(options.callbacks),
     }
+    if not options.model.startswith(FIXED_SAMPLING):
+        settings["temperature"] = options.temperature
     if options.max_tokens is not None:
         settings["max_tokens"] = options.max_tokens
     return ChatAnthropic(**settings)

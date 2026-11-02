@@ -27,6 +27,19 @@ def test_anthropic_gets_its_model_timeout_retries_and_temperature():
     assert (model.model, model.temperature, model.max_retries) == ("m-1", 0.3, 2)
 
 
+@pytest.mark.parametrize("name", ["claude-sonnet-5-5", "claude-fable-5-1"])
+def test_claude_models_that_fix_their_sampling_are_not_sent_a_temperature(name):
+    model = chat_model(options(Provider.ANTHROPIC, model=name), KEY)
+    assert model.temperature is None
+    model._get_request_payload("hello")  # raised ValueError when a temperature was set
+
+
+@pytest.mark.parametrize("name", ["claude-haiku-5-5", "claude-opus-5-5"])
+def test_other_claude_models_still_get_their_temperature(name):
+    model = chat_model(options(Provider.ANTHROPIC, model=name), KEY)
+    assert model.temperature == 0.3
+
+
 def test_openai_uses_the_fixed_public_address_whatever_else_is_configured():
     model = chat_model(options(Provider.OPENAI), KEY)
     assert isinstance(model, ChatOpenAI)
