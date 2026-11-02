@@ -26,6 +26,7 @@ from app.models.transcript import Segment
 from app.ports import Transcriber
 from app.secrets import secrets_for
 from app.uploads import INGEST_KIND
+from app.usage import UsageLog
 from app.vector_setup import vector_store_for
 
 logger = logging.getLogger("heritagevoice.worker")
@@ -62,16 +63,16 @@ def _ingest_handlers(settings: Settings, engine: Engine) -> dict[str, Handler]:
         logger.warning("No speech service configured; ingestion jobs will fail with no_handler")
         return {}
     registry = ModelRegistry(lambda: session_scope(engine), settings)
-    translator = build_translator(registry, secrets_for(settings))
+    usage = UsageLog(lambda: session_scope(engine))
+    translator = build_translator(registry, secrets_for(settings), usage)
     deps = IngestDeps(lambda: session_scope(engine), transcriber, translator)
     return {INGEST_KIND: ingest_handler(deps)}
 
 
 def _graph_handlers(settings: Settings, engine: Engine) -> dict[str, Handler]:
     registry = ModelRegistry(lambda: session_scope(engine), settings)
-    runner = ModelRunner(
-        registry, secrets_for(settings), ModelRole.GRAPH, structured_chain(GRAPH_PROMPT, Proposals)
-    )
+    chain = structured_chain(GRAPH_PROMPT, Proposals, UsageLog(lambda: session_scope(engine)))
+    runner = ModelRunner(registry, secrets_for(settings), ModelRole.GRAPH, chain)
     deps = ExtractDeps(lambda: session_scope(engine), GraphExtractor(runner))
     return {EXTRACT_KIND: partial(extract_recording, deps=deps)}
 

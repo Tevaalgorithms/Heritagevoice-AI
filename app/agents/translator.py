@@ -9,12 +9,14 @@ import hashlib
 import json
 import logging
 from collections.abc import Callable
+from functools import partial
 from typing import Any
 
 from langchain_core.runnables import Runnable
 from pydantic import BaseModel, SecretStr
 
 from app.adapters.chat_models import ChatOptions, chat_model, structured
+from app.adapters.llm_runner import counting
 from app.agents.prompts.translation import TRANSLATION_PROMPT
 from app.errors import ProviderError
 from app.model_registry import ModelRegistry
@@ -22,6 +24,7 @@ from app.models.llm import ModelRole, ModelSetting
 from app.models.transcript import Segment
 from app.ports import Translator
 from app.secrets import SecretReader
+from app.usage import UsageSink
 
 logger = logging.getLogger("heritagevoice.translator")
 MT = "mt"
@@ -89,13 +92,16 @@ def _validated(batch: list[Segment], result: Any) -> list[Segment]:
 ChainFactory = Callable[[ModelSetting, SecretStr], Runnable[dict[str, str], Any]]
 
 
-def build_chain(setting: ModelSetting, api_key: SecretStr) -> Runnable[dict[str, str], Any]:
+def build_chain(
+    setting: ModelSetting, api_key: SecretStr, sink: UsageSink | None = None
+) -> Runnable[dict[str, str], Any]:
     options = ChatOptions(
         setting.provider,
         setting.model,
         setting.timeout_s,
         setting.max_retries,
         setting.temperature,
+        callbacks=counting(setting, sink),
     )
     model = chat_model(options, api_key)
     return TRANSLATION_PROMPT | structured(model, TranslationBatch, setting.provider)
@@ -154,6 +160,8 @@ def _note_served(model: str, position: int) -> None:
         logger.warning("translation served by fall-back model %s (position %d)", model, position)
 
 
-def build_translator(registry: ModelRegistry, secrets: SecretReader) -> Translator:
+def build_translator(
+    registry: ModelRegistry, secrets: SecretReader, sink: UsageSink | None = None
+) -> Translator:
     """Always built: keys are read per call, so adding or rotating one needs no restart."""
-    return ConfiguredTranslator(registry, secrets)
+    return ConfiguredTranslator(registry, secrets, partial(build_chain, sink=sink))

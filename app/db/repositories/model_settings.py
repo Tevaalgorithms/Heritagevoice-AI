@@ -14,6 +14,7 @@ from app.models.llm import (
     ModelSetting,
     ModelStatus,
     NewModel,
+    PriceChange,
     Provider,
 )
 
@@ -36,6 +37,8 @@ def _to_entry(row: ModelCatalogRow) -> CatalogEntry:
         provider=Provider(row.provider),
         key_name=row.key_name,
         status=ModelStatus(row.status),
+        input_price=row.input_price,
+        output_price=row.output_price,
     )
 
 
@@ -72,6 +75,14 @@ class ModelCatalogRepository:
         if row is None:
             return None
         row.status = status.value
+        self._session.flush()
+        return _to_entry(row)
+
+    def set_price(self, model_id: str, price: PriceChange) -> CatalogEntry | None:
+        row = self._session.get(ModelCatalogRow, model_id)
+        if row is None:
+            return None
+        row.input_price, row.output_price = price.input_price, price.output_price
         self._session.flush()
         return _to_entry(row)
 

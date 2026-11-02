@@ -243,6 +243,31 @@ class CatalogView(BaseModel):
     key_name: str
     status: str
     key_configured: bool
+    input_price: float | None = None  # US dollars per million tokens
+    output_price: float | None = None
+
+
+class UsageLine(BaseModel):
+    """Calls, tokens and estimated cost of one job with one model."""
+
+    role: str
+    model: str
+    calls: int
+    input_tokens: int
+    output_tokens: int
+    cost: float | None = None
+
+
+class UsageView(BaseModel):
+    """The Usage page: every line, the totals, and the models still missing a price."""
+
+    days: int
+    lines: list[UsageLine]
+    calls: int
+    input_tokens: int
+    output_tokens: int
+    cost: float
+    unpriced_models: list[str]
 
 
 class NewModelSpec(BaseModel):

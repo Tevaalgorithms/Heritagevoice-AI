@@ -18,7 +18,7 @@ from frontend.api_client import (
     NewModelSpec,
 )
 from frontend.messages import message_for, probe_message
-from frontend.views import integrations
+from frontend.views import integrations, usage
 
 PROVIDERS = ("anthropic", "openai")
 STATUSES = ("active", "deprecated", "disabled")
@@ -49,6 +49,12 @@ def _run(action: object, success: str) -> None:
     st.rerun()
 
 
+def _price_text(entry: CatalogView) -> str:
+    if entry.input_price is None or entry.output_price is None:
+        return "not set"
+    return f"${entry.input_price:g} / ${entry.output_price:g}"
+
+
 def _catalog_rows(catalog: list[CatalogView]) -> list[dict[str, str]]:
     return [
         {
@@ -57,6 +63,7 @@ def _catalog_rows(catalog: list[CatalogView]) -> list[dict[str, str]]:
             "Status": entry.status,
             "Key name": entry.key_name,
             "Key": "🟢 Configured" if entry.key_configured else "🔴 Missing",
+            "Price per 1M tokens (in / out)": _price_text(entry),
         }
         for entry in catalog
     ]
@@ -100,11 +107,29 @@ def _change_status(client: ApiClient, overview: ModelsOverview) -> None:
             _run(lambda: client.set_model_status(model_id, status), "Updated.")
 
 
+def _set_price(client: ApiClient, overview: ModelsOverview) -> None:
+    ids = [e.model_id for e in overview.catalog]
+    if not ids:
+        return
+    st.caption(
+        "What the provider charges, in US dollars per million tokens (from their pricing page). "
+        "Used only for the cost estimate on the Usage tab."
+    )
+    with st.form("model-price"):
+        model_id = str(st.selectbox("Model", ids))
+        price_in = st.number_input("Input, $ per million tokens", 0.0, 10000.0, 0.0, 0.01)
+        price_out = st.number_input("Output, $ per million tokens", 0.0, 10000.0, 0.0, 0.01)
+        if st.form_submit_button("Save price"):
+            _run(lambda: client.set_model_price(model_id, price_in, price_out), "Price saved.")
+
+
 def _manage_catalog(client: ApiClient, overview: ModelsOverview) -> None:
     with st.expander("Add a model"):
         _add_model(client)
     with st.expander("Change a model's status"):
         _change_status(client, overview)
+    with st.expander("Set a model's price (for the cost estimate)"):
+        _set_price(client, overview)
 
 
 def _choices(row: ModelView, overview: ModelsOverview) -> list[str]:
@@ -196,8 +221,16 @@ def render(client: ApiClient) -> None:
         "services the platform uses.",
         "settings",
     )
-    models, keys = st.tabs([":material/tune: Models", ":material/key: Keys and services"])
+    models, keys, used = st.tabs(
+        [
+            ":material/tune: Models",
+            ":material/key: Keys and services",
+            ":material/payments: Usage and cost",
+        ]
+    )
     with models:
         _models_tab(client)
     with keys:
         integrations.render(client)
+    with used:
+        usage.render(client)

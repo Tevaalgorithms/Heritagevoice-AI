@@ -74,6 +74,8 @@ class CatalogEntry(BaseModel):
     provider: Provider
     key_name: str
     status: ModelStatus = ModelStatus.ACTIVE
+    input_price: float | None = None  # US dollars per million tokens
+    output_price: float | None = None
 
 
 class StatusChange(BaseModel):
@@ -81,6 +83,14 @@ class StatusChange(BaseModel):
 
     model_config = ConfigDict(extra="forbid", frozen=True)
     status: ModelStatus
+
+
+class PriceChange(BaseModel):
+    """Request body to set what a model costs, in US dollars per million tokens."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    input_price: Annotated[float, Field(ge=0.0, le=10000.0)]
+    output_price: Annotated[float, Field(ge=0.0, le=10000.0)]
 
 
 class ModelParams(BaseModel):
