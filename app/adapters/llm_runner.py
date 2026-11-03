@@ -28,6 +28,17 @@ logger = logging.getLogger("heritagevoice.agents")
 ChainFactory = Callable[[ModelSetting, SecretStr], Runnable[dict[str, Any], Any]]
 
 
+# A ceiling on what one call may write, so a runaway answer cannot run up the bill. Generous: the
+# newer models count their own reasoning inside the limit, and a cut-off answer is a failed call.
+MAX_OUTPUT_TOKENS = {
+    ModelRole.SUPERVISOR: 4_000,
+    ModelRole.VERIFIER: 8_000,
+    ModelRole.ANSWER: 16_000,
+    ModelRole.GRAPH: 32_000,
+    ModelRole.TRANSLATION: 32_000,
+}
+
+
 def counting(setting: ModelSetting, sink: UsageSink | None) -> tuple[UsageCallback, ...]:
     """The token counter for one setting's calls, or nothing when no one is counting."""
     return () if sink is None else (UsageCallback(setting.role.value, setting.model, sink),)
@@ -45,6 +56,7 @@ def structured_chain(
             setting.timeout_s,
             setting.max_retries,
             setting.temperature,
+            MAX_OUTPUT_TOKENS[setting.role],
             callbacks=counting(setting, sink),
         )
         return prompt | structured(chat_model(options, key), schema, setting.provider)

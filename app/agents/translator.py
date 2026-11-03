@@ -16,7 +16,7 @@ from langchain_core.runnables import Runnable
 from pydantic import BaseModel, SecretStr
 
 from app.adapters.chat_models import ChatOptions, chat_model, structured
-from app.adapters.llm_runner import counting
+from app.adapters.llm_runner import MAX_OUTPUT_TOKENS, counting
 from app.agents.prompts.translation import TRANSLATION_PROMPT
 from app.errors import ProviderError
 from app.model_registry import ModelRegistry
@@ -101,6 +101,7 @@ def build_chain(
         setting.timeout_s,
         setting.max_retries,
         setting.temperature,
+        MAX_OUTPUT_TOKENS[setting.role],
         callbacks=counting(setting, sink),
     )
     model = chat_model(options, api_key)
