@@ -7,7 +7,12 @@ import streamlit as st
 
 from app.config import Settings
 from frontend import theme
-from frontend.account import AwaitingApprovalError, current_role, show_account
+from frontend.account import (
+    AwaitingApprovalError,
+    SessionExpiredError,
+    current_role,
+    show_account,
+)
 from frontend.api_client import ApiClient, ApiError
 from frontend.auth import COGNITO_PROVIDER, cognito_enabled, resolve_token
 from frontend.legal import PAGES, OrganisationFacts
@@ -135,6 +140,18 @@ def _run_for_visitors(settings: Settings, facts: OrganisationFacts) -> None:
     st.navigation({"Explore": [home], "Legal": _legal_pages(facts)}).run()
 
 
+def _run_session_expired(facts: OrganisationFacts) -> None:
+    """The API refused the sign-in: ask the person to sign in again instead of showing errors."""
+    page = st.Page(
+        lambda: home_view.render_expired(lambda: st.login(COGNITO_PROVIDER)),
+        title="Sign in",
+        icon=":material/login:",
+        url_path="signin",
+        default=True,
+    )
+    st.navigation({"Your account": [page], "Legal": _legal_pages(facts)}).run()
+
+
 def _run_awaiting_approval(settings: Settings, facts: OrganisationFacts) -> None:
     """Signed in, but not approved yet: say so plainly, with sign-out and the legal pages."""
     show_account(None, settings)
@@ -163,6 +180,9 @@ def main() -> None:
         role = current_role(client)
     except AwaitingApprovalError:
         _run_awaiting_approval(settings, facts)
+        return
+    except SessionExpiredError:
+        _run_session_expired(facts)
         return
     show_account(role, settings)
     sections = _member_sections(client, role)

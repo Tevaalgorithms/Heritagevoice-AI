@@ -8,6 +8,9 @@ from frontend.api_client import (
     ApiUnavailableError,
 )
 
+UNAUTHORIZED = 401
+SESSION_EXPIRED = "Your sign-in has expired. Please sign in again."
+
 ERROR_MESSAGES: dict[type[ApiError], str] = {
     ApiNotConfiguredError: "Set HERITAGEVOICE_DEV_API_TOKEN in .env to contact the API.",
     ApiUnavailableError: "The API is unavailable. Start it using the setup guide.",
@@ -58,6 +61,8 @@ def message_for(error: ApiError) -> str:
     code = getattr(error, "code", None)
     if code in CODE_MESSAGES:
         return CODE_MESSAGES[code]
+    if getattr(error, "status_code", None) == UNAUTHORIZED:
+        return SESSION_EXPIRED
     matches = (text for kind, text in ERROR_MESSAGES.items() if isinstance(error, kind))
     return next(matches, "Something went wrong.")
 
