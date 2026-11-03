@@ -101,6 +101,23 @@ def test_a_signed_in_account_the_server_does_not_know_sees_the_waiting_screen(mo
     assert current_role(Client(500)) is None
 
 
+def test_an_expired_sign_in_is_reported_not_hidden():
+    """401 from /v1/me means the access token ran out: ask the person to sign in again."""
+    import pytest  # noqa: PLC0415
+
+    from frontend.account import SessionExpiredError, current_role  # noqa: PLC0415
+    from frontend.api_errors import ApiRequestError  # noqa: PLC0415
+    from frontend.messages import SESSION_EXPIRED, message_for  # noqa: PLC0415
+
+    class Client:
+        def me(self):
+            raise ApiRequestError(401)
+
+    with pytest.raises(SessionExpiredError):
+        current_role(Client())
+    assert message_for(ApiRequestError(401)) == SESSION_EXPIRED
+
+
 def test_the_admin_people_calls_go_to_the_admin_endpoints_with_the_token():
     seen = []
 
