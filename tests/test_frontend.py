@@ -78,7 +78,8 @@ def test_connection_failures_become_unavailable():
         (ApiNotConfiguredError(), "HERITAGEVOICE_DEV_API_TOKEN"),
         (ApiUnavailableError(), "unavailable"),
         (ApiNotReadyError(), "not ready"),
-        (ApiRequestError(401), "could not be completed"),
+        (ApiRequestError(500), "could not be completed"),
+        (ApiRequestError(401), "sign-in has expired"),
     ],
 )
 def test_every_error_has_a_plain_message(error, fragment):

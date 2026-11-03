@@ -64,6 +64,16 @@ def render(client: ApiClient, sign_in: Callable[[], None]) -> None:
     theme.footer()
 
 
+def render_expired(sign_in: Callable[[], None]) -> None:
+    """Shown when the sign-in has expired: say so, and offer to sign in again."""
+    theme.page_header(
+        "Your sign-in has expired",
+        "For your safety you are signed out after a while. Nothing you saved is lost.",
+        "people",
+    )
+    st.button("Sign in again", type="primary", icon=":material/login:", on_click=sign_in)
+
+
 def render_waiting() -> None:
     """Shown to someone who is signed in but not yet approved."""
     theme.page_header(
