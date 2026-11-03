@@ -1,3 +1,5 @@
+import threading
+
 import pytest
 
 from app.graph.workflow import Agents, build_workflow
@@ -52,9 +54,33 @@ def test_both_routes_reach_merge_with_both_results(principal, evidence):
         ),
     )
     result = workflow.invoke({"question": "Who?"})
-    assert visited == ["hybrid", "graph"]
+    assert sorted(visited) == ["graph", "hybrid"]
     assert len(result["evidence"]) == 1
     assert result["evidence"][0].retrieval_methods == {"bm25", "graph"}
+
+
+def test_both_searches_run_at_the_same_time(principal, evidence):
+    """Each search waits for the other to start; run one after the other they would time out."""
+    meeting = threading.Barrier(2, timeout=5)
+
+    def search(key):
+        def run(state, who):
+            meeting.wait()
+            return {key: [evidence]}
+
+        return run
+
+    workflow = build_workflow(
+        principal,
+        agents(
+            classify=lambda state: {"route": Route.BOTH},
+            hybrid=search("hybrid_evidence"),
+            graph=search("graph_evidence"),
+            verify=lambda state: {"claims": []},
+            answer=lambda state: {"status": "answered", "answer": "Synthetic test output"},
+        ),
+    )
+    assert workflow.invoke({"question": "Who?"})["status"] == "answered"
 
 
 def test_forbidden_retrieval_stops_before_verification(principal, evidence):

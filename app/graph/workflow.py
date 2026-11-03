@@ -1,8 +1,9 @@
 """Compile the question-answering workflow. Adapter exceptions intentionally propagate.
 
-Both retrieval branches run one after the other. Authorization comes from the captured trusted
-principal, never from model output. The caller supplies the agents (`Agents`), so tests and the
-skeleton can inject fakes and the service injects the real ones.
+When both retrieval branches are needed they run side by side and meet again at the merge step,
+so a question waits for the slower one instead of the sum. Authorization comes from the captured
+trusted principal, never from model output. The caller supplies the agents (`Agents`), so tests
+and the skeleton can inject fakes and the service injects the real ones.
 """
 
 from collections.abc import Callable
@@ -43,14 +44,15 @@ class Agents:
     still_readable: Callable[[list[str], Principal], set[str]] | None = None
 
 
-SUPERVISOR_ROUTES = {
-    Route.HYBRID: "hybrid",
-    Route.GRAPH: "graph",
-    Route.BOTH: "hybrid",
-    Route.CLARIFY: "stop",
-    Route.REFUSE: "stop",
+NEXT_STEPS = {
+    Route.HYBRID: ["hybrid"],
+    Route.GRAPH: ["graph"],
+    Route.BOTH: ["hybrid", "graph"],  # run side by side
+    Route.CLARIFY: ["stop"],
+    Route.REFUSE: ["stop"],
 }
-SUPERVISOR_TARGETS = sorted(set(SUPERVISOR_ROUTES.values()))
+RETRIEVAL_STEPS = ["hybrid", "graph"]
+SUPERVISOR_TARGETS = [*RETRIEVAL_STEPS, "stop"]
 MAX_RETRIES = 1
 STOP_MESSAGES = {
     Route.CLARIFY: ("clarify", "Please clarify the person, place or event."),
@@ -78,8 +80,9 @@ def run_stop(state: WorkflowState) -> StateUpdate:
     return {"status": status, "answer": answer}
 
 
-def route_after_supervisor(state: WorkflowState) -> str:
-    return SUPERVISOR_ROUTES[state["route"]]
+def route_after_supervisor(state: WorkflowState) -> list[str]:
+    """The steps to run next; more than one means they run at the same time."""
+    return NEXT_STEPS[state["route"]]
 
 
 def run_answer(state: WorkflowState, principal: Principal, write: Node) -> StateUpdate:
@@ -107,10 +110,6 @@ def route_after_verify(state: WorkflowState) -> str:
     return "retry" if wants_retry else "answer"
 
 
-def route_after_hybrid(state: WorkflowState) -> str:
-    return "graph" if state["route"] == Route.BOTH else "merge"
-
-
 def _nodes(principal: Principal, agents: Agents) -> dict[str, Node]:
     hybrid = partial(run_retrieval, principal=principal, retrieve=agents.hybrid)
     graph = partial(run_retrieval, principal=principal, retrieve=agents.graph)
@@ -129,8 +128,8 @@ def _nodes(principal: Principal, agents: Agents) -> dict[str, Node]:
 def _wire(builder: StateGraph[WorkflowState]) -> None:
     builder.add_edge(START, "supervisor")
     builder.add_conditional_edges("supervisor", route_after_supervisor, SUPERVISOR_TARGETS)
-    builder.add_conditional_edges("hybrid", route_after_hybrid, ["graph", "merge"])
-    for source, target in (("graph", "merge"), ("merge", "verify"), ("retry", "hybrid")):
+    builder.add_conditional_edges("retry", route_after_supervisor, RETRIEVAL_STEPS)
+    for source, target in (("hybrid", "merge"), ("graph", "merge"), ("merge", "verify")):
         builder.add_edge(source, target)
     builder.add_conditional_edges("verify", route_after_verify, ["retry", "answer"])
     builder.add_edge("answer", END)
