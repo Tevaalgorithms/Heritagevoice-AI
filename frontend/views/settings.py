@@ -25,6 +25,10 @@ STATUSES = ("active", "deprecated", "disabled")
 DEFAULT_KEY_NAME = "HERITAGEVOICE_LLM_API_KEY"
 NONE = "(none)"
 FALLBACK_SLOTS = 3
+REPEATED_HELP = (
+    "**{model}** is chosen more than once for this job. Each model can appear once: set the "
+    "repeated fall-back to (none) or pick a different model."
+)
 STATUS_HELP = (
     "**Active** models can be chosen. **Deprecated** models keep working where already chosen. "
     "**Disabled** models serve nothing, so a job moves on to its next fall-back."
@@ -191,13 +195,26 @@ def _role_panel(client: ApiClient, overview: ModelsOverview, row: ModelView) -> 
         else "Using the server default (no fall-backs). Save to choose a primary and fall-backs."
     )
     params = _form(row, overview)
+    repeated = _repeated(params)
+    if repeated:
+        st.warning(REPEATED_HELP.format(model=repeated))
+    _actions(client, row, params, blocked=bool(repeated))
+
+
+def _repeated(params: ModelParamsSpec) -> str | None:
+    """A model chosen more than once for the same job, if any."""
+    chain = [params.model, *params.fallbacks]
+    return next((model for model in chain if chain.count(model) > 1), None)
+
+
+def _actions(client: ApiClient, row: ModelView, params: ModelParamsSpec, blocked: bool) -> None:
     save, test, reset = st.columns(3)
-    if save.button("Save", key=f"{row.role}-save"):
+    if save.button("Save", key=f"{row.role}-save", disabled=blocked):
         _run(
             lambda: client.save_model_setting(row.role, params),
             "Saved. It applies within a minute.",
         )
-    if test.button("Test primary (costs a few tokens)", key=f"{row.role}-test"):
+    if test.button("Test primary (costs a few tokens)", key=f"{row.role}-test", disabled=blocked):
         _probe(client, row.role, params)
     if reset.button("Reset to default", key=f"{row.role}-reset", disabled=row.source == "default"):
         _run(lambda: client.reset_model_setting(row.role), "Reset.")
