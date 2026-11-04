@@ -177,3 +177,10 @@ def test_a_server_failure_gives_a_reference_to_quote():
     text = message_for(error.value)
     assert "problem on our side" in text
     assert text.endswith("Reference: abc123")
+
+
+def test_teaches_is_a_relationship_a_reviewer_can_pick_and_read():
+    from frontend.relations import RELATIONS, phrase  # noqa: PLC0415
+
+    assert "TEACHES" in RELATIONS
+    assert phrase("TEACHES") == "teaches"

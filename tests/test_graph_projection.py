@@ -238,3 +238,10 @@ def test_the_schema_is_created_with_a_uniqueness_rule():
 
 def test_recordings_in_the_graph_are_listed():
     assert Neo4jProjection(Driver()).recording_ids() == ["r1"]
+
+
+def test_a_teaches_relationship_is_written_with_its_own_fixed_type():
+    driver = Driver()
+    taught = assertion("a2").model_copy(update={"relation": Relation.TEACHES})
+    Neo4jProjection(driver).replace_recording("r1", "c1", Visibility.PUBLIC, [taught])
+    assert "[r:TEACHES {assertion_id: row.assertion_id}]" in driver.statements[1][0]

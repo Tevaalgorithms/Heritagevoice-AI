@@ -175,3 +175,18 @@ def test_without_the_ai_processing_right_nothing_is_sent_to_a_model(engine):
 def test_an_unknown_recording_fails_safely(engine):
     outcome = extract_recording(job("nope"), deps_for(engine))
     assert (outcome.status, outcome.error) == (JobStatus.FAILED, "missing")
+
+
+def test_a_lesson_a_saying_teaches_can_be_proposed_for_review():
+    (found,) = extract(
+        proposal(subject="யானைக்கும் அடி சறுக்கும்", obj="பணிவு", relation=Relation.TEACHES)
+    )
+    assert found.relation is Relation.TEACHES
+    assert found.review_state is ReviewState.PENDING
+
+
+def test_the_extractor_is_told_about_lessons_and_not_to_link_a_saying_to_its_own_word():
+    from app.agents.prompts.graph import SYSTEM  # noqa: PLC0415
+
+    assert "TEACHES" in SYSTEM
+    assert "simply part of it" in SYSTEM
