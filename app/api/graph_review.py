@@ -86,6 +86,12 @@ def _segment(session: Session, assertion: GraphAssertion) -> Segment | None:
     return found[0] if found else None
 
 
+def passage_for(session: Session, assertion: GraphAssertion) -> str:
+    """The words a proposal came from, or nothing if its transcript is no longer current."""
+    segment = _segment(session, assertion)
+    return segment.text if segment else ""
+
+
 def _view(session: Session, assertion: GraphAssertion) -> AssertionView:
     segment = _segment(session, assertion)
     return AssertionView(

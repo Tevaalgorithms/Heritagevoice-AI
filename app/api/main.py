@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 from app.api.admin import router as admin_router
 from app.api.consents import router as consents_router
 from app.api.graph_review import router as graph_review_router
+from app.api.graph_voice import router as graph_voice_router
 from app.api.group_members import router as group_members_router
 from app.api.groups import mine_router as my_groups_router
 from app.api.groups import router as groups_router
@@ -45,6 +46,7 @@ app.include_router(group_members_router)
 app.include_router(graph_review_router)
 app.include_router(media_router)
 app.include_router(open_sharing_router)
+app.include_router(graph_voice_router)
 app.include_router(reports_router)
 app.include_router(usage_router)
 app.include_router(my_groups_router)

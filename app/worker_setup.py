@@ -38,7 +38,7 @@ DEV_SEGMENTS = [
 ]
 
 
-def _transcriber(settings: Settings) -> Transcriber | None:
+def transcriber_for(settings: Settings) -> Transcriber | None:
     if settings.asr_provider == "fake" and settings.environment == LOCAL:
         return FakeTranscriber(DEV_SEGMENTS)
     if settings.audio_bucket:
@@ -58,7 +58,7 @@ def index_deps(settings: Settings, engine: Engine) -> IndexDeps:
 
 
 def _ingest_handlers(settings: Settings, engine: Engine) -> dict[str, Handler]:
-    transcriber = _transcriber(settings)
+    transcriber = transcriber_for(settings)
     if transcriber is None:
         logger.warning("No speech service configured; ingestion jobs will fail with no_handler")
         return {}

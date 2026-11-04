@@ -247,6 +247,18 @@ class CatalogView(BaseModel):
     output_price: float | None = None
 
 
+class VoiceSuggestionView(BaseModel):
+    """What a spoken correction was heard as, in the speaker's language and in English, and the
+    relationship it was taken to mean (empty when nothing clear could be made of it)."""
+
+    heard: str
+    english: str
+    understood: bool
+    subject: str = ""
+    relation: str | None = None
+    object: str = ""
+
+
 class UsageLine(BaseModel):
     """Calls, tokens and estimated cost of one job with one model."""
 
