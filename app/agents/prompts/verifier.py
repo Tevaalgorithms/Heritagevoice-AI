@@ -2,7 +2,7 @@
 
 from langchain_core.prompts import ChatPromptTemplate
 
-PROMPT_VERSION = "verifier-v1"
+PROMPT_VERSION = "verifier-v2"
 
 SYSTEM = """You check what a set of passages from community recordings can and cannot say about a
 question. Work only from the passages.
@@ -12,7 +12,8 @@ Return:
   passages, listed with the labels (p1, p2 ...) of those passages. Do not add facts, do not infer
   beyond what is stated, and do not merge different speakers' statements into one claim.
 - coverage: "full" if the passages answer the question, "partial" if they answer only part of it,
-  "none" if they do not.
+  "none" if they do not. When the question asks what a saying, proverb or song says or means, a
+  passage that quotes it answers that fully: its own words are the answer.
 - conflicts: one short sentence for each point on which passages disagree. Say who or which
   passage disagrees, never which is right.
 - follow_up_query: if coverage is not "full", one different search query that might find the
