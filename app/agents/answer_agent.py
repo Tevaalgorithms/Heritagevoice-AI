@@ -25,6 +25,7 @@ INSUFFICIENT = "The recordings you can read do not contain enough to answer this
 FALLBACK_CLAIMS = 3
 SAME_LANGUAGE = "the same language as the question"
 MARKER = re.compile(r"\[(\d+)\]")
+REPEATED = re.compile(r"(\[\d+\])(?:\s*\1)+")  # the same source cited twice in a row
 
 
 class AnswerDraft(BaseModel):
@@ -78,9 +79,10 @@ def _renumbered(text: str, by_claim: dict[int, list[int]]) -> str:
     """Replace claim markers with source markers; drop any marker that is not a used claim."""
 
     def swap(match: re.Match[str]) -> str:
-        return "".join(f"[{n}]" for n in by_claim.get(int(match.group(1)), []))
+        numbers = dict.fromkeys(by_claim.get(int(match.group(1)), []))
+        return "".join(f"[{n}]" for n in numbers)
 
-    return MARKER.sub(swap, text).strip()
+    return REPEATED.sub(r"\1", MARKER.sub(swap, text)).strip()
 
 
 def _valid_used(draft: AnswerDraft, claim_count: int) -> list[int]:
