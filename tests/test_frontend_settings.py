@@ -138,3 +138,15 @@ def test_non_admins_get_a_clear_refusal():
         client_for(handler).model_settings()
     assert error.value.status_code == 403
     assert "could not be completed" in message_for(error.value)
+
+
+def test_a_model_chosen_twice_for_one_job_is_caught_before_sending():
+    from frontend.views.settings import _repeated  # noqa: PLC0415
+
+    twice = ModelParamsSpec(
+        provider="anthropic",
+        model="claude-haiku-5-5",
+        fallbacks=["gpt-5.4-nano", "claude-sonnet-5-5", "claude-haiku-5-5"],
+    )
+    assert _repeated(twice) == "claude-haiku-5-5"
+    assert _repeated(PARAMS) is None
