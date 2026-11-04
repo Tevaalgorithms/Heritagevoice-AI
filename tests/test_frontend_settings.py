@@ -184,3 +184,49 @@ def test_teaches_is_a_relationship_a_reviewer_can_pick_and_read():
 
     assert "TEACHES" in RELATIONS
     assert phrase("TEACHES") == "teaches"
+
+
+def test_a_spoken_correction_is_sent_as_a_form_and_read_back():
+    seen = {}
+
+    def handler(request):
+        seen["path"], seen["auth"] = request.url.path, request.headers.get("authorization")
+        seen["type"] = request.headers.get("content-type", "")
+        reply = {
+            "heard": "இது பணிவு", "english": "this is humility", "understood": True,
+            "subject": "யானை", "relation": "TEACHES", "object": "பணிவு",
+        }  # fmt: skip
+        return httpx.Response(200, json=reply)
+
+    found = client_for(handler).voice_correction("a1", b"audio", "ta")
+    assert seen["path"] == "/v1/graph/assertions/a1/voice"
+    assert seen["auth"] == "Bearer tok"
+    assert seen["type"].startswith("multipart/form-data")
+    assert (found.heard, found.relation, found.understood) == ("இது பணிவு", "TEACHES", True)
+
+
+def test_the_typed_form_starts_from_the_spoken_correction_when_it_was_understood():
+    from frontend.api_models import AssertionView, VoiceSuggestionView  # noqa: PLC0415
+    from frontend.views.relationships import _starting_point  # noqa: PLC0415
+
+    item = AssertionView(
+        id="a1", recording_id="r1", subject="proverb", relation="DESCRIBES", object="elephant",
+        asserted_by="unknown", review_state="pending", confidence=0.4,
+    )  # fmt: skip
+    clear = VoiceSuggestionView(
+        heard="h",
+        english="e",
+        understood=True,
+        subject="proverb",
+        relation="TEACHES",
+        object="humility",
+    )
+    unclear = VoiceSuggestionView(heard="h", english="e", understood=False)
+    assert _starting_point(item, clear).relation == "TEACHES"
+    assert _starting_point(item, clear).object == "humility"
+    assert _starting_point(item, unclear) == item
+    assert _starting_point(item, None) == item
+
+
+def test_a_failed_voice_correction_has_its_own_message():
+    assert "type the correction" in message_for(ApiRequestError(502, "voice_failed"))

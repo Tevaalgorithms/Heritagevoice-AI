@@ -67,7 +67,8 @@ CODE_MESSAGES = {
     "not_approved": "That person has an account but an administrator has not approved it yet.",
     "rate_limited": "Too many requests just now. Please wait a few minutes and try again.",
     "invalid_edit": "The two sides of a relationship must be different.",
-    "deadline": "That took too long to answer. Try a shorter or simpler question.",
+    "deadline": "That took too long. Try a shorter question or recording.",
+    "voice_failed": "We could not understand that recording. Try again, or type the correction.",
 }
 
 

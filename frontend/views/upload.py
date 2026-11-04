@@ -9,7 +9,6 @@ from dataclasses import dataclass
 
 import streamlit as st
 
-from app.languages import LANGUAGES as ALL_LANGUAGES
 from app.models.groups import OPEN_COMMUNITY
 from frontend import theme
 from frontend.api_client import ApiClient, ApiError, MyGroupView, RecordingSummary, UploadSpec
@@ -17,11 +16,12 @@ from frontend.format import failure_message, progress_for
 from frontend.kinds import BY_KEY, KINDS, REMEDY_NOTICE, label_for
 from frontend.messages import message_for
 from frontend.rights import describe
+from frontend.spoken import LANGUAGE_CHOICES
 from frontend.upload_input import idempotency_key, pick_audio
 from frontend.views.transcript_editor import render_editor
 
 AUDIO_TYPES = ["wav", "mp3", "flac", "ogg", "m4a", "mp4"]
-LANGUAGES = {f"{lang.name} · {lang.native_name}": lang.code for lang in ALL_LANGUAGES}
+LANGUAGES = LANGUAGE_CHOICES
 POLL_SECONDS = 2.0
 MAX_POLLS = 150
 FOCUS = "focus-recording"  # the recording just uploaded, so its transcript opens for editing

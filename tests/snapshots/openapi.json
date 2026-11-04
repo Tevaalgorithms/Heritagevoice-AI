@@ -2058,6 +2058,72 @@
         "title": "VisibilityResult",
         "type": "object"
       },
+      "VoiceForm": {
+        "additionalProperties": false,
+        "description": "The multipart form: the spoken correction and the language it is in.",
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          },
+          "language": {
+            "pattern": "^[a-z]{2,8}$",
+            "title": "Language",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file",
+          "language"
+        ],
+        "title": "VoiceForm",
+        "type": "object"
+      },
+      "VoiceSuggestion": {
+        "description": "What was heard, in the reviewer's language and in English, and the relationship it means.\n`understood` is false when nothing clear could be made of it.",
+        "properties": {
+          "english": {
+            "title": "English",
+            "type": "string"
+          },
+          "heard": {
+            "title": "Heard",
+            "type": "string"
+          },
+          "object": {
+            "default": "",
+            "title": "Object",
+            "type": "string"
+          },
+          "relation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Relation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "subject": {
+            "default": "",
+            "title": "Subject",
+            "type": "string"
+          },
+          "understood": {
+            "title": "Understood",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "heard",
+          "english",
+          "understood"
+        ],
+        "title": "VoiceSuggestion",
+        "type": "object"
+      },
       "app__api__consents__RevokeResponse": {
         "description": "What a revocation changed: recordings revoked and jobs stopped.",
         "properties": {
@@ -3792,6 +3858,64 @@
           }
         ],
         "summary": "Decide Assertion",
+        "tags": [
+          "graph"
+        ]
+      }
+    },
+    "/v1/graph/assertions/{assertion_id}/voice": {
+      "post": {
+        "operationId": "correct_by_voice_v1_graph_assertions__assertion_id__voice_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "assertion_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "title": "Assertion Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/VoiceForm"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoiceSuggestion"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Correct By Voice",
         "tags": [
           "graph"
         ]

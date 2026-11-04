@@ -52,6 +52,7 @@ from frontend.api_models import (
     VersionResult,
     VersionView,
     VisibilityResult,
+    VoiceSuggestionView,
 )
 
 __all__ = [
@@ -73,6 +74,7 @@ __all__ = [
     "ApiUnavailableError",
     "CatalogView",
     "UsageView",
+    "VoiceSuggestionView",
     "ConsentView",
     "GroupView",
     "MyGroupView",
@@ -98,6 +100,8 @@ __all__ = [
     "VersionResult",
     "VersionView",
 ]
+
+VOICE_TIMEOUT_S = 150.0  # transcribing speech takes a while
 
 
 class ApiClient:
@@ -157,6 +161,20 @@ class ApiClient:
             headers={"Idempotency-Key": idempotency_key},
         )
         return UploadResult.model_validate(response.json())
+
+    def voice_correction(
+        self, assertion_id: str, data: bytes, language: str
+    ) -> VoiceSuggestionView:
+        """Send a spoken correction. The server transcribes and translates it, then deletes it."""
+        response = self._send(
+            "POST",
+            f"/v1/graph/assertions/{assertion_id}/voice",
+            auth=True,
+            data={"language": language},
+            files={"file": ("correction", data, "application/octet-stream")},
+            timeout=VOICE_TIMEOUT_S,
+        )
+        return VoiceSuggestionView.model_validate(response.json())
 
     def get_job(self, job_id: str) -> JobView:
         return JobView.model_validate(self._send("GET", f"/v1/jobs/{job_id}", auth=True).json())
