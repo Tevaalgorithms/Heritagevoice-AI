@@ -305,3 +305,11 @@ def test_the_model_sees_only_the_claims_never_the_passages_or_ids():
     sent = str(runner.calls[0])
     assert "secret-id" not in sent
     assert "Water was shared." in sent
+
+
+def test_the_supervisor_is_told_to_search_when_unsure_and_to_clarify_rarely():
+    from app.agents.prompts.supervisor import SYSTEM  # noqa: PLC0415
+
+    assert "When unsure, choose hybrid" in SYSTEM
+    assert "A question that names a topic is" in SYSTEM
+    assert '"What is the proverb about learning?" -> hybrid' in SYSTEM
