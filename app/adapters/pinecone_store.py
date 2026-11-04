@@ -12,6 +12,7 @@ from typing import Any
 
 from app.errors import ProviderError
 from app.models.evidence import Evidence
+from app.models.groups import OPEN_COMMUNITY
 from app.ports import Embedder
 from app.security.permissions import COMMUNITY_PREFIX, Principal
 
@@ -94,7 +95,7 @@ class PineconeVectorStore:
     def _candidate_ids(self, query: str, principal: Principal, limit: int) -> list[str]:
         vector = self._embedder.embed_query(query)
         scored: list[tuple[float, str]] = []
-        for namespace in sorted(principal.communities):
+        for namespace in sorted(principal.communities | {OPEN_COMMUNITY}):
             response = self._index.query(
                 vector=vector, top_k=limit * CANDIDATE_FACTOR, namespace=namespace
             )
@@ -102,8 +103,9 @@ class PineconeVectorStore:
         return [evidence_id for _, evidence_id in sorted(scored, key=lambda s: (-s[0], s[1]))]
 
     def search(self, query: str, principal: Principal, limit: int = 20) -> list[Evidence]:
-        """Own-community candidates by similarity, then authorized Evidence from PostgreSQL."""
-        if not principal.communities or not query.strip():
+        """Candidates by similarity from the reader's groups and the open-sharing space, then the
+        evidence each reader may actually see, re-checked in PostgreSQL."""
+        if not query.strip():
             return []
         ids = self._candidate_ids(query, principal, limit)
         return self._hydrate(ids[: limit * CANDIDATE_FACTOR], principal)[:limit]

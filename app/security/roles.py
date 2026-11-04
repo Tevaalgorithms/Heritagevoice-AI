@@ -74,9 +74,6 @@ ADMIN_ACROSS_COMMUNITIES = frozenset(
 )
 # Members act only on their own items; reviewers act across their communities.
 OWNED_ONLY = frozenset({Action.DRAFT_EDIT, Action.RECORDING_VIEW})
-# Asking a question is not tied to one community: the user needs at least one, and evidence is
-# filtered by membership during retrieval.
-ANY_COMMUNITY = frozenset({Action.QUERY_ASK})
 
 
 def rank(role: Role) -> int:

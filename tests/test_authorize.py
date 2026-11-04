@@ -66,7 +66,9 @@ def test_the_old_reviewer_role_is_denied_approval_everywhere():
 
 
 def test_admin_has_no_content_access_without_membership():
-    decision = authorize(person(Role.ADMIN, communities=()), Action.QUERY_ASK, Resource("c1"))
+    decision = authorize(
+        person(Role.ADMIN, communities=()), Action.RECORDING_UPLOAD, Resource("c1")
+    )
     assert decision.reason == Reason.COMMUNITY
 
 
@@ -94,9 +96,10 @@ def test_missing_resource_context_is_denied_for_community_actions():
     assert not authorize(person(Role.MEMBER), Action.MEDIA_PLAY).allowed
 
 
-def test_asking_a_question_needs_at_least_one_community():
-    assert authorize(person(Role.MEMBER), Action.QUERY_ASK).allowed
-    assert not authorize(person(Role.MEMBER, communities=()), Action.QUERY_ASK).allowed
+def test_anyone_signed_in_may_ask_a_question_whatever_their_groups():
+    for role in (Role.MEMBER, Role.REVIEWER, Role.ADMIN):
+        assert authorize(person(role), Action.QUERY_ASK).allowed
+        assert authorize(person(role, communities=()), Action.QUERY_ASK).allowed
 
 
 @pytest.mark.parametrize(
