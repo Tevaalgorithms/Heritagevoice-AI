@@ -307,6 +307,14 @@ def test_the_model_sees_only_the_claims_never_the_passages_or_ids():
     assert "Water was shared." in sent
 
 
+def test_the_supervisor_is_told_to_search_when_unsure_and_to_clarify_rarely():
+    from app.agents.prompts.supervisor import SYSTEM  # noqa: PLC0415
+
+    assert "When unsure, choose hybrid" in SYSTEM
+    assert "A question that names a topic is" in SYSTEM
+    assert '"What is the proverb about learning?" -> hybrid' in SYSTEM
+
+
 def test_two_claims_resting_on_the_same_source_cite_it_once():
     state = answer_state(claims(("A.", ["e1"]), ("B.", ["e1"])), [evidence("e1")])
     update = AnswerAgent(writes("It means this [1][2].", [1, 2]))(state)
