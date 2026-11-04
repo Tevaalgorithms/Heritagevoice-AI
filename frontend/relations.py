@@ -5,6 +5,7 @@ RELATIONS = {
     "DESCRIBES": "is about",
     "OCCURRED_AT": "happened at",
     "RELATED_TO": "is related to",
+    "TEACHES": "teaches",
     "SPOKE_IN": "spoke in",
 }
 

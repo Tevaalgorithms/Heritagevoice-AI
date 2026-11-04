@@ -1427,6 +1427,7 @@
           "DESCRIBES",
           "OCCURRED_AT",
           "RELATED_TO",
+          "TEACHES",
           "SUPPORTED_BY"
         ],
         "title": "Relation",
