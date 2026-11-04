@@ -141,9 +141,11 @@ def _run_for_visitors(settings: Settings, facts: OrganisationFacts) -> None:
 
 
 def _run_session_expired(facts: OrganisationFacts) -> None:
-    """The API refused the sign-in: ask the person to sign in again instead of showing errors."""
+    """The API refused the sign-in: say so, and clear the old one. Streamlit still thinks the
+    person is signed in, so asking it to sign in again does nothing; signing out starts afresh
+    and the home page then offers Sign in."""
     page = st.Page(
-        lambda: home_view.render_expired(lambda: st.login(COGNITO_PROVIDER)),
+        lambda: home_view.render_expired(st.logout),
         title="Sign in",
         icon=":material/login:",
         url_path="signin",
