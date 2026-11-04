@@ -68,6 +68,11 @@ CODE_MESSAGES = {
     "rate_limited": "Too many requests just now. Please wait a few minutes and try again.",
     "invalid_edit": "The two sides of a relationship must be different.",
     "deadline": "That took too long. Try a shorter question or recording.",
+    "permission_missing": (
+        "The server is not yet allowed to do this in AWS. An administrator needs to apply the "
+        "latest infrastructure update (the infra workflow, stack single-instance)."
+    ),
+    "aws_error": "An AWS service the server relies on did not answer. Try again in a minute.",
     "voice_failed": "We could not understand that recording. Try again, or type the correction.",
 }
 

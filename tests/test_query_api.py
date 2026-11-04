@@ -114,10 +114,20 @@ def test_warnings_are_reported_once(client):
     assert client.post(URL, json=ASK).json()["warnings"] == ["graph_unavailable"]
 
 
-def test_a_reader_with_no_community_cannot_ask(client):
+def test_a_reader_in_no_group_may_ask_and_gets_an_honest_answer(client):
     app.dependency_overrides[current_principal] = lambda: person(user_id="x", communities=())
-    serving(agents_object([passage("e1")]))
-    assert client.post(URL, json=ASK).status_code == 403
+    serving(agents_object([]))
+    response = client.post(URL, json=ASK)
+    assert response.status_code == 200
+    assert response.json()["status"] == "insufficient_evidence"
+
+
+def test_a_reader_in_no_group_is_never_given_another_groups_passage(client):
+    app.dependency_overrides[current_principal] = lambda: person(user_id="x", communities=())
+    serving(agents_object([passage("e1")]))  # e1 belongs to group c1
+    response = client.post(URL, json=ASK)
+    assert response.status_code == 503
+    assert "e1" not in response.text
 
 
 def test_asking_needs_a_signed_in_user():

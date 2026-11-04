@@ -1,6 +1,7 @@
 import logging
 from uuid import uuid4
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.api.main import app
@@ -85,3 +86,29 @@ def test_a_crash_still_returns_a_trace_id_and_no_error_text(caplog):
     assert response.headers[TRACE_HEADER]
     assert "secret detail" not in response.text
     assert any("unhandled error on GET /boom" in r.getMessage() for r in caplog.records)
+
+
+@pytest.mark.parametrize(
+    ("aws_code", "expected"),
+    [("AccessDeniedException", "permission_missing"), ("ThrottlingException", "aws_error")],
+)
+def test_an_aws_refusal_becomes_a_clear_502_without_the_aws_text(aws_code, expected, caplog):
+    from botocore.exceptions import ClientError  # noqa: PLC0415
+    from fastapi import FastAPI  # noqa: PLC0415
+    from fastapi.testclient import TestClient  # noqa: PLC0415
+
+    from app.api.main import aws_error  # noqa: PLC0415
+
+    small = FastAPI()
+    small.add_exception_handler(ClientError, aws_error)
+
+    @small.get("/denied")
+    def denied():
+        message = "User: arn:aws:iam::123456789012:role/x is not authorized"
+        raise ClientError({"Error": {"Code": aws_code, "Message": message}}, "ListUsers")
+
+    with caplog.at_level("ERROR", logger="heritagevoice.api"):
+        response = TestClient(small, raise_server_exceptions=False).get("/denied")
+    assert response.status_code == 502
+    assert response.json() == {"detail": {"code": expected}}
+    assert "123456789012" not in response.text + caplog.text

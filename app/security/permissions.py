@@ -10,7 +10,6 @@ from app.models.evidence import Evidence
 from app.models.groups import OPEN_COMMUNITY
 from app.security.roles import (
     ADMIN_ACROSS_COMMUNITIES,
-    ANY_COMMUNITY,
     COMMUNITY_SCOPED,
     OWNED_ONLY,
     ROLE_PERMISSIONS,
@@ -102,8 +101,6 @@ def _belongs(principal: Principal, resource: Resource) -> bool:
 
 
 def _community_rule(principal: Principal, action: Action, resource: Resource) -> Reason | None:
-    if action in ANY_COMMUNITY:
-        return None if principal.communities else Reason.COMMUNITY
     if _exempt_from_membership(principal, action):
         return None
     return None if _belongs(principal, resource) else Reason.COMMUNITY

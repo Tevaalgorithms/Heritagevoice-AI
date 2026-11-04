@@ -111,11 +111,46 @@ def test_large_uploads_are_embedded_in_batches():
     assert index.count("c1") == EMBED_BATCH * 2 + 1
 
 
-def test_search_does_nothing_without_communities_or_words():
-    embedder = FakeEmbedder()
-    adapter, _ = store(embedder=embedder)
-    assert adapter.search("anything", person(communities=())) == []
+def test_search_does_nothing_without_words():
+    adapter, _ = store(embedder=FakeEmbedder())
     assert adapter.search("   ", person()) == []
+
+
+def test_a_reader_in_no_group_searches_only_the_open_sharing_space():
+    seen = {}
+
+    def hydrate(ids, principal):
+        seen["ids"] = ids
+        return []
+
+    adapter, _ = store(hydrate=hydrate)
+    adapter.upsert(
+        [
+            evidence("r1:transcript:v1:c0", text="water"),
+            evidence("r2:transcript:v1:c0", text="water", labels=("community:everyone",)),
+        ]
+    )
+    adapter.search("water", person(communities=()))
+    assert seen["ids"] == ["r2:transcript:v1:c0"]  # never the c1 group's passage
+
+
+def test_a_member_searches_their_groups_and_the_open_sharing_space():
+    seen = {}
+
+    def hydrate(ids, principal):
+        seen["ids"] = sorted(ids)
+        return []
+
+    adapter, _ = store(hydrate=hydrate)
+    adapter.upsert(
+        [
+            evidence("r1:transcript:v1:c0", text="water"),
+            evidence("r2:transcript:v1:c0", text="water", labels=("community:everyone",)),
+            evidence("r3:transcript:v1:c0", text="water", labels=("community:other",)),
+        ]
+    )
+    adapter.search("water", person())  # a member of c1
+    assert seen["ids"] == ["r1:transcript:v1:c0", "r2:transcript:v1:c0"]
 
 
 def test_search_hands_candidates_to_postgres_and_keeps_its_order_and_limit():

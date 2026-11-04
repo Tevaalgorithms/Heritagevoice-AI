@@ -1,5 +1,8 @@
 """The HeritageVoice API: health, records, review, the Library and questions."""
 
+import logging
+
+from botocore.exceptions import ClientError
 from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -27,6 +30,8 @@ from app.api.tracing import install_trace_logging, trace_id_middleware
 from app.api.usage import router as usage_router
 from app.config import Settings
 
+logger = logging.getLogger("heritagevoice.api")
+DENIED_BY_AWS = {"AccessDenied", "AccessDeniedException", "UnauthorizedOperation"}
 app = FastAPI(title="HeritageVoice AI", version="0.1.0")
 app.middleware("http")(trace_id_middleware)
 install_trace_logging()
@@ -37,6 +42,16 @@ def validation_error(request: Request, error: RequestValidationError) -> JSONRes
     """Say what is wrong and where, but never echo submitted values (they may be secrets)."""
     problems = [{"loc": e["loc"], "msg": e["msg"], "type": e["type"]} for e in error.errors()]
     return JSONResponse(status_code=422, content={"detail": problems})
+
+
+@app.exception_handler(ClientError)
+def aws_error(request: Request, error: ClientError) -> JSONResponse:
+    """An AWS service refused or failed. Log only its short code (the message can name accounts),
+    and say which case it is: a missing permission is fixed by applying the infrastructure."""
+    code = str(error.response.get("Error", {}).get("Code", "unknown"))
+    logger.error("AWS call failed (%s) on %s %s", code, request.method, request.url.path)
+    problem = "permission_missing" if code in DENIED_BY_AWS else "aws_error"
+    return JSONResponse(status_code=502, content={"detail": {"code": problem}})
 
 
 app.include_router(admin_router)
