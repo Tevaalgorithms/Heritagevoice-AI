@@ -8,6 +8,7 @@ from http import HTTPStatus
 
 import httpx
 
+from app.security.principal import POLICY_VERSION
 from frontend.api_errors import (
     ApiError,
     ApiNotConfiguredError,
@@ -302,6 +303,11 @@ class ApiClient:
 
     def revoke_consent(self, consent_id: str) -> None:
         self._send("POST", f"/admin/consents/{consent_id}/revoke", auth=True)
+
+    def withdraw_recording(self, recording_id: str, reason: str) -> None:
+        """Take one recording down at once: out of the Library, search, answers and the graph."""
+        body = {"policy_version": POLICY_VERSION, "reason": reason}
+        self._send("POST", f"/v1/recordings/{recording_id}/revoke", auth=True, json=body)
 
     def report_item(self, recording_id: str, reason: str, note: str) -> None:
         """Say a recording should not be shared. Works with or without an account."""
