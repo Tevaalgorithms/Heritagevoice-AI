@@ -313,3 +313,23 @@ def test_the_supervisor_is_told_to_search_when_unsure_and_to_clarify_rarely():
     assert "When unsure, choose hybrid" in SYSTEM
     assert "A question that names a topic is" in SYSTEM
     assert '"What is the proverb about learning?" -> hybrid' in SYSTEM
+
+
+def test_two_claims_resting_on_the_same_source_cite_it_once():
+    state = answer_state(claims(("A.", ["e1"]), ("B.", ["e1"])), [evidence("e1")])
+    update = AnswerAgent(writes("It means this [1][2].", [1, 2]))(state)
+    assert update["answer"] == "It means this [1]."
+    assert [c.evidence_id for c in update["citations"]] == ["e1"]
+
+
+def test_different_sources_next_to_each_other_are_all_kept():
+    items = [evidence("e1"), evidence("e2", recording="r2")]
+    state = answer_state(claims(("A.", ["e1"]), ("B.", ["e2"])), items)
+    update = AnswerAgent(writes("Both [1][2].", [1, 2]))(state)
+    assert update["answer"] == "Both [1][2]."
+
+
+def test_the_verifier_is_told_a_quoted_saying_answers_what_it_means():
+    from app.agents.prompts.verifier import SYSTEM  # noqa: PLC0415
+
+    assert "its own words are the answer" in SYSTEM
