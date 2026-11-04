@@ -7,8 +7,10 @@ from contextvars import ContextVar
 from uuid import uuid4
 
 from fastapi import Request, Response
+from fastapi.responses import JSONResponse
 
 TRACE_HEADER = "X-Trace-ID"
+logger = logging.getLogger("heritagevoice.api")
 _VALID = re.compile(r"[A-Za-z0-9-]{8,64}")
 _trace_id: ContextVar[str] = ContextVar("trace_id", default="-")
 
@@ -46,8 +48,20 @@ async def trace_id_middleware(
 ) -> Response:
     token = _trace_id.set(resolve_trace_id(request.headers.get(TRACE_HEADER)))
     try:
-        response = await call_next(request)
+        response = await _answer(request, call_next)
         response.headers[TRACE_HEADER] = current_trace_id()
         return response
     finally:
         _trace_id.reset(token)
+
+
+async def _answer(
+    request: Request, call_next: Callable[[Request], Awaitable[Response]]
+) -> Response:
+    """The response, or for a crash a plain 500 that carries the trace ID like any other answer.
+    The error text and traceback go to the log (with the trace ID), never to the caller."""
+    try:
+        return await call_next(request)
+    except Exception:
+        logger.exception("unhandled error on %s %s", request.method, request.url.path)
+        return JSONResponse(status_code=500, content={"detail": {"code": "internal"}})

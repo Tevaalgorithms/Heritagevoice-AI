@@ -63,3 +63,25 @@ def test_validation_errors_never_echo_the_submitted_values():
     response = client.put("/admin/models/translation", json=body)
     assert response.status_code in {401, 403, 422, 503}
     assert submitted not in response.text
+
+
+def test_a_crash_still_returns_a_trace_id_and_no_error_text(caplog):
+    from fastapi import FastAPI  # noqa: PLC0415
+    from fastapi.testclient import TestClient  # noqa: PLC0415
+
+    from app.api.tracing import trace_id_middleware  # noqa: PLC0415
+
+    small = FastAPI()
+    small.middleware("http")(trace_id_middleware)
+
+    @small.get("/boom")
+    def boom():
+        raise RuntimeError("secret detail")
+
+    with caplog.at_level("ERROR", logger="heritagevoice.api"):
+        response = TestClient(small, raise_server_exceptions=False).get("/boom")
+    assert response.status_code == 500
+    assert response.json() == {"detail": {"code": "internal"}}
+    assert response.headers[TRACE_HEADER]
+    assert "secret detail" not in response.text
+    assert any("unhandled error on GET /boom" in r.getMessage() for r in caplog.records)
