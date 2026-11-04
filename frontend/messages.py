@@ -10,6 +10,20 @@ from frontend.api_client import (
 
 UNAUTHORIZED = 401
 SESSION_EXPIRED = "Your sign-in has expired. Please sign in again."
+SERVER_ERROR = 500
+STATUS_MESSAGES = {
+    UNAUTHORIZED: SESSION_EXPIRED,
+    403: "You are not allowed to do that.",
+    404: "That could not be found. It may have been removed.",
+    409: "Someone else changed this at the same time. Reload the page and try again.",
+    413: "That is too large to send.",
+    422: "The request could not be completed because some values are not allowed.",
+    429: "Too many requests just now. Please wait a minute and try again.",
+}
+SERVER_PROBLEM = (
+    "The request could not be completed because of a problem on our side. "
+    "Please try again in a minute."
+)
 
 ERROR_MESSAGES: dict[type[ApiError], str] = {
     ApiNotConfiguredError: "Set HERITAGEVOICE_DEV_API_TOKEN in .env to contact the API.",
@@ -61,10 +75,26 @@ def message_for(error: ApiError) -> str:
     code = getattr(error, "code", None)
     if code in CODE_MESSAGES:
         return CODE_MESSAGES[code]
-    if getattr(error, "status_code", None) == UNAUTHORIZED:
-        return SESSION_EXPIRED
+    if isinstance(error, ApiRequestError):
+        return _request_message(error)
     matches = (text for kind, text in ERROR_MESSAGES.items() if isinstance(error, kind))
     return next(matches, "Something went wrong.")
+
+
+def _base_text(status: int) -> str:
+    if status in STATUS_MESSAGES:
+        return STATUS_MESSAGES[status]
+    return SERVER_PROBLEM if status >= SERVER_ERROR else ERROR_MESSAGES[ApiRequestError]
+
+
+def _request_message(error: ApiRequestError) -> str:
+    """What went wrong, in words, by the kind of refusal; then what to tell support."""
+    parts = [_base_text(error.status_code)]
+    if error.problems:
+        parts.append("; ".join(error.problems) + ".")
+    if error.status_code >= SERVER_ERROR and error.reference:
+        parts.append(f"Reference: {error.reference}")
+    return " ".join(parts)
 
 
 PROBE_MESSAGES = {
@@ -83,7 +113,7 @@ PROBE_MESSAGES = {
     "rate_limited": "The provider is rate limiting requests. Try again in a minute.",
     "bad_request": (
         "The provider refused the test request. The model may not accept these settings, "
-        "such as the temperature."
+        "or the account may have a billing or credit problem. Check the provider's console."
     ),
     "timeout": "The provider did not answer in time. Try again, or raise the timeout.",
     "provider_unreachable": "The provider could not be reached from the server. Try again.",

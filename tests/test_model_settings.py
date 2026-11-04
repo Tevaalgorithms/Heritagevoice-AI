@@ -547,3 +547,21 @@ def test_a_chain_can_fail_over_from_one_provider_to_another(engine):
         (Provider.ANTHROPIC, DEFAULT_KEY_NAME),
         (Provider.OPENAI, "OPENAI_API_KEY"),
     ]
+
+
+@pytest.mark.parametrize(
+    ("name", "status", "code"),
+    [
+        ("AnthropicInvalidRequestError", 400, "bad_request"),
+        ("AnthropicAuthenticationError", 401, "bad_key"),
+        ("AnthropicRateLimitError", 429, "rate_limited"),
+        ("AnthropicModelNotFoundError", 404, "unknown_model"),
+        ("AnthropicOverloadedError", 529, "provider_down"),
+    ],
+)
+def test_the_wrapped_errors_langchain_raises_get_the_same_codes(name, status, code):
+    import langchain_anthropic.chat_models as wrapped  # noqa: PLC0415
+
+    response = httpx.Response(status, request=httpx.Request("POST", "http://x"))
+    error = getattr(wrapped, name)("secret detail", response=response, body=None)
+    assert _code_for(error) == code

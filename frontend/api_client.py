@@ -400,12 +400,47 @@ def _checked(response: httpx.Response, accept_not_ready: bool) -> httpx.Response
         if accept_not_ready:
             return response
         raise ApiNotReadyError(response.url.path)
-    raise ApiRequestError(response.status_code, _error_code(response))
+    raise ApiRequestError(
+        response.status_code,
+        _error_code(response),
+        response.headers.get("x-trace-id"),
+        _problems(response),
+    )
+
+
+MAX_PROBLEMS = 3
+MAX_PROBLEM_LENGTH = 120
+HIDDEN_PLACES = {"body", "query", "path"}
+
+
+def _detail(response: httpx.Response) -> object:
+    """The `detail` of an error answer, or None when the answer is not JSON."""
+    try:
+        body = response.json()
+    except ValueError:
+        return None
+    return body.get("detail") if isinstance(body, dict) else None
+
+
+def _problems(response: httpx.Response) -> tuple[str, ...]:
+    """Which fields the server refused and why. Values are never included, only the field name
+    and the rule it broke."""
+    detail = _detail(response)
+    items = detail if isinstance(detail, list) else []
+    return tuple(_problem(item) for item in items[:MAX_PROBLEMS] if isinstance(item, dict))
+
+
+def _field(places: object) -> str:
+    shown = [str(place) for place in places if place not in HIDDEN_PLACES]  # type: ignore[attr-defined]
+    return ".".join(shown)
+
+
+def _problem(item: dict[str, object]) -> str:
+    field = _field(item.get("loc") or [])
+    text = str(item.get("msg", "")).removeprefix("Value error, ")[:MAX_PROBLEM_LENGTH]
+    return f"{field}: {text}" if field else text
 
 
 def _error_code(response: httpx.Response) -> str | None:
-    try:
-        detail = response.json().get("detail")
-    except ValueError:
-        return None
+    detail = _detail(response)
     return detail.get("code") if isinstance(detail, dict) else None
