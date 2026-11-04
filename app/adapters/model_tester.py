@@ -26,7 +26,10 @@ ERROR_CODES = {
 
 
 def _code_for(error: Exception) -> str:
-    return ERROR_CODES.get(type(error).__name__, "provider_error")
+    """Match by class name up the inheritance chain: LangChain wraps the SDK's errors in its own
+    classes (such as AnthropicInvalidRequestError) whose parents carry the names listed above."""
+    names = (kind.__name__ for kind in type(error).__mro__)
+    return next((ERROR_CODES[name] for name in names if name in ERROR_CODES), "provider_error")
 
 
 class ProviderModelTester:

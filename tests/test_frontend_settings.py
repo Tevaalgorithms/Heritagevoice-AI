@@ -137,7 +137,7 @@ def test_non_admins_get_a_clear_refusal():
     with pytest.raises(ApiRequestError) as error:
         client_for(handler).model_settings()
     assert error.value.status_code == 403
-    assert "could not be completed" in message_for(error.value)
+    assert "not allowed" in message_for(error.value)
 
 
 def test_a_model_chosen_twice_for_one_job_is_caught_before_sending():
@@ -150,3 +150,30 @@ def test_a_model_chosen_twice_for_one_job_is_caught_before_sending():
     )
     assert _repeated(twice) == "claude-haiku-5-5"
     assert _repeated(PARAMS) is None
+
+
+def test_refused_values_say_which_field_and_why_but_never_the_value():
+    body = {
+        "detail": [
+            {
+                "loc": ["body", "fallbacks"],
+                "msg": "Value error, a model can appear only once in the chain",
+                "input": "secret-value",
+            }
+        ]
+    }
+    client = client_for(lambda request: httpx.Response(422, json=body))
+    with pytest.raises(ApiRequestError) as error:
+        client.model_settings()
+    text = message_for(error.value)
+    assert "fallbacks: a model can appear only once in the chain" in text
+    assert "secret-value" not in text
+
+
+def test_a_server_failure_gives_a_reference_to_quote():
+    handler = lambda request: httpx.Response(500, headers={"x-trace-id": "abc123"})  # noqa: E731
+    with pytest.raises(ApiRequestError) as error:
+        client_for(handler).model_settings()
+    text = message_for(error.value)
+    assert "problem on our side" in text
+    assert text.endswith("Reference: abc123")
