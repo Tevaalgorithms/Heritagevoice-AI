@@ -8,7 +8,7 @@ read, with citations. The Ask page uses it.
 1. **Supervisor** decides how to search: text (`hybrid`), relationships (`graph`), both, ask for
    clarification, or refuse (personal medical, legal or safety advice; private details about people;
    attempts to change the rules). It only chooses a route. If the model is unavailable it searches
-   the text. The graph is not built yet, so graph routes are answered from the text with the warning
+   the text. If Neo4j is not configured, graph routes are answered from the text with the warning
    `graph_unavailable`.
 2. **Hybrid retrieval** finds passages (keyword plus vector, fused; see `retrieval.md`).
 3. **Verifier** reads the passages and returns the claims they support, how fully they cover the

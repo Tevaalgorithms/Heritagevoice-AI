@@ -13,8 +13,9 @@ current prices before relying on this.
 > daily disk snapshots, not point-in-time recovery. Move to a managed setup (RDS, load balancer,
 > containers) before real community recordings go in.
 
-Status: this profile has been applied and runs a live site. Names below (`example.org`, `<owner>/<repo>`,
-`<account>`) are placeholders for your own values.
+Status: this profile has been applied and runs the live site at <https://heritagevoice.org>, deployed
+by the workflows below. Names in this guide (`example.org`, `<owner>/<repo>`, `<account>`) are
+placeholders for your own values.
 
 ## What you need
 
@@ -150,11 +151,14 @@ all green and accepts only refs made of letters, digits and `. _ / -`.
 
 ## Known gaps (things this profile does not do)
 
-- No failover, no point-in-time recovery, no autoscaling.
-- The deploy workflow passes `actionlint` but has never run; the OIDC role has never been assumed.
-- Not yet verified against real AWS: the Transcribe and S3 adapters, the Cognito admin adapter,
-  the Streamlit Cognito login, the DLM snapshot policy with the customer key, and the first-boot
-  script on a real instance.
+- No failover, no point-in-time recovery, no autoscaling. Backups are daily disk snapshots, kept for
+  7 days.
+- A restore from a snapshot has not been rehearsed. Do one before relying on the backups.
+- Transcription quality has not been measured per language; see the languages guide.
+
+What has run for real on the live site: the deploy and infrastructure workflows (through the OIDC
+roles), the Transcribe and S3 adapters, Cognito sign-in on its own domain, and the first-admin
+workflow.
 
 ## The sign-in page
 

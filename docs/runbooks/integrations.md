@@ -10,7 +10,7 @@ services. Nothing needs the AWS console or a redeploy.
 | Language models | Anthropic API key (`HERITAGEVOICE_LLM_API_KEY`), OpenAI API key (`OPENAI_API_KEY`), and the key of any catalogue model whose key name ends in `_API_KEY` | Translation, routing, verifying and writing answers. You need at least one. |
 | Pinecone | API key, index name, embedding model (default `multilingual-e5-large`), embedding dimension (default 1024) | Meaning-based search |
 | LangSmith | API key, project | Tracing (not used by the app yet) |
-| Neo4j | Connection address, user name, password | The knowledge graph (not built yet) |
+| Neo4j | Connection address, user name, password | The reviewed knowledge graph (optional; without it, relationship questions use text search) |
 
 The **Setup checklist** at the top shows which services are ready. For language models one
 provider is enough. **Test the Pinecone connection** looks the index up with the saved key (it
