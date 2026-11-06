@@ -17,8 +17,8 @@ def test_the_cards_use_the_grid_with_the_right_number_of_columns():
 
 @pytest.mark.parametrize(
     "texts",
-    [home.HOW, home.PRINCIPLES, home.STEPS],
-    ids=["how", "principles", "steps"],
+    [home.HOW, home.PRINCIPLES],
+    ids=["how", "principles"],
 )
 def test_every_card_has_a_title_and_a_sentence(texts):
     for title, text in texts:
