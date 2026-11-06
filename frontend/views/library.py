@@ -22,6 +22,7 @@ from frontend.views.playback import Fetch, listen_button
 from frontend.views.report import report_button
 
 ANY = "Any"
+PREVIEW_CHARS = 100  # a snapshot on the home page: about three lines
 PENDING = "hv-pending-search"  # what the Home page search card asked for
 VIEWS = {"Original": "original", "English": "translation"}
 
@@ -94,12 +95,35 @@ def _origin(item: LibraryItem) -> str:
     )
 
 
-def card(client: ApiClient, play: Fetch, item: LibraryItem) -> None:
-    with theme.card(item.evidence_id):
+def snapshot(text: str, limit: int = PREVIEW_CHARS) -> str:
+    """The start of a passage, cut at a word, with an ellipsis when something was left out."""
+    if len(text) <= limit:
+        return text
+    cut = text[:limit].rsplit(" ", 1)[0] or text[:limit]
+    return cut.rstrip(" ,.;:-") + "…"
+
+
+def _body(item: LibraryItem, preview: bool) -> None:
+    """The notices, the words (or a snapshot of them) and where they are in the recording."""
+    for notice in item.notices:
+        st.warning(notice, icon=":material/health_and_safety:")
+    words = snapshot(item.passage) if preview else item.passage
+    st.markdown(theme.passage_html(words), unsafe_allow_html=True)
+
+
+def _more(more: object | None) -> None:
+    if more is not None:
+        st.page_link(more, label="More", icon=":material/arrow_forward:")  # type: ignore[arg-type]
+
+
+def card(client: ApiClient, play: Fetch, item: LibraryItem, more: object | None = None) -> None:
+    """A recording. With `more` (a page) it is a snapshot for the home page: the first words, and
+    a link to that page for the rest."""
+    preview = more is not None
+    with theme.card(f"recent-{item.evidence_id}" if preview else item.evidence_id):
         st.markdown(f"<div class='hv-kind'>{escape(_heading(item))}</div>", unsafe_allow_html=True)
-        for notice in item.notices:
-            st.warning(notice, icon=":material/health_and_safety:")
-        st.markdown(theme.passage_html(item.passage), unsafe_allow_html=True)
+        _body(item, preview)
+        _more(more)
         span = f"{format_time(item.start_s)} to {format_time(item.end_s)}"
         shown = "English translation" if item.view == "translation" else "Original words"
         st.caption(f"{shown} · {span}")
