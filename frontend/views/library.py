@@ -23,7 +23,7 @@ from frontend.views.report import report_button
 
 ANY = "Any"
 PENDING = "hv-pending-search"  # what the Home page search card asked for
-VIEWS = {"Original language": "original", "English translation": "translation"}
+VIEWS = {"Original": "original", "English": "translation"}
 
 
 def language_options() -> dict[str, str]:
@@ -60,13 +60,13 @@ def _filters() -> LibrarySpec:
             "Language spoken", list(language_options()), key="lib-language"
         )
         kind = kinds.selectbox("Kind", list(kind_options()), key="lib-kind")
-        read_as = view.radio("Read in", list(VIEWS), horizontal=False)
+        read_as = view.segmented_control("Read in", list(VIEWS), default=next(iter(VIEWS)))
         st.form_submit_button("Search", icon=":material/search:", type="primary")
     return LibrarySpec(
         q=query.strip(),
         language=language_options()[str(language)],
         kind=kind_options()[str(kind)],
-        view=VIEWS[str(read_as)],
+        view=VIEWS.get(str(read_as), "original"),
     )
 
 

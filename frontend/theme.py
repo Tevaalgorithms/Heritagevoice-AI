@@ -127,10 +127,20 @@ def card(key: str) -> AbstractContextManager[DeltaGenerator]:
     return st.container(border=True, key=f"hvcard-{key}")
 
 
-def kinds_and_languages() -> None:
-    """What we preserve, and the languages the service speaks, for the landing page."""
+def kinds() -> None:
+    """What we preserve, as chips."""
     st.markdown(_kind_chips(), unsafe_allow_html=True)
-    st.markdown(_languages(), unsafe_allow_html=True)
+
+
+def languages_band() -> None:
+    """The languages the service speaks, in a full-width navy band for the landing page."""
+    with st.container(key="hv-band-langs"):
+        st.markdown(_languages(), unsafe_allow_html=True)
+
+
+def band(name: str) -> AbstractContextManager[DeltaGenerator]:
+    """A section with a full-width tinted background. `name` is "how" or "recent"."""
+    return st.container(key=f"hv-band-{name}")
 
 
 def cards_html(items: tuple[tuple[str, str], ...], columns: int, style: str = "") -> str:
@@ -176,9 +186,11 @@ def supported_languages_html() -> str:
     )
 
 
-def footer() -> None:
-    """The supported languages, a closing thought, then the promise the project makes."""
-    st.markdown(supported_languages_html(), unsafe_allow_html=True)
+def footer(languages: bool = True) -> None:
+    """The supported languages (unless the page shows them already), a closing thought, then the
+    promise the project makes."""
+    if languages:
+        st.markdown(supported_languages_html(), unsafe_allow_html=True)
     st.markdown(
         "<div class='hv-closing' style='text-align:center'>"
         f"<div class='hv-closing-line'>{CLOSING}</div>"

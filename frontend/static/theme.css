@@ -185,3 +185,18 @@ input, textarea, [data-baseweb="select"] > div { border-radius: 10px !important;
 .hv-cards.steps .hv-card::before { counter-increment: step; content: counter(step); display: grid; place-items: center;
   width: 2.1rem; height: 2.1rem; border-radius: 50%; background: #D98A2B; color: #1B1208; font-weight: 700; margin-bottom: .8rem; }
 .hv-cards.principles .hv-card { background: transparent; border: 0; border-top: 3px solid #D98A2B; border-radius: 0; padding: .9rem 0 0; }
+/* Trust line under the hero buttons. */
+.hv-trust { list-style: none; display: flex; flex-wrap: wrap; gap: .5rem 1.4rem; margin: 1.2rem 0 0; padding: 0; color: #3B4658; font-size: .95rem; }
+.hv-trust li { display: inline-flex; align-items: center; gap: .45rem; }
+.hv-title { text-wrap: balance; font-size: clamp(2rem, 3.6vw, 2.7rem); }
+/* Full-width bands behind some Home sections, as in the mock-up. The content stays in the page column. */
+[data-testid="stMain"], .stApp { overflow-x: hidden; }
+[class*="st-key-hv-band-"] { padding-block: 1rem 1.6rem; margin-block: 2.2rem; clip-path: inset(0 -100vmax); }
+.st-key-hv-band-how, .st-key-hv-band-recent { background: #F5ECD9; box-shadow: 0 0 0 100vmax #F5ECD9; }
+.st-key-hv-band-langs { background: #14284B; box-shadow: 0 0 0 100vmax #14284B; }
+.st-key-hv-band-langs .hv-langs { max-width: none; margin: 0; padding: .6rem 0; background: transparent; }
+/* Original / English switch, a pill with the chosen side in terracotta. */
+[data-testid="stButtonGroup"] button { border-radius: 999px; border: 1px solid #E4D6BC; background: #FFFDF8; color: #1B2A41; font-weight: 600; }
+[data-testid="stButtonGroup"] button[aria-checked="true"], [data-testid="stButtonGroup"] button[kind="segmented_controlActive"] { background: #B4532A; color: #fff; border-color: #B4532A; }
+.hv-trust, .hv-trust li { margin-left: 0 !important; padding-left: 0 !important; list-style: none; }
+.hv-trust { gap: .4rem 1.1rem; font-size: .9rem; }
