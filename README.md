@@ -44,7 +44,8 @@ tools to preserve and share their own heritage.
 ## What it does
 
 - **Contribute.** Record in the browser or upload audio or MP4 in 17 languages. Share with a family
-  or group, or openly with everyone; either way the speaker's consent is recorded first.
+  or group, or openly with everyone; either way the speaker's consent is recorded first. Optionally
+  credit the speaker and say where the knowledge came from (a family elder, a book, a website).
 - **Review.** Speech is transcribed and translated, then people check it. Only approved, current
   versions are searchable.
 - **Find.** Anyone can search the openly shared recordings without an account. Signed-in people also
@@ -52,10 +53,16 @@ tools to preserve and share their own heritage.
 - **Ask.** Questions are answered from the recordings only, using keyword and meaning-based search
   plus a reviewed knowledge graph for "how are these connected" questions. Answers carry
   citations, and you can listen to the cited moment.
+- **Follow connections.** The Connections page shows how people, places, songs and customs are
+  linked, each with the words in the recording that say it. Only relationships a person approved
+  are shown.
+- **Correct by voice.** An administrator can say how a proposed relationship should read; a model
+  suggests the wording, and the administrator checks and approves it.
 - **Stay in control.** Groups and coordinators, consent that can be withdrawn at once, "report this
   item", an audit trail, and remedies that always carry a "not medically validated" notice.
-- **Administer.** Choose the language models for each job (with fall-backs), keep API keys in AWS
-  Parameter Store (never shown again), and review proposed relationships.
+- **Administer.** Approve people and manage accounts and roles, choose the language models for each
+  job (with fall-backs), see model usage and cost, keep API keys in AWS Parameter Store (never shown
+  again), and review proposed relationships.
 
 ## Architecture
 
@@ -152,6 +159,7 @@ the whole product. A step that cannot run records a warning and the pipeline car
 | --- | --- | --- | --- |
 | **Translator** | Preservation | Drafts a translation of each transcript segment. Keeps cultural terms (names, places, kinship words, songs) and treats the transcript as data, never as instructions. | Review continues without a translation draft. |
 | **Graph extractor** | Preservation | Reads an approved transcript and *proposes* relationships (person, place, event, practice, theme). Every proposal is checked for a real segment and a known relation, then stored as pending. | Nothing is proposed; nothing reaches the graph. |
+| **Correction interpreter** | Preservation | Understands a reviewer's spoken correction of a proposed relationship. The reviewer sees the words it heard and what it wrote, can change either, and approves it themselves. | The reviewer types the change instead. |
 | **Question rewriter** | Question | Turns a follow-up ("and her mother?") into a standalone question using the last few turns. Memory is stateless and never widens access. | The original question is used. |
 | **Supervisor** | Question | Chooses the route: text search, graph search, both, ask for clarification, or refuse. It routes; it never grants access. | Falls back to text search with a warning. |
 | **Hybrid RAG** | Question | Finds passages with keyword and meaning-based search, fuses the ranks and keeps the best five to eight. | Keyword results only, with a warning. |
@@ -265,6 +273,11 @@ in-memory fakes and prints a cited answer.
 | Models, keys and services | [`docs/runbooks/models.md`](docs/runbooks/models.md), [`integrations.md`](docs/runbooks/integrations.md), [`secrets.md`](docs/runbooks/secrets.md) |
 | Search and answering | [`docs/runbooks/retrieval.md`](docs/runbooks/retrieval.md), [`answering.md`](docs/runbooks/answering.md) |
 | Languages | [`docs/runbooks/languages.md`](docs/runbooks/languages.md) |
+| Correcting relationships by voice | [`docs/runbooks/voice-correction.md`](docs/runbooks/voice-correction.md) |
+| Sign-in domain (Cognito) | [`docs/runbooks/login-domain.md`](docs/runbooks/login-domain.md) |
+| Access tests (the denied cases) | [`docs/runbooks/access-tests.md`](docs/runbooks/access-tests.md) |
+| **Data stores**: PostgreSQL tables, the vector index, the graph | [`docs/schema/`](docs/schema/README.md) |
+| **Why it is built this way** (decision records) | [`docs/adr/`](docs/adr/README.md) |
 
 ## Quality standards
 
@@ -300,7 +313,10 @@ migrations/       Alembic migrations
 infra/            Terraform (Cognito, single-instance hosting, CI roles)
 deploy/           Container stack and deploy scripts
 evals/            Retrieval evaluation harness and synthetic fixtures
-docs/             Runbooks and the code guide
+ingestion/        Helpers for text sources (see its README)
+tests/            Unit, access and end-to-end tests
+scripts/          Git hook installer and Pinecone index setup
+docs/             Runbooks, schema of the three data stores, decision records, code guide
 ```
 
 ## Contributing
