@@ -12,9 +12,10 @@ import streamlit as st
 from frontend import theme
 from frontend.api_client import ApiClient, ApiError, ApiRequestError, GroupView, SignupView
 from frontend.messages import message_for
+from frontend.roles import ROLE_CHOICES, ROLE_DESCRIPTIONS
+from frontend.views import accounts
 
 NOT_FOUND = 404
-ROLES = {"Contributor": "member", "Coordinator": "reviewer", "Administrator": "admin"}
 GROUP_HELP = "Groups are created under Groups and consent."
 
 
@@ -83,16 +84,19 @@ def _waiting_tab(client: ApiClient) -> None:
 def _invite_tab(client: ApiClient) -> None:
     st.caption(
         "Invite someone by email. They receive a temporary password and set their own. "
-        "A Coordinator looks after the groups they belong to and records their consents. "
-        "Choose Administrator only for people who should review recordings and manage settings."
+        "Choose the smallest role that lets them do their part."
     )
     with st.form("invite", border=True):
         email = st.text_input("Email address")
-        role = st.radio("Role", list(ROLES), horizontal=True)
+        role = st.radio(
+            "Role",
+            list(ROLE_CHOICES),
+            captions=[ROLE_DESCRIPTIONS[key] for key in ROLE_CHOICES.values()],
+        )
         communities = _pick_groups("Groups", _groups(client), "invite-groups")
         sent = st.form_submit_button("Send invitation", type="primary")
     if sent:
-        _send_invite(client, email.strip(), ROLES[role], communities)
+        _send_invite(client, email.strip(), ROLE_CHOICES[role], communities)
 
 
 def _send_invite(client: ApiClient, email: str, role: str, communities: list[str]) -> None:
@@ -108,13 +112,19 @@ def render(client: ApiClient) -> None:
     """The People page."""
     theme.page_header(
         "People",
-        "Approve people who asked for an account, and invite contributors and administrators.",
+        "Approve people who asked for an account, manage accounts, and invite people.",
         "people",
     )
-    waiting, invite = st.tabs(
-        [":material/how_to_reg: Waiting for approval", ":material/mail: Invite"]
+    waiting, everyone, invite = st.tabs(
+        [
+            ":material/how_to_reg: Waiting for approval",
+            ":material/group: Accounts",
+            ":material/mail: Invite",
+        ]
     )
     with waiting:
         _waiting_tab(client)
+    with everyone:
+        accounts.render(client, _groups(client))
     with invite:
         _invite_tab(client)

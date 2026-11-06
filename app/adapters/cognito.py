@@ -64,6 +64,17 @@ class CognitoIdentityProvider:
         user = self._lookup("sub", sub)
         return None if user is None else _attribute(user["Attributes"], "email")
 
+    def emails_for(self, subs: list[str]) -> dict[str, str]:
+        wanted = set(subs)
+        found: dict[str, str] = {}
+        for page in self._pages():
+            for user in page["Users"]:
+                attributes = user.get("Attributes", [])
+                sub = _attribute(attributes, "sub")
+                if sub in wanted:
+                    found[sub] = _attribute(attributes, "email")
+        return found
+
     def _lookup(self, attribute: str, value: str) -> dict[str, Any] | None:
         """One account matching `attribute = value`. The value is quoted, never concatenated raw."""
         quoted = value.replace("\\", "\\\\").replace('"', '\\"')

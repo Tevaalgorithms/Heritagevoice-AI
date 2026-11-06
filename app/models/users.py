@@ -31,3 +31,4 @@ class StoredUser(BaseModel):
     role: Role
     status: UserStatus
     communities: frozenset[str]
+    created: str = ""  # the day the record was made, YYYY-MM-DD

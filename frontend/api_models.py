@@ -136,6 +136,18 @@ class SignupView(BaseModel):
     created: str
 
 
+class AccountView(BaseModel):
+    """An account that has a role here. `email` is empty if the sign-in account no longer exists."""
+
+    sub: str
+    email: str = ""
+    role: str
+    status: str
+    communities: list[str] = []
+    created: str = ""
+    is_you: bool = False
+
+
 class GroupView(BaseModel):
     """A group: a family, a village, a choir. People see the name; the system uses the ID."""
 

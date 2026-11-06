@@ -1925,6 +1925,60 @@
         "title": "UsageSummary",
         "type": "object"
       },
+      "UserStatus": {
+        "description": "Whether a user may sign in.",
+        "enum": [
+          "active",
+          "disabled"
+        ],
+        "title": "UserStatus",
+        "type": "string"
+      },
+      "UserView": {
+        "description": "An account as an admin sees it. `email` is empty if the sign-in account no longer exists.",
+        "properties": {
+          "communities": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Communities",
+            "type": "array"
+          },
+          "created": {
+            "title": "Created",
+            "type": "string"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "is_you": {
+            "title": "Is You",
+            "type": "boolean"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          },
+          "status": {
+            "$ref": "#/components/schemas/UserStatus"
+          },
+          "sub": {
+            "title": "Sub",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sub",
+          "email",
+          "role",
+          "status",
+          "communities",
+          "created",
+          "is_you"
+        ],
+        "title": "UserView",
+        "type": "object"
+      },
       "ValidationError": {
         "properties": {
           "ctx": {
@@ -3372,6 +3426,35 @@
       }
     },
     "/admin/users": {
+      "get": {
+        "description": "Every account with a role here, with its email, groups and status.",
+        "operationId": "list_users_admin_users_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/UserView"
+                  },
+                  "title": "Response List Users Admin Users Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Users",
+        "tags": [
+          "admin"
+        ]
+      },
       "post": {
         "operationId": "invite_user_admin_users_post",
         "requestBody": {

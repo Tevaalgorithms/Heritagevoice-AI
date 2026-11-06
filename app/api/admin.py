@@ -105,6 +105,38 @@ def _update(session: Session, sub: str, change: Callable[[UserRepository], None]
         raise HTTPException(status_code=404, detail="User not found") from error
 
 
+class UserView(BaseModel):
+    """An account as an admin sees it. `email` is empty if the sign-in account no longer exists."""
+
+    sub: str
+    email: str
+    role: Role
+    status: UserStatus
+    communities: list[str]
+    created: str
+    is_you: bool
+
+
+@router.get("/users")
+def list_users(ctx: Ctx, identity: Identity) -> list[UserView]:
+    """Every account with a role here, with its email, groups and status."""
+    with ctx.factory() as session:
+        users = UserRepository(session).list_all()
+    emails = identity.emails_for([user.sub for user in users])
+    return [
+        UserView(
+            sub=user.sub,
+            email=emails.get(user.sub, ""),
+            role=user.role,
+            status=user.status,
+            communities=sorted(user.communities),
+            created=user.created,
+            is_you=user.sub == ctx.admin.user_id,
+        )
+        for user in users
+    ]
+
+
 @router.post("/users", status_code=201)
 def invite_user(body: InviteRequest, ctx: Ctx, identity: Identity) -> dict[str, str]:
     sub = identity.invite_user(body.email, body.role)

@@ -17,6 +17,7 @@ from frontend.api_errors import (
     ApiUnavailableError,
 )
 from frontend.api_models import (
+    AccountView,
     AssertionEditSpec,
     AssertionView,
     CatalogView,
@@ -73,6 +74,7 @@ __all__ = [
     "ApiNotReadyError",
     "ApiRequestError",
     "ApiUnavailableError",
+    "AccountView",
     "CatalogView",
     "UsageView",
     "VoiceSuggestionView",
@@ -248,6 +250,21 @@ class ApiClient:
         """People who created an account and wait for approval (admins only)."""
         response = self._send("GET", "/admin/signups", auth=True)
         return [SignupView.model_validate(item) for item in response.json()]
+
+    def accounts(self) -> list[AccountView]:
+        """Every account with a role here (admins only)."""
+        response = self._send("GET", "/admin/users", auth=True)
+        return [AccountView.model_validate(item) for item in response.json()]
+
+    def set_account_role(self, sub: str, role: str) -> None:
+        self._send("PUT", f"/admin/users/{sub}/role", auth=True, json={"role": role})
+
+    def set_account_groups(self, sub: str, communities: list[str]) -> None:
+        body = {"communities": communities}
+        self._send("PUT", f"/admin/users/{sub}/communities", auth=True, json=body)
+
+    def disable_account(self, sub: str) -> None:
+        self._send("POST", f"/admin/users/{sub}/disable", auth=True)
 
     def approve_signup(self, sub: str, communities: list[str]) -> None:
         self._send(

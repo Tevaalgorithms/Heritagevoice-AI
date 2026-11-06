@@ -104,6 +104,10 @@ class IdentityProvider(Protocol):
         """The email address of an account, if it still exists."""
         ...
 
+    def emails_for(self, subs: list[str]) -> dict[str, str]:
+        """The email address of each of these accounts that still exists, in one pass."""
+        ...
+
 
 @runtime_checkable
 class AudioStore(Protocol):
