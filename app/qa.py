@@ -14,6 +14,7 @@ from app.credits import Origin
 from app.graph.state import WorkflowState
 from app.graph.workflow import Agents, build_workflow
 from app.models.evidence import Citation, Evidence, Turn
+from app.models.records import path_text
 from app.security.permissions import Principal
 
 TIMES = re.compile(r"\?t=([0-9.]+)-([0-9.]+)$")
@@ -46,6 +47,7 @@ def to_citation(evidence: Evidence) -> Citation:
         start_s=start,
         end_s=end,
         notices=list(evidence.notices),
+        connections=[path_text(path) for path in evidence.graph_paths],
     )
 
 

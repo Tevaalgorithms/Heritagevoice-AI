@@ -128,3 +128,80 @@ def test_a_library_item_and_a_citation_read_the_credit_the_server_sent():
     )
     assert cited.credit is None
     assert cited.added == ""
+
+
+# --- connections ---------------------------------------------------------------------------
+
+
+def test_the_connections_call_uses_the_signed_in_or_the_public_endpoint():
+    seen = []
+
+    def handler(request):
+        seen.append(
+            (request.url.path, request.url.query.decode(), request.headers.get("authorization"))
+        )
+        return httpx.Response(200, json={"items": []})
+
+    ApiClient("http://api.test", "tok", transport=httpx.MockTransport(handler)).connections(
+        "humility"
+    )
+    ApiClient("http://api.test", None, transport=httpx.MockTransport(handler)).connections("")
+    assert seen[0] == ("/v1/connections", "q=humility", "Bearer tok")
+    assert seen[1] == ("/v1/public/connections", "", None)
+
+
+def test_a_client_knows_whether_someone_is_signed_in():
+    assert ApiClient("http://api.test", "tok").signed_in is True
+    assert ApiClient("http://api.test", None).signed_in is False
+
+
+def test_a_connection_headline_names_both_sides_and_escapes_them():
+    from frontend.relations import headline_html  # noqa: PLC0415
+
+    line = headline_html("<script>x</script>", "TEACHES", "பணிவு")
+    assert "<script>" not in line
+    assert "&lt;script&gt;" in line
+    assert line.endswith("teaches <b>பணிவு</b>")
+
+
+def test_a_connection_parses_with_its_passage_and_origin():
+    from frontend.api_models import ConnectionResult  # noqa: PLC0415
+
+    result = ConnectionResult.model_validate(
+        {
+            "items": [
+                {
+                    "assertion_id": "a1",
+                    "subject": "proverb",
+                    "relation": "TEACHES",
+                    "object": "humility",
+                    "recording_id": "r1",
+                    "evidence_id": "e1",
+                    "passage": "p",
+                    "start_s": 0.9,
+                    "end_s": 2.7,
+                    "added": "2026-11-05",
+                }
+            ]
+        }
+    )
+    assert (result.items[0].relation, result.items[0].credit, result.items[0].added) == (
+        "TEACHES",
+        None,
+        "2026-11-05",
+    )
+
+
+def test_a_citation_carries_how_it_was_connected():
+    cited = CitationView.model_validate(
+        {
+            "evidence_id": "e1",
+            "recording_id": "r1",
+            "title": "t",
+            "passage": "p",
+            "start_s": 0,
+            "end_s": 1,
+            "connections": ["the proverb teaches humility"],
+        }
+    )
+    assert cited.connections == ["the proverb teaches humility"]

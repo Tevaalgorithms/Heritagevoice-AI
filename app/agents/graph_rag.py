@@ -41,7 +41,7 @@ def _is_current(session: Session, assertion: GraphAssertion) -> int | None:
     return transcript.version
 
 
-def _supporting_chunks(session: Session, assertions: dict[str, GraphAssertion]) -> dict[str, str]:
+def supporting_chunks(session: Session, assertions: dict[str, GraphAssertion]) -> dict[str, str]:
     """For each still-valid approved assertion, the passage that says it."""
     found: dict[str, str] = {}
     for assertion in assertions.values():
@@ -80,7 +80,7 @@ def supported_evidence(
     """Turn candidate paths into evidence this person may read, dropping everything else."""
     ids = sorted({a for path in paths for a in path.assertion_ids})
     assertions = GraphAssertionRepository(session).get_many(ids)
-    chunk_of = _supporting_chunks(session, assertions)
+    chunk_of = supporting_chunks(session, assertions)
     shown = hydrate(session, sorted(set(chunk_of.values())), principal, METHOD)
     readable = {item.evidence_id: item for item in shown}
     return _collect(paths, chunk_of, readable)[:MAX_EVIDENCE]

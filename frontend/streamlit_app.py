@@ -17,7 +17,17 @@ from frontend.api_client import ApiClient, ApiError
 from frontend.auth import COGNITO_PROVIDER, cognito_enabled, resolve_token
 from frontend.legal import PAGES, OrganisationFacts
 from frontend.messages import message_for
-from frontend.views import ask, groups, library, people, relationships, reports, review, upload
+from frontend.views import (
+    ask,
+    connections,
+    groups,
+    library,
+    people,
+    relationships,
+    reports,
+    review,
+    upload,
+)
 from frontend.views import home as home_view
 from frontend.views import legal as legal_view
 from frontend.views import settings as settings_page
@@ -75,6 +85,13 @@ def _member_sections(client: ApiClient, role: str | None) -> dict[str, list[obje
                 default=True,
             ),
             _page(ask.render, client, title="Ask", icon=":material/forum:", url_path="ask"),
+            _page(
+                connections.render,
+                client,
+                title="Connections",
+                icon=":material/hub:",
+                url_path="connections",
+            ),
         ],
         "Contribute": [
             _page(
@@ -137,8 +154,14 @@ def _run_for_visitors(settings: Settings, facts: OrganisationFacts) -> None:
         default=True,
     )
     theme.brand()
-    # One page: no heading over it (a heading is for a group of pages).
-    st.navigation({"": [home], "Legal": _legal_pages(facts)}).run()
+    explore = _page(
+        connections.render,
+        client,
+        title="Connections",
+        icon=":material/hub:",
+        url_path="connections",
+    )
+    st.navigation({"Explore": [home, explore], "Legal": _legal_pages(facts)}).run()
 
 
 def _run_session_expired(facts: OrganisationFacts) -> None:

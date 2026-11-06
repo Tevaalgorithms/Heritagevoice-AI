@@ -5,7 +5,7 @@ import streamlit as st
 from app.languages import BY_CODE, LANGUAGES
 from frontend import theme
 from frontend.api_client import ApiClient, ApiError, CitationView, QueryResult
-from frontend.credit import origin_line
+from frontend.credit import origin_line, plain
 from frontend.format import format_time
 from frontend.kinds import label_for
 from frontend.messages import message_for
@@ -101,6 +101,8 @@ def _source(client: ApiClient, number: int, citation: CitationView, scope: str) 
     origin = _origin(citation)
     if origin:
         st.caption(origin)
+    if citation.connections:
+        st.caption("Connected through: " + "; ".join(plain(c) for c in citation.connections))
     for notice in citation.notices:
         st.warning(notice, icon=":material/health_and_safety:")
     st.markdown(theme.passage_html(citation.passage), unsafe_allow_html=True)

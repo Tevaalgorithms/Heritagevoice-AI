@@ -87,7 +87,9 @@ def test_a_citation_gives_the_passage_and_its_time_but_nothing_internal(client):
         "heritage_kind",
         "language",
         "credit",
+        "connections",
     }
+    assert citation["connections"] == []
     assert citation["credit"] is None  # no consent has allowed a credit to be shown
 
 
@@ -300,3 +302,12 @@ def test_a_citation_without_a_reported_credit_names_nobody(client):
     (citation,) = client.post(URL, json=ASK).json()["citations"]
     assert citation["credit"] is None
     assert citation["added"] == "2026-11-05"
+
+
+def test_an_answer_reached_through_the_graph_says_how_it_was_connected(client):
+    item = passage("e1").model_copy(
+        update={"graph_paths": (("the proverb", "TEACHES", "humility"),)}
+    )
+    serving(agents_object([item]))
+    (citation,) = client.post(URL, json=ASK).json()["citations"]
+    assert citation["connections"] == ["the proverb teaches humility"]

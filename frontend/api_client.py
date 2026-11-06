@@ -22,6 +22,7 @@ from frontend.api_models import (
     AssertionView,
     CatalogView,
     CitationView,
+    ConnectionResult,
     ConsentView,
     CreditView,
     GroupView,
@@ -66,6 +67,7 @@ __all__ = [
     "IntegrationItem",
     "IntegrationsOverview",
     "CitationView",
+    "ConnectionResult",
     "LibraryItem",
     "LibraryResult",
     "LibrarySpec",
@@ -232,6 +234,17 @@ class ApiClient:
         params = {k: v for k, v in spec.model_dump().items() if v not in ("", None)}
         response = self._send("GET", "/v1/public/library", auth=False, params=params)
         return LibraryResult.model_validate(response.json())
+
+    @property
+    def signed_in(self) -> bool:
+        return self._token is not None
+
+    def connections(self, text: str) -> ConnectionResult:
+        """Approved relationships naming `text` (the newest if empty). With or without sign-in."""
+        params = {"q": text} if text else {}
+        path = "/v1/connections" if self.signed_in else "/v1/public/connections"
+        response = self._send("GET", path, auth=self.signed_in, params=params)
+        return ConnectionResult.model_validate(response.json())
 
     def set_visibility(self, recording_id: str, visibility: str) -> VisibilityResult:
         response = self._send(
