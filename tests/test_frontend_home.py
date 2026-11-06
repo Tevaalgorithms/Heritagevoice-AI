@@ -138,3 +138,30 @@ def test_the_admin_people_calls_go_to_the_admin_endpoints_with_the_token():
         ("POST", "/admin/signups/s1/decline", "Bearer tok"),
         ("POST", "/admin/users", "Bearer tok"),
     ]
+
+
+def test_the_home_search_offers_speaking_and_keeps_search_as_the_first_button(monkeypatch):
+    app = visitor_app(monkeypatch)
+    assert not app.exception
+    buttons = [b.label for b in app.get("form_submit_button")]
+    assert buttons[0] == "Search"  # Enter in the box must press Search, not the voice button
+    assert "Put my words in the box" in buttons
+    assert any(w.label == "Say a word or idea" for w in app.get("audio_input"))
+
+
+def test_words_heard_by_voice_appear_in_the_home_search_box(monkeypatch):
+    app = visitor_app(monkeypatch)
+    app.session_state["home-heard"] = "பணிவு"
+    app.run()
+    assert not app.exception
+    box = next(t for t in app.text_input if t.key == "home-q")
+    assert box.value == "பணிவு"
+    assert "home-heard" not in app.session_state
+
+
+def test_pressing_the_voice_button_with_nothing_recorded_asks_for_a_recording(monkeypatch):
+    app = visitor_app(monkeypatch)
+    next(b for b in app.get("form_submit_button") if b.label == "Put my words in the box").click()
+    app.run()
+    assert not app.exception
+    assert any("say a few words" in w.value for w in app.warning)
