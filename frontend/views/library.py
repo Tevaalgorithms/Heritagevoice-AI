@@ -81,7 +81,7 @@ def _origin(item: LibraryItem) -> str:
     )
 
 
-def _card(client: ApiClient, play: Fetch, item: LibraryItem) -> None:
+def card(client: ApiClient, play: Fetch, item: LibraryItem) -> None:
     with st.container(border=True):
         st.markdown(f"**{_heading(item)}**")
         for notice in item.notices:
@@ -124,7 +124,7 @@ def search_and_show(
         return
     st.caption(f"{len(items)} shown")
     for item in items:
-        _card(client, play, item)
+        card(client, play, item)
 
 
 def render(client: ApiClient) -> None:
