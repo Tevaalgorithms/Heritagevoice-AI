@@ -617,6 +617,20 @@
         "title": "EditRequest",
         "type": "object"
       },
+      "FindResult": {
+        "description": "Whether a new search for relationships was queued (false: one is already waiting).",
+        "properties": {
+          "queued": {
+            "title": "Queued",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "queued"
+        ],
+        "title": "FindResult",
+        "type": "object"
+      },
       "Group": {
         "description": "A group as people see it: a friendly name and the ID the system uses.",
         "properties": {
@@ -4323,6 +4337,55 @@
           }
         ],
         "summary": "Correct By Voice",
+        "tags": [
+          "graph"
+        ]
+      }
+    },
+    "/v1/graph/recordings/{recording_id}/find": {
+      "post": {
+        "description": "Ask the model again for relationships in a published recording.\n\nThe same background job as at publishing: it proposes new pending items and never changes a\ndecision already made. Same access rule as reviewing; nothing is approved by this call.",
+        "operationId": "find_relationships_v1_graph_recordings__recording_id__find_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recording_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "title": "Recording Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FindResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Find Relationships",
         "tags": [
           "graph"
         ]

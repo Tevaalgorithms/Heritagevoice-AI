@@ -147,3 +147,41 @@ def test_an_admin_cannot_approve_their_own_upload(client, engine, seeded):
     act_as(person(Role.ADMIN, user_id="uploader", communities=()))
     assert decide(client).status_code == 403
     assert state_of(engine, "a1").review_state is ReviewState.PENDING
+
+
+def find(client, recording_id="r1"):
+    return client.post(f"/v1/graph/recordings/{recording_id}/find")
+
+
+def extract_jobs(engine):
+    with Session(engine) as session:
+        return list(session.scalars(select(JobRow).where(JobRow.kind == "extract_graph")))
+
+
+def test_finding_relationships_again_queues_one_job_and_is_audited(client, engine, seeded):
+    assert find(client).json() == {"queued": True}
+    assert len(extract_jobs(engine)) == 1
+    with Session(engine) as session:
+        entry = session.scalars(select(AuditLogRow).where(AuditLogRow.action == "graph:find")).one()
+    assert entry.target == "recording:r1"
+
+
+def test_pressing_it_twice_does_not_queue_a_second_job(client, engine, seeded):
+    find(client)
+    assert find(client).json() == {"queued": False}
+    assert len(extract_jobs(engine)) == 1
+
+
+def test_it_never_changes_a_decision_already_made(client, engine, seeded):
+    find(client)
+    assert state_of(engine, "a2").review_state is ReviewState.APPROVED
+
+
+def test_only_admins_may_ask_again(client, engine, seeded):
+    act_as(person(Role.MEMBER, user_id="m1", communities=()))
+    assert find(client).status_code == 403
+    assert extract_jobs(engine) == []
+
+
+def test_an_unknown_recording_is_404(client, seeded):
+    assert find(client, "nope").status_code == 404
