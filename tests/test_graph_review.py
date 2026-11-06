@@ -185,3 +185,21 @@ def test_only_admins_may_ask_again(client, engine, seeded):
 
 def test_an_unknown_recording_is_404(client, seeded):
     assert find(client, "nope").status_code == 404
+
+
+def test_english_meanings_are_saved_with_an_approval_and_can_be_fixed_later(client, engine, seeded):
+    decide(client, "a1", edit={"subject_en": "Mother", "object_en": "the water source"})
+    row = state_of(engine, "a1")
+    assert (row.subject_en, row.object_en) == ("Mother", "the water source")
+    # An approved relationship can have its meanings edited without changing its names.
+    decide(client, "a1", edit={"object_en": "the well"})
+    row = state_of(engine, "a1")
+    assert (row.subject, row.object, row.object_en) == ("Amma", "the well", "the well")
+    assert row.subject_en == "Mother"
+
+
+def test_a_name_that_changes_does_not_keep_its_old_english_meaning(client, engine, seeded):
+    decide(client, "a1", edit={"subject_en": "Mother"})
+    decide(client, "a1", edit={"subject": "Ammamma"})
+    row = state_of(engine, "a1")
+    assert (row.subject, row.subject_en) == ("Ammamma", "")

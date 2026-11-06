@@ -6,7 +6,7 @@ relationship reach the knowledge graph; the graph is refreshed by a background j
 decision is audit-logged by ID, never with the content.
 """
 
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from pydantic import BaseModel, ConfigDict, StringConstraints, field_validator
@@ -29,6 +29,7 @@ from app.security.roles import Action
 router = APIRouter(prefix="/v1/graph", tags=["graph"])
 Ctx = Annotated[AdminContext, Depends(context_for(Action.REVIEW_APPROVE))]
 Name = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
+Meaning = Annotated[str, StringConstraints(strip_whitespace=True, max_length=200)]
 NOT_FOUND = HTTPException(status_code=404, detail="Not found")
 LIST_LIMIT = 200
 
@@ -41,6 +42,8 @@ class AssertionView(BaseModel):
     subject: str
     relation: Relation
     object: str
+    subject_en: str
+    object_en: str
     asserted_by: str
     review_state: ReviewState
     confidence: float
@@ -56,6 +59,8 @@ class AssertionEdit(BaseModel):
     subject: Name | None = None
     relation: Relation | None = None
     object: Name | None = None
+    subject_en: Meaning | None = None
+    object_en: Meaning | None = None
 
     @field_validator("relation")
     @classmethod
@@ -106,6 +111,8 @@ def _view(session: Session, assertion: GraphAssertion) -> AssertionView:
         subject=assertion.subject,
         relation=assertion.relation,
         object=assertion.object,
+        subject_en=assertion.subject_en,
+        object_en=assertion.object_en,
         asserted_by=assertion.asserted_by,
         review_state=assertion.review_state,
         confidence=assertion.confidence,
@@ -129,10 +136,19 @@ def _current(session: Session, assertion: GraphAssertion) -> bool:
     return transcript is not None and transcript.version == assertion.transcript_version
 
 
+def _stale_meanings(assertion: GraphAssertion, changes: dict[str, Any]) -> dict[str, Any]:
+    """A name that changed without a new English meaning must not keep the old meaning."""
+    for name in ("subject", "object"):
+        meaning = f"{name}_en"
+        if changes.get(name, getattr(assertion, name)) != getattr(assertion, name):
+            changes.setdefault(meaning, "")
+    return changes
+
+
 def _corrected(assertion: GraphAssertion, edit: AssertionEdit | None) -> GraphAssertion:
     """The assertion with the reviewer's corrections applied; its two ends must still differ."""
     changes = edit.model_dump(exclude_none=True) if edit else {}
-    corrected = assertion.model_copy(update=changes)
+    corrected = assertion.model_copy(update=_stale_meanings(assertion, changes))
     if corrected.subject.casefold() == corrected.object.casefold():
         raise _problem("invalid_edit", 422)
     return corrected
@@ -149,7 +165,7 @@ def _apply(
     if body.approved and not _current(session, assertion):
         raise _problem("stale_version", 409)
     corrected = _corrected(assertion, body.edit)
-    repository.revise(assertion_id, corrected.subject, corrected.relation, corrected.object)
+    repository.revise(corrected)
     state = ReviewState.APPROVED if body.approved else ReviewState.REJECTED
     repository.decide(assertion_id, state)
     AuditRepository(session).record(ctx.entry(f"graph:{state.value}", f"graph:{assertion_id}"))

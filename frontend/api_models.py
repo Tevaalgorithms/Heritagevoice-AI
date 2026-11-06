@@ -231,6 +231,8 @@ class AssertionView(BaseModel):
     subject: str
     relation: str
     object: str
+    subject_en: str = ""
+    object_en: str = ""
     asserted_by: str
     review_state: str
     confidence: float
@@ -245,6 +247,8 @@ class AssertionEditSpec(BaseModel):
     subject: str | None = None
     relation: str | None = None
     object: str | None = None
+    subject_en: str | None = None
+    object_en: str | None = None
 
 
 class MeView(BaseModel):
@@ -375,6 +379,14 @@ class ConnectionItem(BaseModel):
     language: str = ""
     added: str = ""
     credit: CreditView | None = None
+    subject_en: str = ""
+    object_en: str = ""
+    translation: str = ""
+
+    @property
+    def has_english(self) -> bool:
+        """Whether there is anything to show in English: a meaning for a name or a translation."""
+        return bool(self.subject_en or self.object_en or self.translation)
 
 
 class ConnectionResult(BaseModel):

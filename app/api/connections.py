@@ -44,6 +44,9 @@ class ConnectionItem(BaseModel):
     language: str = ""
     added: str = ""
     credit: Credit | None = None
+    subject_en: str = ""
+    object_en: str = ""
+    translation: str = ""
 
 
 class ConnectionsResponse(BaseModel):
@@ -69,6 +72,9 @@ def item_of(found: Connection) -> ConnectionItem:
         language=origin.language if origin else "",
         added=origin.added if origin else "",
         credit=origin.credit if origin else None,
+        subject_en=found.subject_en,
+        object_en=found.object_en,
+        translation=found.translation,
     )
 
 

@@ -246,6 +246,19 @@ class ApiClient:
         response = self._send("GET", path, auth=self.signed_in, params=params)
         return ConnectionResult.model_validate(response.json())
 
+    def hear_search(self, data: bytes, language: str) -> str:
+        """Turn a few spoken words into text for the Connections search box (no sign-in needed)."""
+        path = "/v1/connections/voice" if self.signed_in else "/v1/public/connections/voice"
+        response = self._send(
+            "POST",
+            path,
+            auth=self.signed_in,
+            data={"language": language},
+            files={"file": ("search", data, "application/octet-stream")},
+            timeout=VOICE_TIMEOUT_S,
+        )
+        return str(response.json()["heard"])
+
     def set_visibility(self, recording_id: str, visibility: str) -> VisibilityResult:
         response = self._send(
             "PUT",

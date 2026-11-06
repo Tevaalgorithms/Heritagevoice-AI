@@ -207,6 +207,8 @@ class GraphAssertion(BaseModel):
     subject: str
     relation: Relation
     object: str
+    subject_en: str = ""  # what the two names mean in English, so English readers can follow
+    object_en: str = ""
     asserted_by: str
     review_state: ReviewState = ReviewState.PENDING
     supporting_segment_id: str

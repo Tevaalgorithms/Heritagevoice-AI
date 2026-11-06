@@ -2,7 +2,7 @@
 
 from langchain_core.prompts import ChatPromptTemplate
 
-PROMPT_VERSION = "graph-v3"
+PROMPT_VERSION = "graph-v4"
 
 RELATION_HELP = """- MENTIONS: the speaker names the second thing while talking about the first.
 - DESCRIBES: the first thing (a song, story or custom) is about or explains the second.
@@ -35,6 +35,9 @@ Rules:
   "about" the elephant). Prefer TEACHES with the lesson, or propose nothing.
 - Write each name as the speaker said it, in the original language. Do not translate or merge
   names.
+- Also give subject_en and object_en: what each name means in English, in a few words (for
+  example "humility"). Keep the names themselves in the speaker's language; the English is only
+  so English readers can follow.
 - Every proposal must point to the segment_id where it is said.
 - Give a confidence from 0 to 1. It is only a hint for the reviewer; a person decides. Give a
   lesson you are drawing from a saying (not stated aloud) a confidence of 0.6 or lower.

@@ -233,3 +233,37 @@ def test_a_visitor_asking_too_often_is_slowed_down(client):
 @pytest.mark.parametrize("params", [{"limit": 0}, {"limit": 999}, {"q": "x" * 101}])
 def test_bad_parameters_are_refused(client, params):
     assert client.get("/v1/connections", params=params).status_code == 422
+
+
+def test_a_connection_can_be_searched_by_its_english_meaning(engine):
+    seed(
+        engine,
+        [
+            assertion(
+                "a1", subject="பணிவு", object="யானை", object_en="elephant", subject_en="humility"
+            )
+        ],
+    )
+    assert [c.assertion_id for c in found(engine, text="Humility")] == ["a1"]
+    assert [c.assertion_id for c in found(engine, text="பணிவு")] == ["a1"]
+    assert found(engine, text="grandmother") == []
+
+
+def test_a_connection_carries_its_english_meanings_and_the_english_translation(engine):
+    seed(engine, [assertion("a1", subject_en="Amma", object_en="the well")])
+    (connection,) = found(engine)
+    assert (connection.subject_en, connection.object_en) == ("Amma", "the well")
+    assert connection.translation.startswith("In summer we drew water")
+
+
+def test_no_translation_is_shown_when_there_is_none_or_it_is_no_longer_current(engine):
+    seed(engine, translation=None)
+    assert found(engine)[0].translation == ""
+    other = create_engine(f"sqlite:///{engine.url.database}.2")
+    Base.metadata.create_all(other)
+    seed(other)
+    with session_scope(other) as session:
+        VersionRepository(session).set_status("r1", Subject.TRANSLATION, 1, "superseded")
+    (stale,) = found(other)
+    assert stale.translation == ""
+    assert stale.passage  # the original words are still shown
