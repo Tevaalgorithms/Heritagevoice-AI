@@ -140,13 +140,11 @@ def test_the_admin_people_calls_go_to_the_admin_endpoints_with_the_token():
     ]
 
 
-def test_the_home_search_offers_speaking_and_keeps_search_as_the_first_button(monkeypatch):
+def test_the_home_search_offers_speaking_without_a_second_form_button(monkeypatch):
     app = visitor_app(monkeypatch)
     assert not app.exception
-    buttons = [b.label for b in app.get("form_submit_button")]
-    assert buttons[0] == "Search"  # Enter in the box must press Search, not the voice button
-    assert "Put my words in the box" in buttons
-    assert any(w.label == "Say a word or idea" for w in app.get("audio_input"))
+    assert [b.label for b in app.get("form_submit_button")] == ["Search"]
+    assert any(w.label.startswith("Say a word or idea") for w in app.get("audio_input"))
 
 
 def test_words_heard_by_voice_appear_in_the_home_search_box(monkeypatch):
@@ -159,9 +157,25 @@ def test_words_heard_by_voice_appear_in_the_home_search_box(monkeypatch):
     assert "home-heard" not in app.session_state
 
 
-def test_pressing_the_voice_button_with_nothing_recorded_asks_for_a_recording(monkeypatch):
-    app = visitor_app(monkeypatch)
-    next(b for b in app.get("form_submit_button") if b.label == "Put my words in the box").click()
-    app.run()
+def test_a_recording_is_understood_once_and_its_words_are_kept_for_the_box():
+    """No button: a finished recording is sent, and the page runs again after every click, so the
+    same recording must not be sent twice."""
+    from streamlit.testing.v1 import AppTest  # noqa: PLC0415
+
+    def script():
+        import streamlit as st  # noqa: PLC0415
+
+        from frontend import voice  # noqa: PLC0415
+
+        class Client:
+            def hear_search(self, data, language):
+                st.session_state.setdefault("calls", []).append(language)
+                return "பணிவு"
+
+        voice.hear_once(Client(), "Tamil · தமிழ்", b"the recording", "home")
+
+    app = AppTest.from_function(script).run()
     assert not app.exception
-    assert any("say a few words" in w.value for w in app.warning)
+    assert app.session_state["home-heard"] == "பணிவு"
+    app.run()  # the page runs again; the same recording is not sent again
+    assert app.session_state["calls"] == ["ta"]
