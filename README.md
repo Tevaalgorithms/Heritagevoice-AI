@@ -16,9 +16,9 @@ knowledge, and answers questions with citations that lead back to the original v
 not yet ready for large collections of real community recordings: see
 [Status and limitations](#status-and-limitations).
 
-| The public home page | Connections: a relationship and the words that say it |
-| --- | --- |
-| ![Home page with search](docs/assets/home.jpg) | ![Connections page](docs/assets/connections.jpg) |
+| Home: search and the three promises | Library: browse, filter, listen | Connections: a relationship and its words |
+| --- | --- | --- |
+| ![Home page with search](docs/assets/home.jpg) | ![Library with filters and a recording card](docs/assets/library.jpg) | ![Connections page](docs/assets/connections.jpg) |
 
 Signed-in flow (not shown above, it needs an account): record or upload → an administrator reviews
 the transcript and translation → ask a question → read the answer with its citation and play the
