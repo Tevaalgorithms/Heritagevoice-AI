@@ -90,3 +90,22 @@ def test_values_that_could_break_the_toml_or_shell_are_rejected(tmp_path, bad):
     assert result.returncode != 0
     assert "unsupported characters" in result.stderr
     assert not (out / "secrets.toml").exists()
+
+
+def test_a_parameter_store_value_replaces_the_same_setting_from_config_env(tmp_path):
+    result, out = run(tmp_path, {**SECRETS, "HV_DOMAIN": "new.example.org"})
+    assert result.returncode == 0, result.stderr
+    lines = (out / "app.env").read_text().splitlines()
+    assert [line for line in lines if line.startswith("HV_DOMAIN=")] == [
+        "HV_DOMAIN=new.example.org"
+    ]
+    toml = (out / "secrets.toml").read_text()
+    assert 'redirect_uri = "https://new.example.org/oauth2callback"' in toml
+
+
+def test_every_setting_appears_once_and_config_env_order_is_kept(tmp_path):
+    result, out = run(tmp_path, {**SECRETS, "HV_DOMAIN": "new.example.org"})
+    assert result.returncode == 0, result.stderr
+    names = [line.split("=")[0] for line in (out / "app.env").read_text().splitlines()]
+    assert len(names) == len(set(names))
+    assert names[0] == "HV_DOMAIN"
