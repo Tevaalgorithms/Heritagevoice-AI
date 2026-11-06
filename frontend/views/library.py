@@ -82,7 +82,7 @@ def _origin(item: LibraryItem) -> str:
     )
 
 
-def _card(client: ApiClient, play: Fetch, item: LibraryItem) -> None:
+def card(client: ApiClient, play: Fetch, item: LibraryItem) -> None:
     with theme.card(item.evidence_id):
         st.markdown(f"<div class='hv-kind'>{escape(_heading(item))}</div>", unsafe_allow_html=True)
         for notice in item.notices:
@@ -125,7 +125,7 @@ def search_and_show(
         return
     st.caption(f"{len(items)} shown")
     for item in items:
-        _card(client, play, item)
+        card(client, play, item)
 
 
 def render(client: ApiClient) -> None:
