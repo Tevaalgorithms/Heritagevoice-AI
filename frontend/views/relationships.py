@@ -15,6 +15,7 @@ from frontend.api_client import (
     ApiError,
     AssertionEditSpec,
     AssertionView,
+    LibrarySpec,
     VoiceSuggestionView,
 )
 from frontend.format import format_time
@@ -27,6 +28,12 @@ NAME_HELP = (
     "Write it in the language of the recording, as the speaker said it. "
     "Short, general words link best across recordings."
 )
+FIND_HELP = (
+    "Ask the model again for the connections in a published recording. New suggestions appear "
+    "under To review in about a minute. What you already approved or rejected is never changed."
+)
+FOUND = "Looking again. New suggestions will appear under To review in about a minute."
+ALREADY = "A search for this recording is already waiting or running."
 EMPTY = {
     "pending": "Nothing is waiting. Proposals appear here after a recording is published.",
     "approved": "No relationship has been approved yet.",
@@ -220,6 +227,31 @@ def _tab(client: ApiClient, state: str) -> None:
     _cards(client, state, items)
 
 
+def _find(client: ApiClient, recording_id: str) -> None:
+    try:
+        queued = client.find_relationships(recording_id)
+    except ApiError as error:
+        st.error(message_for(error))
+        return
+    st.success(FOUND if queued else ALREADY)
+
+
+def _find_section(client: ApiClient) -> None:
+    """Ask the model again for one published recording, for example after the prompt improved."""
+    with st.expander("Find relationships again"):
+        st.caption(FIND_HELP)
+        try:
+            items = client.library(LibrarySpec(limit=50)).items
+        except ApiError as error:
+            st.error(message_for(error))
+            return
+        for recording_id, item in {i.recording_id: i for i in items}.items():
+            words, button = st.columns([4, 1])
+            words.markdown(theme.passage_html(item.passage), unsafe_allow_html=True)
+            if button.button("Find again", key=f"find-{recording_id}"):
+                _find(client, recording_id)
+
+
 def render(client: ApiClient) -> None:
     """The Relationships page."""
     theme.page_header(
@@ -234,3 +266,4 @@ def render(client: ApiClient) -> None:
         _tab(client, "pending")
     with approved:
         _tab(client, "approved")
+    _find_section(client)

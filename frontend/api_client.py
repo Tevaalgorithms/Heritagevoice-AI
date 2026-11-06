@@ -381,6 +381,11 @@ class ApiClient:
         body = {"approved": approved, "edit": edit.model_dump(exclude_none=True) if edit else None}
         self._send("POST", f"/v1/graph/assertions/{assertion_id}/decision", auth=True, json=body)
 
+    def find_relationships(self, recording_id: str) -> bool:
+        """Ask for new relationship suggestions for a recording; False if one is already waiting."""
+        response = self._send("POST", f"/v1/graph/recordings/{recording_id}/find", auth=True)
+        return bool(response.json()["queued"])
+
     def invite_user(self, email: str, role: str, communities: list[str]) -> None:
         """Invite a person by email with a role. This is the only way an admin is created."""
         body = {"email": email, "role": role, "communities": communities}

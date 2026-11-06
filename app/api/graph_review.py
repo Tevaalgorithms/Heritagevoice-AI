@@ -14,9 +14,15 @@ from sqlalchemy.orm import Session
 
 from app.api.admin import AdminContext, context_for
 from app.api.review import allowed_recording
-from app.db.repositories import AuditRepository, GraphAssertionRepository, VersionRepository
-from app.index_sync import queue_graph_projection
-from app.models.records import GraphAssertion, Relation, ReviewState, Subject
+from app.db.repositories import (
+    AuditRepository,
+    GraphAssertionRepository,
+    JobRepository,
+    VersionRepository,
+)
+from app.graph_extraction import EXTRACT_KIND
+from app.index_sync import queue_graph_extraction, queue_graph_projection
+from app.models.records import GraphAssertion, RecordingStatus, Relation, ReviewState, Subject
 from app.models.transcript import Segment
 from app.security.roles import Action
 
@@ -160,3 +166,29 @@ def decide_assertion(
     with ctx.factory() as session:
         state = _apply(session, ctx, assertion_id, body)
     return DecisionResult(id=assertion_id, review_state=state)
+
+
+class FindResult(BaseModel):
+    """Whether a new search for relationships was queued (false: one is already waiting)."""
+
+    queued: bool
+
+
+@router.post("/recordings/{recording_id}/find")
+def find_relationships(
+    recording_id: Annotated[str, Path(pattern=r"^[A-Za-z0-9_-]{1,64}$")], ctx: Ctx
+) -> FindResult:
+    """Ask the model again for relationships in a published recording.
+
+    The same background job as at publishing: it proposes new pending items and never changes a
+    decision already made. Same access rule as reviewing; nothing is approved by this call.
+    """
+    with ctx.factory() as session:
+        recording = allowed_recording(session, ctx.admin, recording_id, Action.REVIEW_APPROVE)
+        if recording.status is not RecordingStatus.PUBLISHED:
+            raise _problem("not_published", 409)
+        if JobRepository(session).is_open(EXTRACT_KIND, recording_id):
+            return FindResult(queued=False)
+        queue_graph_extraction(session, recording_id)
+        AuditRepository(session).record(ctx.entry("graph:find", f"recording:{recording_id}"))
+    return FindResult(queued=True)
