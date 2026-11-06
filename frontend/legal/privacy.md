@@ -60,7 +60,3 @@ to accept any. You can block cookies in your browser; you can then still search,
 ## Changes
 
 We will update this notice when what we do changes and show the new version date above.
-
-## Contact
-
-**{{operator}}** · {{contact}}
