@@ -14,5 +14,5 @@ output "issuer" {
 }
 
 output "hosted_ui_domain" {
-  value = "${aws_cognito_user_pool_domain.this.domain}.auth.${var.region}.amazoncognito.com"
+  value = local.custom_domain ? var.login_domain : "${aws_cognito_user_pool_domain.this.domain}.auth.${var.region}.amazoncognito.com"
 }

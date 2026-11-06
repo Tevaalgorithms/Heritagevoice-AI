@@ -72,9 +72,68 @@ resource "aws_cognito_user_pool_client" "ui" {
   }
 }
 
+locals {
+  custom_domain = var.login_domain != "" && var.route53_zone_name != ""
+}
+
+# One domain per pool: Amazon's own (<prefix>.auth.<region>.amazoncognito.com) until `login_domain`
+# is set, then the custom one. Changing it replaces the domain, so sign-in is down for a few minutes.
 resource "aws_cognito_user_pool_domain" "this" {
-  domain       = var.domain_prefix
-  user_pool_id = aws_cognito_user_pool.this.id
+  domain          = local.custom_domain ? var.login_domain : var.domain_prefix
+  user_pool_id    = aws_cognito_user_pool.this.id
+  certificate_arn = local.custom_domain ? aws_acm_certificate_validation.login[0].certificate_arn : null
+}
+
+data "aws_route53_zone" "login" {
+  count        = local.custom_domain ? 1 : 0
+  name         = var.route53_zone_name
+  private_zone = false
+}
+
+# The certificate for the custom sign-in domain, proved by a DNS record in our own zone.
+resource "aws_acm_certificate" "login" {
+  count             = local.custom_domain ? 1 : 0
+  provider          = aws.us_east_1
+  domain_name       = var.login_domain
+  validation_method = "DNS"
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_route53_record" "login_validation" {
+  for_each = local.custom_domain ? {
+    for option in aws_acm_certificate.login[0].domain_validation_options : option.domain_name => option
+  } : {}
+
+  zone_id         = data.aws_route53_zone.login[0].zone_id
+  name            = each.value.resource_record_name
+  type            = each.value.resource_record_type
+  records         = [each.value.resource_record_value]
+  ttl             = 60
+  allow_overwrite = true
+}
+
+resource "aws_acm_certificate_validation" "login" {
+  count                   = local.custom_domain ? 1 : 0
+  provider                = aws.us_east_1
+  certificate_arn         = aws_acm_certificate.login[0].arn
+  validation_record_fqdns = [for record in aws_route53_record.login_validation : record.fqdn]
+}
+
+# Cognito serves the custom domain through its own CloudFront distribution; point the name at it.
+resource "aws_route53_record" "login" {
+  count   = local.custom_domain ? 1 : 0
+  zone_id = data.aws_route53_zone.login[0].zone_id
+  name    = var.login_domain
+  type    = "A"
+
+  alias {
+    name                   = aws_cognito_user_pool_domain.this.cloudfront_distribution
+    zone_id                = aws_cognito_user_pool_domain.this.cloudfront_distribution_zone_id
+    evaluate_target_health = false
+  }
 }
 
 # The hosted sign-in page, styled like the app. The logo must be under 100 KB and the stylesheet
@@ -86,4 +145,9 @@ resource "aws_cognito_user_pool_ui_customization" "branding" {
   image_file   = filebase64("${path.module}/branding/logo.png")
 
   depends_on = [aws_cognito_user_pool_domain.this]
+
+  # Apply it again whenever the domain is replaced.
+  lifecycle {
+    replace_triggered_by = [aws_cognito_user_pool_domain.this]
+  }
 }
