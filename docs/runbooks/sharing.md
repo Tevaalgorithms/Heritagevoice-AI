@@ -63,3 +63,16 @@ the server with every passage, so it cannot be left out by one screen.
 - Audio is streamed through the API rather than from short-lived storage links, so a withdrawal
   takes effect immediately. Storage links would reduce server traffic, at the cost of a link that
   stays usable for a few minutes; reconsider if playback traffic grows.
+
+## Withdrawing a recording (admins)
+
+On **Review**, choose the recording and open **Withdraw this recording** at the bottom. Give a
+reason and tick the confirmation, then press **Withdraw now**.
+
+- **At once:** the recording leaves the Library, search and answers, and playback stops.
+- **Shortly after (a background job):** its vectors and relationships are removed from Pinecone and
+  the knowledge graph.
+- **Kept:** the record itself and your reason, in the audit log, so the decision can be explained.
+- **Not reversible** from the app. To share it again, the person uploads it again.
+
+A report from a reader can lead to the same result: Reports → decide → remove.

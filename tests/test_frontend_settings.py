@@ -1,3 +1,5 @@
+import json
+
 import httpx
 import pytest
 
@@ -230,3 +232,28 @@ def test_the_typed_form_starts_from_the_spoken_correction_when_it_was_understood
 
 def test_a_failed_voice_correction_has_its_own_message():
     assert "type the correction" in message_for(ApiRequestError(502, "voice_failed"))
+
+
+def test_withdrawing_a_recording_posts_the_reason_to_the_revoke_endpoint():
+    seen = {}
+
+    def handler(request):
+        seen["path"], seen["auth"] = request.url.path, request.headers.get("authorization")
+        seen["body"] = json.loads(request.content)
+        return httpx.Response(200, json={"recording_id": "r1", "status": "revoked"})
+
+    client_for(handler).withdraw_recording("r1", "Family asked for it to be removed")
+    assert seen["path"] == "/v1/recordings/r1/revoke"
+    assert seen["auth"] == "Bearer tok"
+    assert seen["body"] == {"policy_version": "v1", "reason": "Family asked for it to be removed"}
+
+
+@pytest.mark.parametrize(
+    ("reason", "understood", "allowed"),
+    [("", True, False), ("   ", True, False), ("Asked by family", False, False)]
+    + [("Asked by family", True, True)],
+)
+def test_withdrawing_needs_a_reason_and_a_confirmation(reason, understood, allowed):
+    from frontend.views.review import can_withdraw  # noqa: PLC0415
+
+    assert can_withdraw(reason, understood) is allowed

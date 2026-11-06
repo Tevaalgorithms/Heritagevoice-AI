@@ -17,6 +17,11 @@ from frontend.messages import message_for
 from frontend.views.playback import listen_button
 
 REVIEWABLE = {"review", "published"}
+WITHDRAW_WARNING = (
+    "Withdrawing takes this recording out of the Library, search, answers and the knowledge graph "
+    "at once, and stops playback. The record and the reason stay in the audit trail. "
+    "This cannot be undone."
+)
 
 
 def _label(recording: RecordingSummary) -> str:
@@ -89,6 +94,32 @@ def _review_recording(client: ApiClient, recording_id: str) -> None:
     if st.button("Publish approved transcript", disabled=recording.status != "review"):
         _act(lambda: client.publish(recording.id), "Published.")
     _visibility_panel(client, recording)
+    _withdraw_panel(client, recording)
+
+
+def can_withdraw(reason: str, understood: bool) -> bool:
+    """Withdrawing needs a reason and an explicit confirmation."""
+    return bool(reason.strip()) and understood
+
+
+def _withdraw_panel(client: ApiClient, recording: RecordingView) -> None:
+    """Take the recording down. Kept inside an expander so it is never one stray click away."""
+    with st.expander("Withdraw this recording"):
+        st.warning(WITHDRAW_WARNING)
+        reason = st.text_input(
+            "Why is it being withdrawn?", max_chars=150, key=f"withdraw-reason-{recording.id}"
+        )
+        understood = st.checkbox("I understand this cannot be undone.", key=f"sure-{recording.id}")
+        if st.button(
+            "Withdraw now",
+            type="primary",
+            disabled=not can_withdraw(reason, understood),
+            key=f"withdraw-{recording.id}",
+        ):
+            _act(
+                lambda: client.withdraw_recording(recording.id, reason.strip()),
+                "Withdrawn. It is no longer shared.",
+            )
 
 
 def _load_recordings(client: ApiClient) -> list[RecordingSummary] | None:
