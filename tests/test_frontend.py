@@ -86,10 +86,20 @@ def test_every_error_has_a_plain_message(error, fragment):
     assert fragment in message_for(error)
 
 
-def test_the_app_renders_navigation_and_an_unavailable_status(monkeypatch):
+def test_the_app_renders_its_menu_and_says_when_the_api_is_unavailable(monkeypatch):
     monkeypatch.setenv("HERITAGEVOICE_API_URL", "http://127.0.0.1:1")
     monkeypatch.delenv("HERITAGEVOICE_DEV_API_TOKEN", raising=False)
     app = AppTest.from_file(str(APP), default_timeout=20).run()
     assert not app.exception
     assert [h.value for h in app.header] == ["Library"]
-    assert any("unavailable" in e.value for e in app.sidebar.error)
+    assert any("unavailable" in e.value for e in app.error)
+
+
+def test_a_visitor_gets_a_sign_in_button_at_the_top_and_no_error(monkeypatch):
+    monkeypatch.setenv("HERITAGEVOICE_API_URL", "http://127.0.0.1:1")
+    monkeypatch.setenv("HERITAGEVOICE_COGNITO_REGION", "us-west-2")
+    monkeypatch.setenv("HERITAGEVOICE_COGNITO_USER_POOL_ID", "us-west-2_TEST")
+    monkeypatch.setenv("HERITAGEVOICE_COGNITO_APP_CLIENT_ID", "client")
+    app = AppTest.from_file(str(APP), default_timeout=20).run()
+    assert not app.exception
+    assert any(b.key == "hv-header-signin" for b in app.button)

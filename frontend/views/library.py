@@ -137,3 +137,15 @@ def render(client: ApiClient) -> None:
     )
     search_and_show(client, client.library, client.recording_media)
     theme.footer()
+
+
+def render_public(client: ApiClient) -> None:
+    """The Library page for visitors: only what communities shared openly, no account needed."""
+    theme.page_header(
+        "Library",
+        "Songs, stories, lessons and living knowledge shared openly by communities. "
+        "Choose a language, or search for what you want to find.",
+        "library",
+    )
+    search_and_show(client, client.public_library, client.public_recording_media)
+    theme.footer()
