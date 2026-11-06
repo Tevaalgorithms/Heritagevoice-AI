@@ -1,6 +1,6 @@
 *Version {{updated}}*
 
-## Contact
+## How to reach us
 
 **{{operator}}** · {{contact}}
 

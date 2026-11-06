@@ -107,3 +107,20 @@ def test_no_two_pages_share_a_summary_and_none_is_the_old_generic_line():
     summaries = [page.summary for page in PAGES]
     assert len(set(summaries)) == len(summaries)
     assert not any("read this carefully" in s for s in summaries)
+
+
+def _text(slug):
+    page = next(page for page in PAGES if page.slug == slug)
+    return legal_text(page, FACTS)
+
+
+def test_the_contact_page_opens_with_how_to_reach_us_not_a_bare_contact_heading():
+    text = _text("contact")
+    assert "## How to reach us" in text
+    assert "\n## Contact\n" not in text
+
+
+def test_the_privacy_notice_gives_the_contact_once_near_the_top_not_again_at_the_end():
+    text = _text("privacy")
+    assert text.index("legal@example.org") < 400  # in the opening paragraph
+    assert "\n## Contact\n" not in text
