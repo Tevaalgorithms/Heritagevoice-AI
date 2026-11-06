@@ -28,6 +28,11 @@ class UserRepository:
         query = select(AppUserRow.sub).where(AppUserRow.sub.in_(subs))
         return set(self._session.scalars(query))
 
+    def list_all(self, limit: int = 500) -> list[StoredUser]:
+        """Every account that has a record here, oldest first."""
+        query = select(AppUserRow).order_by(AppUserRow.created_at, AppUserRow.sub).limit(limit)
+        return [self._to_user(row) for row in self._session.scalars(query)]
+
     def get(self, sub: str) -> StoredUser | None:
         row = self._session.get(AppUserRow, sub)
         return None if row is None else self._to_user(row)
@@ -80,4 +85,5 @@ class UserRepository:
             role=Role(row.role),
             status=UserStatus(row.status),
             communities=communities,
+            created=row.created_at.date().isoformat() if row.created_at else "",
         )

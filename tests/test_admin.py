@@ -431,3 +431,54 @@ def test_cognito_lookups_return_none_when_nobody_matches():
 
     provider = CognitoIdentityProvider("eu-west-2", "pool", Client())
     assert (provider.find_sub("a@x.org"), provider.email_of("abc")) == (None, None)
+
+
+# --- the list of accounts ---------------------------------------------------------------------
+
+
+def test_only_admins_may_list_accounts(client):
+    assert client.get("/admin/users").status_code == 401
+    assert client.get("/admin/users", headers=auth("member-1", "member")).status_code == 403
+    assert client.get("/admin/users", headers=auth("reviewer-1", "reviewer")).status_code == 403
+
+
+def test_the_account_list_shows_email_role_status_groups_and_who_you_are(client, idp):
+    idp.emails = {"admin-1": "boss@example.org", "member-1": "m@example.org"}
+    rows = {row["sub"]: row for row in client.get("/admin/users", headers=ADMIN).json()}
+    assert set(rows) == {"admin-1", "member-1", "reviewer-1"}
+    assert (rows["admin-1"]["email"], rows["admin-1"]["role"], rows["admin-1"]["is_you"]) == (
+        "boss@example.org",
+        "admin",
+        True,
+    )
+    assert rows["member-1"]["communities"] == ["c1"]
+    assert (rows["member-1"]["status"], rows["member-1"]["is_you"]) == ("active", False)
+    assert rows["member-1"]["created"]
+
+
+def test_an_account_missing_from_the_sign_in_service_has_an_empty_email(client, idp):
+    idp.emails = {}
+    rows = client.get("/admin/users", headers=ADMIN).json()
+    assert all(row["email"] == "" for row in rows)
+
+
+def test_a_disabled_account_is_listed_as_disabled(client, engine):
+    client.post("/admin/users/member-1/disable", headers=ADMIN)
+    rows = {row["sub"]: row for row in client.get("/admin/users", headers=ADMIN).json()}
+    assert rows["member-1"]["status"] == "disabled"
+
+
+def test_cognito_finds_the_emails_of_the_accounts_asked_for_in_one_listing(cognito_stub):
+    provider, stubber = cognito_stub
+
+    def user(sub, email):
+        attributes = [{"Name": "sub", "Value": sub}, {"Name": "email", "Value": email}]
+        return {"Username": sub, "Attributes": attributes}
+
+    stubber.add_response(
+        "list_users",
+        {"Users": [user("a", "a@example.org"), user("b", "b@example.org"), user("c", "c@x.org")]},
+        {"UserPoolId": "eu-west-2_TESTPOOL", "Limit": 60},
+    )
+    assert provider.emails_for(["a", "c", "gone"]) == {"a": "a@example.org", "c": "c@x.org"}
+    stubber.assert_no_pending_responses()

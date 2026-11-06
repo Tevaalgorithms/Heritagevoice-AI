@@ -162,6 +162,9 @@ class FakeIdentityProvider:
     def email_of(self, sub: str) -> str | None:
         return self.emails.get(sub)
 
+    def emails_for(self, subs: list[str]) -> dict[str, str]:
+        return {sub: self.emails[sub] for sub in subs if sub in self.emails}
+
 
 class FakeAudioStore:
     """In-memory audio storage for tests."""

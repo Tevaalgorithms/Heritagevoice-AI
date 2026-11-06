@@ -257,3 +257,51 @@ def test_withdrawing_needs_a_reason_and_a_confirmation(reason, understood, allow
     from frontend.views.review import can_withdraw  # noqa: PLC0415
 
     assert can_withdraw(reason, understood) is allowed
+
+
+def test_the_account_calls_go_to_the_admin_user_endpoints():
+    seen = []
+
+    def handler(request):
+        seen.append((request.method, request.url.path, request.content))
+        if request.method == "GET":
+            row = {"sub": "s1", "email": "a@example.org", "role": "member", "status": "active"}
+            return httpx.Response(200, json=[{**row, "communities": ["c1"], "is_you": True}])
+        return httpx.Response(200, json={})
+
+    client = client_for(handler)
+    person = client.accounts()[0]
+    assert (person.email, person.role, person.is_you, person.communities) == (
+        "a@example.org",
+        "member",
+        True,
+        ["c1"],
+    )
+    client.set_account_role("s1", "reviewer")
+    client.set_account_groups("s1", ["c1", "c2"])
+    client.disable_account("s1")
+    assert [(method, path) for method, path, _ in seen] == [
+        ("GET", "/admin/users"),
+        ("PUT", "/admin/users/s1/role"),
+        ("PUT", "/admin/users/s1/communities"),
+        ("POST", "/admin/users/s1/disable"),
+    ]
+    assert json.loads(seen[1][2]) == {"role": "reviewer"}
+    assert json.loads(seen[2][2]) == {"communities": ["c1", "c2"]}
+
+
+def test_every_role_has_a_label_and_a_one_line_description():
+    from frontend.roles import ROLE_CHOICES, ROLE_DESCRIPTIONS, ROLE_LABELS, role_label  # noqa: PLC0415
+
+    assert set(ROLE_LABELS) == set(ROLE_DESCRIPTIONS) == {"member", "reviewer", "admin"}
+    assert set(ROLE_CHOICES.values()) == set(ROLE_LABELS)
+    assert role_label("reviewer") == "Coordinator"
+    assert role_label("surprise") == "surprise"
+
+
+def test_groups_are_named_and_a_removed_group_shows_its_id():
+    from frontend.views.accounts import describe_groups  # noqa: PLC0415
+
+    names = {"c1": "Our Family"}
+    assert describe_groups([], names) == "no groups"
+    assert describe_groups(["c1", "gone"], names) == "Our Family, gone"
