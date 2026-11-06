@@ -83,6 +83,17 @@ resource "aws_route53_record" "app" {
   records = [aws_eip.app.public_ip]
 }
 
+# When the site lives at the top of its own domain (heritagevoice.org), `www.` points at the same
+# server too; Caddy then redirects it to the main address. A subdomain gets no `www.` record.
+resource "aws_route53_record" "www" {
+  count   = var.route53_zone_name != "" && var.route53_zone_name == var.domain ? 1 : 0
+  zone_id = data.aws_route53_zone.this[0].zone_id
+  name    = "www.${var.domain}"
+  type    = "A"
+  ttl     = 300
+  records = [aws_eip.app.public_ip]
+}
+
 # Daily snapshots of the root and data disks (tag Backup=daily), keeping the last 7.
 data "aws_iam_policy_document" "dlm_assume" {
   statement {
