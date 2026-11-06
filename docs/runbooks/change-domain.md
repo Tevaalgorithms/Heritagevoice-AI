@@ -45,10 +45,19 @@ sign-in cookies.
    The deploy re-reads Parameter Store, so the new `HV_DOMAIN` replaces the old one, and Caddy
    fetches the certificate.
 
+## `www.`
+
+When the site is at the top of its own domain (for example `heritagevoice.org`), the `single-instance`
+stack also adds a `www.` record, and Caddy redirects `www.<domain>` to `<domain>` with a
+permanent redirect, so there is one official address. A domain that is a subdomain of another gets no
+`www.` record. After changing the infrastructure, run the deploy once more so Caddy asks for the
+`www.` certificate.
+
 ## Check
 
 - `https://<new domain>/` loads with a padlock, and signing in and out works.
 - The Library, Ask and an admin page load.
+- `https://www.<new domain>/` redirects to `https://<new domain>/` (domains at the top level only).
 - The old address no longer answers (expected).
 
 ## Afterwards
