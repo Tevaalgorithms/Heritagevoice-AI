@@ -13,6 +13,18 @@ variable "domain_prefix" {
   description = "Globally unique prefix for the hosted sign-in domain."
 }
 
+variable "login_domain" {
+  type        = string
+  default     = ""
+  description = "Optional custom sign-in domain, for example login.heritagevoice.org. When set, the hosted sign-in and sign-up pages use it instead of the Amazon-owned domain. Needs route53_zone_name."
+}
+
+variable "route53_zone_name" {
+  type        = string
+  default     = ""
+  description = "Public Route 53 zone that holds login_domain (for example heritagevoice.org). The zone's top-level name must already have an A record, which Cognito checks."
+}
+
 variable "callback_urls" {
   type        = list(string)
   description = "Exact HTTPS callback URLs of the UI (Streamlit's /oauth2callback)."

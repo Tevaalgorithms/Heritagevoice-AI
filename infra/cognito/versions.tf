@@ -20,3 +20,10 @@ terraform {
 provider "aws" {
   region = var.region
 }
+
+# A custom sign-in domain is served through CloudFront, which only accepts certificates from
+# us-east-1 (N. Virginia). Nothing else of ours lives there.
+provider "aws" {
+  alias  = "us_east_1"
+  region = "us-east-1"
+}

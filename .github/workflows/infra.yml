@@ -39,6 +39,7 @@ env:
   TF_VAR_cognito_user_pool_id: ${{ vars.COGNITO_USER_POOL_ID }}
   TF_VAR_cognito_app_client_id: ${{ vars.COGNITO_APP_CLIENT_ID }}
   TF_VAR_domain_prefix: ${{ vars.COGNITO_DOMAIN_PREFIX }}
+  TF_VAR_login_domain: ${{ vars.LOGIN_DOMAIN }}
   TF_VAR_budget_email: ${{ vars.TF_BUDGET_EMAIL }}
   TF_VAR_callback_urls: '["https://${{ vars.SITE_DOMAIN }}/oauth2callback"]'
   TF_VAR_logout_urls: '["https://${{ vars.SITE_DOMAIN }}/"]'
