@@ -64,13 +64,20 @@ def _assertion_id(source: Source, proposal: Proposal, subject: str, obj: str) ->
     return hashlib.sha256(raw.encode()).hexdigest()[:32]
 
 
+def _part_of(a: str, b: str) -> bool:
+    """One name is the other, or a word inside it (a proverb about an elephant is not 'about'
+    the elephant). Tamil words carry endings, so a stem inside a longer word counts too."""
+    a, b = a.casefold(), b.casefold()
+    return a in b or b in a
+
+
 def _acceptable(proposal: Proposal, subject: str, obj: str, known: set[str]) -> bool:
     names_ok = 0 < len(subject) <= MAX_NAME and 0 < len(obj) <= MAX_NAME
     return (
         names_ok
         and proposal.relation in PROPOSABLE
         and proposal.segment_id in known
-        and subject.casefold() != obj.casefold()
+        and not _part_of(subject, obj)
     )
 
 

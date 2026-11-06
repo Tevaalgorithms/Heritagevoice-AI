@@ -2,7 +2,7 @@
 
 from langchain_core.prompts import ChatPromptTemplate
 
-PROMPT_VERSION = "graph-v2"
+PROMPT_VERSION = "graph-v3"
 
 RELATION_HELP = """- MENTIONS: the speaker names the second thing while talking about the first.
 - DESCRIBES: the first thing (a song, story or custom) is about or explains the second.
@@ -20,6 +20,13 @@ connect.
 
 Use only these relations:
 {RELATION_HELP}
+
+Examples of a saying and its lesson (names stay in the speaker's language):
+- "யானைக்கும் அடி சறுக்கும்" (even an elephant's foot slips) TEACHES "தவறு" (mistake): even the
+  capable make mistakes. Never propose it as TEACHES or DESCRIBES "யானை": the elephant is only
+  part of the saying, not what it teaches.
+- "கற்றது கைமண் அளவு" (what is learned is a handful of soil) TEACHES "பணிவு" (humility).
+- Use short, general lesson words (one or two words), so the same lesson links different sayings.
 
 Rules:
 - Only propose what the speakers actually say (for TEACHES, what the saying plainly expresses).
