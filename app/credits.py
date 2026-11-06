@@ -48,14 +48,19 @@ class OriginLookup:
 
     def __call__(self, recording_ids: list[str]) -> dict[str, Origin]:
         with self._sessions() as session:
-            recordings = RecordingRepository(session).get_many(sorted(set(recording_ids)))
-            consents = ConsentRepository(session)
-            return {
-                rid: Origin(
-                    added=rec.added,
-                    heritage_kind=rec.heritage_kind.value,
-                    language=rec.language,
-                    credit=credit_for(rec, consents.get(rec.consent_id)),
-                )
-                for rid, rec in recordings.items()
-            }
+            return origins_in(session, recording_ids)
+
+
+def origins_in(session: Session, recording_ids: list[str]) -> dict[str, Origin]:
+    """The origin of each of these recordings, read in this session."""
+    recordings = RecordingRepository(session).get_many(sorted(set(recording_ids)))
+    consents = ConsentRepository(session)
+    return {
+        rid: Origin(
+            added=rec.added,
+            heritage_kind=rec.heritage_kind.value,
+            language=rec.language,
+            credit=credit_for(rec, consents.get(rec.consent_id)),
+        )
+        for rid, rec in recordings.items()
+    }

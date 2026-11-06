@@ -218,6 +218,13 @@
             "title": "Added",
             "type": "string"
           },
+          "connections": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Connections",
+            "type": "array"
+          },
           "credit": {
             "anyOf": [
               {
@@ -298,6 +305,109 @@
           "communities"
         ],
         "title": "CommunitiesRequest",
+        "type": "object"
+      },
+      "ConnectionItem": {
+        "description": "One relationship and its source. `notices` must be shown with the passage.",
+        "properties": {
+          "added": {
+            "default": "",
+            "title": "Added",
+            "type": "string"
+          },
+          "assertion_id": {
+            "title": "Assertion Id",
+            "type": "string"
+          },
+          "credit": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Credit"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "end_s": {
+            "title": "End S",
+            "type": "number"
+          },
+          "evidence_id": {
+            "title": "Evidence Id",
+            "type": "string"
+          },
+          "heritage_kind": {
+            "default": "",
+            "title": "Heritage Kind",
+            "type": "string"
+          },
+          "language": {
+            "default": "",
+            "title": "Language",
+            "type": "string"
+          },
+          "notices": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notices",
+            "type": "array"
+          },
+          "object": {
+            "title": "Object",
+            "type": "string"
+          },
+          "passage": {
+            "title": "Passage",
+            "type": "string"
+          },
+          "recording_id": {
+            "title": "Recording Id",
+            "type": "string"
+          },
+          "relation": {
+            "$ref": "#/components/schemas/Relation"
+          },
+          "start_s": {
+            "title": "Start S",
+            "type": "number"
+          },
+          "subject": {
+            "title": "Subject",
+            "type": "string"
+          }
+        },
+        "required": [
+          "assertion_id",
+          "subject",
+          "relation",
+          "object",
+          "recording_id",
+          "evidence_id",
+          "passage",
+          "start_s",
+          "end_s",
+          "notices"
+        ],
+        "title": "ConnectionItem",
+        "type": "object"
+      },
+      "ConnectionsResponse": {
+        "description": "The matching relationships.",
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ConnectionItem"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "ConnectionsResponse",
         "type": "object"
       },
       "ConsentChoice": {
@@ -3983,6 +4093,74 @@
         ]
       }
     },
+    "/v1/connections": {
+      "get": {
+        "description": "Approved relationships that name `q`, or the newest, that this reader may see.",
+        "operationId": "connections_v1_connections_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Connections",
+        "tags": [
+          "connections"
+        ]
+      }
+    },
     "/v1/graph/assertions": {
       "get": {
         "operationId": "list_assertions_v1_graph_assertions_get",
@@ -4407,6 +4585,69 @@
         "summary": "Give Consent",
         "tags": [
           "open-sharing"
+        ]
+      }
+    },
+    "/v1/public/connections": {
+      "get": {
+        "description": "Approved relationships from public recordings only, for someone without an account.",
+        "operationId": "public_connections_v1_public_connections_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "maximum": 20,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Public Connections",
+        "tags": [
+          "public"
         ]
       }
     },

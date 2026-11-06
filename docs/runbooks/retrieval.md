@@ -44,3 +44,21 @@ matches shared words, so a good score shows the pieces fit together; it does **n
 meaning or cross-language retrieval works. For that, pick and test a real multilingual embedding
 model with `python -m evals.embedding_bakeoff <model>` and a Pinecone key, then repeat this check
 with it.
+
+## Connections
+
+The **Connections** page (Explore menu; also open to visitors) lists the relationships people have
+approved, each with the words in the recording that say it, where they are, and a Listen button.
+It searches the names on either side of a relationship, or shows the newest if you search for
+nothing.
+
+- **Same rules as search.** A connection is shown only if its passage could be returned by a search
+  for that reader: the recording is published, its consent still allows indexing, the reader belongs
+  to its community or it is public, and the relationship was approved for the transcript that is
+  current. A visitor sees public recordings only and is rate limited like the public Library.
+- **Source of truth.** The list is read from PostgreSQL, not from Neo4j. Neo4j only helps the
+  answering step find paths.
+- **In answers.** A source reached through the graph shows *Connected through: a teaches b* under
+  it, so a reader can see why it was chosen.
+- **Credits.** The credit and date appear with a connection under the same consent rule as the
+  Library.

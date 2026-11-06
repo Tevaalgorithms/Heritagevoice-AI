@@ -4,7 +4,7 @@ PostgreSQL is the source of truth. Neo4j only ever receives the approved ones (s
 `app.graph_projection`), so a pending or rejected assertion can never be found by a question.
 """
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from app.db.tables import GraphAssertionRow
@@ -27,6 +27,11 @@ def _to_assertion(row: GraphAssertionRow) -> GraphAssertion:
     )
 
 
+def _escape(text: str) -> str:
+    """Make `%`, `_` and the escape character itself match literally in a LIKE pattern."""
+    return text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
 class GraphAssertionRepository:
     """Stores assertions and their review state."""
 
@@ -37,6 +42,20 @@ class GraphAssertionRepository:
         for assertion in assertions:
             self._session.add(GraphAssertionRow(**assertion.model_dump(mode="json")))
         self._session.flush()
+
+    def approved_matching(self, text: str, limit: int) -> list[GraphAssertion]:
+        """Approved assertions that name `text` on either side (any, newest first, if empty)."""
+        query = select(GraphAssertionRow).where(
+            GraphAssertionRow.review_state == ReviewState.APPROVED.value
+        )
+        if text.strip():
+            pattern = f"%{_escape(text.strip().casefold())}%"
+            query = query.where(
+                func.lower(GraphAssertionRow.subject).like(pattern, escape="\\")
+                | func.lower(GraphAssertionRow.object).like(pattern, escape="\\")
+            )
+        query = query.order_by(GraphAssertionRow.id).limit(limit)
+        return [_to_assertion(row) for row in self._session.scalars(query)]
 
     def get(self, assertion_id: str) -> GraphAssertion | None:
         row = self._session.get(GraphAssertionRow, assertion_id)

@@ -88,6 +88,7 @@ class Citation(BaseModel):
     heritage_kind: str = ""
     language: str = ""
     credit: Credit | None = None
+    connections: list[str] = Field(default_factory=list)  # how it was reached through the graph
 
 
 class QueryResponse(BaseModel):

@@ -165,6 +165,31 @@ class Relation(StrEnum):
     SUPPORTED_BY = "SUPPORTED_BY"
 
 
+RELATION_PHRASES = {
+    Relation.MENTIONS: "mentions",
+    Relation.DESCRIBES: "is about",
+    Relation.OCCURRED_AT: "happened at",
+    Relation.RELATED_TO: "is related to",
+    Relation.TEACHES: "teaches",
+    Relation.SPOKE_IN: "spoke in",
+    Relation.SUPPORTED_BY: "is supported by",
+}
+
+
+def relation_phrase(code: str) -> str:
+    """A relationship as words, for example `teaches`. Unknown ones are shown as stored."""
+    try:
+        return RELATION_PHRASES[Relation(code)]
+    except ValueError:
+        return code
+
+
+def path_text(steps: tuple[str, ...]) -> str:
+    """A graph path as a sentence: names at even places, relationships between them."""
+    words = [relation_phrase(step) if index % 2 else step for index, step in enumerate(steps)]
+    return " ".join(words)
+
+
 class ReviewState(StrEnum):
     """Whether a graph assertion is pending, approved or rejected."""
 

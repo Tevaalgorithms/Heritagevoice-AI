@@ -39,6 +39,7 @@ class CitationView(BaseModel):
     heritage_kind: str = ""
     language: str = ""
     credit: CreditView | None = None
+    connections: list[str] = []  # how the answer reached this source through the graph
 
 
 class QueryResult(BaseModel):
@@ -355,6 +356,31 @@ class LibrarySpec(BaseModel):
     kind: str = ""
     view: str = "original"
     limit: int = 20
+
+
+class ConnectionItem(BaseModel):
+    """One approved relationship and the passage that says it."""
+
+    assertion_id: str
+    subject: str
+    relation: str
+    object: str
+    recording_id: str
+    evidence_id: str
+    passage: str
+    start_s: float
+    end_s: float
+    notices: list[str] = []
+    heritage_kind: str = ""
+    language: str = ""
+    added: str = ""
+    credit: CreditView | None = None
+
+
+class ConnectionResult(BaseModel):
+    """The relationships that matched."""
+
+    items: list[ConnectionItem]
 
 
 class LibraryItem(BaseModel):

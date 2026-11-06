@@ -51,6 +51,10 @@ ICONS = {
         "<path d='M16 6a3 3 0 010 6M18 20c0-2.5-1-4.5-3-5.5'/>"
     ),
     "home": "<path d='M4 11l8-7 8 7'/><path d='M6 10v10h12V10'/>",
+    "connections": (
+        "<circle cx='6' cy='12' r='2.5'/><circle cx='18' cy='6' r='2.5'/>"
+        "<circle cx='18' cy='18' r='2.5'/><path d='M8.2 11l7.6-4M8.2 13l7.6 4'/>"
+    ),
     "settings": (
         "<path d='M4 7h10M18 7h2M4 17h2M10 17h10'/>"
         "<circle cx='16' cy='7' r='2'/><circle cx='8' cy='17' r='2'/>"

@@ -16,9 +16,11 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.api.auth import SessionFactory, get_session_factory
+from app.api.connections import ConnectionsResponse, item_of
 from app.api.library import LibraryResponse, _item
 from app.api.media import audio_response, public_playable
 from app.api.recordings import NOT_FOUND, PathId, get_audio_store
+from app.connections import find_connections
 from app.library import browse, search
 from app.models.library import LibraryFilter, LibraryView
 from app.models.records import HeritageKind
@@ -110,6 +112,27 @@ def public_library(
             else browse(session, ANONYMOUS, where)
         )
     return LibraryResponse(items=[_item(e) for e in found])
+
+
+class PublicConnectionQuery(BaseModel):
+    """What a visitor may ask for. Smaller limits than a signed-in reader's."""
+
+    model_config = ConfigDict(extra="forbid")
+    q: Annotated[str | None, Field(max_length=100)] = None
+    limit: Annotated[int, Field(ge=1, le=MAX_LIMIT)] = 10
+
+
+@router.get("/connections", dependencies=[Depends(throttle)])
+def public_connections(
+    params: Annotated[PublicConnectionQuery, Query()],
+    response: Response,
+    factory: Annotated[SessionFactory, Depends(get_session_factory)],
+) -> ConnectionsResponse:
+    """Approved relationships from public recordings only, for someone without an account."""
+    response.headers.update(NO_KEEPING)
+    with factory() as session:
+        found = find_connections(session, ANONYMOUS, params.q or "", params.limit)
+    return ConnectionsResponse(items=[item_of(f) for f in found])
 
 
 @router.get("/recordings/{recording_id}/media", dependencies=[Depends(throttle_media)])
