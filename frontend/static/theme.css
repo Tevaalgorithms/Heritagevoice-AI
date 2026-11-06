@@ -1,13 +1,13 @@
 /* Palette from the README banner. Static; never built from user input. */
 .stApp { background: linear-gradient(180deg, #FBF5E9 0%, #F7EEDC 100%); color: #1B2A41; }
-.block-container { max-width: 1080px; padding-top: 2.2rem; padding-bottom: 4rem; }
+.block-container { max-width: 1200px; padding-top: 4.6rem; padding-bottom: 4rem; }
 /* This Streamlit version names the page container differently, so the rule above alone leaves a tall gap. */
-[data-testid="stMainBlockContainer"] { max-width: 1080px; padding-top: .5rem; padding-bottom: 4rem; }
+[data-testid="stMainBlockContainer"] { max-width: 1200px; padding: 4.6rem 2rem 4rem; }
 /* On a phone the menu button sits at the top left, so keep the page clear of it. */
-@media (max-width: 800px) { [data-testid="stMainBlockContainer"] { padding-top: 3.5rem; } }
+@media (max-width: 800px) { [data-testid="stMainBlockContainer"] { padding-top: 4.2rem; } }
 [data-testid="stSidebarHeader"] { padding-top: .6rem; padding-bottom: 0; height: auto; min-height: 0; }
 h1, h2, h3, h4, h1 *, h2 *, h3 * { font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif !important; color: #14284B; letter-spacing: -0.01em; font-weight: 600 !important; }
-h2 { border-bottom: 2px solid #E4D6BC; padding-bottom: .4rem; margin-bottom: 1rem; }
+h2 { border-bottom: 0; padding-bottom: .2rem; margin-bottom: .6rem; }
 [data-testid="stHeader"] { background: transparent; }
 
 [data-testid="stSidebar"] { background: linear-gradient(180deg, #14284B 0%, #0E1D38 100%); }
@@ -136,3 +136,25 @@ input, textarea, [data-baseweb="select"] > div { border-radius: 10px !important;
 .st-key-hv-footer a, .st-key-hv-footer a * { font-size: .85rem; color: #5B6577 !important; }
 .st-key-hv-footer a:hover, .st-key-hv-footer a:hover * { color: #14284B !important; text-decoration: underline; }
 .hv-foot { font-size: .85rem; color: #5B6577; }
+
+/* Match the mock-up. Menu: text only, the page you are on underlined in gold, pushed to the right
+   and clear of the account buttons (wider when signed in, as the buttons differ). */
+[data-testid="stTopNav"] { justify-content: flex-end; padding-right: 19rem; }
+[data-testid="stApp"]:has(.hv-who) [data-testid="stTopNav"] { padding-right: 15rem; }
+[data-testid="stTopNavLink"] { font-size: 15px !important; padding: .6rem .9rem; border-radius: 0; background: transparent !important; }
+[data-testid="stTopNavLink"] > span:first-child { display: none; }
+[data-testid="stTopNavLink"]:hover { background: #F5ECD9 !important; }
+[data-testid="stTopNavLink"][aria-current="page"], [data-testid="stTopNavLink"][aria-current="page"] * { color: #B4532A !important; }
+[data-testid="stTopNavLink"][aria-current="page"] { box-shadow: inset 0 -3px 0 #D98A2B; }
+/* Page titles: no icon tile and no rule under them, like the mock-up. */
+.hv-pageicon { display: none; }
+.hv-sub { margin-top: .1rem; }
+/* Recording cards: white, a small terracotta label, the words in serif with a gold bar. */
+[class*="st-key-hvcard-"] { background: #FFFDF8; border-color: #E4D6BC !important; border-radius: 16px !important; padding: 1.1rem 1.2rem; }
+.hv-kind { font-size: .86rem; font-weight: 700; color: #B4532A; letter-spacing: .02em; margin-bottom: .3rem; }
+.hv-passage { color: #14284B; }
+/* Footer: text links only. */
+.st-key-hv-footer [data-testid="stIconMaterial"] { display: none; }
+/* Keep the role label level with the buttons. */
+.st-key-hv-account [data-testid="stElementContainer"], .st-key-hv-account p { margin: 0 !important; }
+.st-key-hv-account .hv-who { display: inline-block; line-height: 2.4rem; }

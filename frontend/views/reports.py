@@ -24,7 +24,7 @@ def _decide(client: ApiClient, report: ReportView, take_down: bool) -> None:
 
 
 def _card(client: ApiClient, report: ReportView) -> None:
-    with st.container(border=True):
+    with theme.card(f"report-{report.id}"):
         reason = REASONS.get(report.reason, report.reason)
         st.markdown(f"**{reason}**")
         st.caption(

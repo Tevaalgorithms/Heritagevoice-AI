@@ -52,7 +52,7 @@ def _decide(action: str, client: ApiClient, sub: str, communities: list[str]) ->
 
 
 def _request_card(client: ApiClient, person: SignupView, options: list[GroupView]) -> None:
-    with st.container(border=True):
+    with theme.card(f"signup-{person.sub}"):
         st.markdown(f"<b>{escape(person.email)}</b>", unsafe_allow_html=True)
         st.caption(f"Asked for an account on {person.created}. Their email has been verified.")
         chosen = _pick_groups(

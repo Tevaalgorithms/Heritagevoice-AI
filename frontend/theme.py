@@ -2,10 +2,12 @@
 into a web of preserved knowledge). Static markup only; nothing a user typed is ever inserted."""
 
 from collections.abc import Callable
+from contextlib import AbstractContextManager
 from html import escape
 from pathlib import Path
 
 import streamlit as st
+from streamlit.delta_generator import DeltaGenerator
 
 from app.languages import LANGUAGES as SUPPORTED_LANGUAGES
 from frontend.kinds import KINDS
@@ -118,6 +120,11 @@ def sign_in_button(on_click: Callable[[], None], label: str = "Sign in securely"
         on_click=on_click,
         key="hv-sign-in",
     )
+
+
+def card(key: str) -> AbstractContextManager[DeltaGenerator]:
+    """A white card, drawn the same everywhere. `key` must be unique on the page."""
+    return st.container(border=True, key=f"hvcard-{key}")
 
 
 def landing_details() -> None:

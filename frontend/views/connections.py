@@ -47,7 +47,7 @@ def _origin(item: ConnectionItem) -> str:
 
 def _card(client: ApiClient, item: ConnectionItem) -> None:
     play = client.recording_media if client.signed_in else client.public_recording_media
-    with st.container(border=True):
+    with theme.card(f"conn-{item.assertion_id}"):
         st.markdown(headline_html(item.subject, item.relation, item.object), unsafe_allow_html=True)
         for notice in item.notices:
             st.warning(notice, icon=":material/health_and_safety:")

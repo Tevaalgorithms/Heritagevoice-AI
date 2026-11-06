@@ -54,7 +54,7 @@ def _revoke(client: ApiClient, consent: ConsentView) -> None:
 
 
 def _consent_card(client: ApiClient, consent: ConsentView) -> None:
-    with st.container(border=True):
+    with theme.card(f"consent-{consent.id}"):
         state = "Withdrawn" if consent.revoked else "Active"
         st.markdown(f"**{state}** · version {consent.policy_version}")
         st.caption(describe(consent.rights))

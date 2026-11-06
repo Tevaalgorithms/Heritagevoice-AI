@@ -18,8 +18,10 @@ def logo() -> None:
 
 
 def visitor_account(sign_in: Callable[[], None]) -> None:
-    """Sign in, at the top right. A new person creates their account from the sign-in page."""
+    """Create account and Sign in, at the top right. Both go to the same secure sign-in page, which
+    has a Sign up link for new people."""
     with st.container(key="hv-account"):
+        st.button("Create account", key="hv-header-create", on_click=sign_in)
         st.button("Sign in", key="hv-header-signin", type="primary", on_click=sign_in)
 
 
