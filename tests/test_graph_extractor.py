@@ -190,3 +190,12 @@ def test_the_extractor_is_told_about_lessons_and_not_to_link_a_saying_to_its_own
 
     assert "TEACHES" in SYSTEM
     assert "simply part of it" in SYSTEM
+
+
+def test_a_saying_is_never_linked_to_a_word_that_is_part_of_it():
+    from app.agents.graph_extractor import _part_of  # noqa: PLC0415
+
+    assert _part_of("யானைக்கும் அடி சறுக்கும்", "யானை")  # the elephant is only part of the saying
+    assert _part_of("Amma", "amma")
+    assert not _part_of("யானைக்கும் அடி சறுக்கும்", "தவறு")  # the lesson is a different thing
+    assert not _part_of("பொன்னம்மா", "நல்லூர்")

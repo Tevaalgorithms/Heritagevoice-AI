@@ -19,9 +19,14 @@ from frontend.api_client import (
 )
 from frontend.format import format_time
 from frontend.messages import message_for
-from frontend.relations import RELATIONS, phrase
+from frontend.relations import RELATIONS, headline_html, phrase
 from frontend.spoken import LANGUAGE_CHOICES
 
+LESSONS = ("தவறு", "பணிவு", "முயற்சி", "ஒற்றுமை", "நன்றி")  # short lesson words, in Tamil
+NAME_HELP = (
+    "Write it in the language of the recording, as the speaker said it. "
+    "Short, general words link best across recordings."
+)
 EMPTY = {
     "pending": "Nothing is waiting. Proposals appear here after a recording is published.",
     "approved": "No relationship has been approved yet.",
@@ -107,31 +112,63 @@ def _starting_point(item: AssertionView, suggestion: VoiceSuggestionView | None)
     )
 
 
-def _correction_form(client: ApiClient, item: AssertionView, start: AssertionView) -> None:
-    with st.form(f"fix-{item.id}", border=False):
-        subject = st.text_input("First name", start.subject)
-        relation = st.selectbox(
+def _copy_pick(key: str) -> None:
+    """Put the name chosen from the chips into the text box."""
+    picked = st.session_state.get(f"{key}-pick")
+    if picked:
+        st.session_state[key] = picked
+
+
+def _name_field(label: str, key: str, start: str, suggestions: tuple[str, ...]) -> str:
+    """A name box, with clickable names to reuse so the spelling stays the same."""
+    box = f"{key}-{abs(hash(start))}"  # a new start (a spoken correction) gives a fresh box
+    value = st.text_input(label, start, key=box, help=NAME_HELP)
+    if suggestions:
+        st.pills(
+            "Use one that is already there",
+            suggestions,
+            key=f"{box}-pick",
+            on_change=_copy_pick,
+            args=(box,),
+        )
+    return value
+
+
+def _correction_form(
+    client: ApiClient, item: AssertionView, start: AssertionView, names: tuple[str, ...]
+) -> None:
+    """From, the relationship, and To: any two things (a saying, a person, a place, an idea)."""
+    subject = _name_field("From", f"from-{item.id}", start.subject, names)
+    relation = str(
+        st.selectbox(
             "Relationship",
             list(RELATIONS),
             index=list(RELATIONS).index(start.relation) if start.relation in RELATIONS else 0,
             format_func=phrase,
+            key=f"rel-{item.id}",
         )
-        obj = st.text_input("Second name", start.object)
-        saved = st.form_submit_button("Approve with these corrections")
-    if saved:
-        edit = AssertionEditSpec(subject=subject, relation=str(relation), object=obj)
-        _decide(client, item, True, edit)
+    )
+    lessons = LESSONS if relation == "TEACHES" else names
+    obj = _name_field("To", f"to-{item.id}", start.object, lessons)
+    st.markdown(
+        f"<div class='hv-sentence'>{headline_html(subject, relation, obj)}</div>",
+        unsafe_allow_html=True,
+    )
+    if st.button("Approve with these corrections", key=f"fixok-{item.id}"):
+        _decide(
+            client, item, True, AssertionEditSpec(subject=subject, relation=relation, object=obj)
+        )
 
 
-def _modify(client: ApiClient, item: AssertionView) -> None:
+def _modify(client: ApiClient, item: AssertionView, names: tuple[str, ...]) -> None:
     """Modify: speak the correction in your own language, or type it. A person approves it."""
     with st.expander("Modify: speak or type a correction"):
         suggestion = _voice(client, item)
         st.markdown("**Check and approve**")
-        _correction_form(client, item, _starting_point(item, suggestion))
+        _correction_form(client, item, _starting_point(item, suggestion), names)
 
 
-def _pending_card(client: ApiClient, item: AssertionView) -> None:
+def _pending_card(client: ApiClient, item: AssertionView, names: tuple[str, ...]) -> None:
     with theme.card(f"pending-{item.id}"):
         st.markdown(_headline(item), unsafe_allow_html=True)
         _source(item)
@@ -140,7 +177,7 @@ def _pending_card(client: ApiClient, item: AssertionView) -> None:
             _decide(client, item, True)
         if reject.button("Reject", key=f"no-{item.id}"):
             _decide(client, item, False)
-        _modify(client, item)
+        _modify(client, item, names)
 
 
 def _approved_card(client: ApiClient, item: AssertionView) -> None:
@@ -149,6 +186,25 @@ def _approved_card(client: ApiClient, item: AssertionView) -> None:
         _source(item)
         if st.button("Withdraw", key=f"withdraw-{item.id}", help="Remove it from the graph."):
             _decide(client, item, False)
+
+
+def _known_names(client: ApiClient) -> tuple[str, ...]:
+    """Names already in approved relationships, to reuse so the spelling stays the same."""
+    try:
+        approved = client.assertions("approved")
+    except ApiError:
+        return ()
+    return tuple(sorted({n for item in approved for n in (item.subject, item.object)}))
+
+
+def _cards(client: ApiClient, state: str, items: list[AssertionView]) -> None:
+    if state != "pending":
+        for item in items:
+            _approved_card(client, item)
+        return
+    names = _known_names(client)
+    for item in items:
+        _pending_card(client, item, names)
 
 
 def _tab(client: ApiClient, state: str) -> None:
@@ -161,9 +217,7 @@ def _tab(client: ApiClient, state: str) -> None:
         st.info(EMPTY[state])
         return
     st.caption(f"{len(items)} shown")
-    card = _pending_card if state == "pending" else _approved_card
-    for item in items:
-        card(client, item)
+    _cards(client, state, items)
 
 
 def render(client: ApiClient) -> None:
