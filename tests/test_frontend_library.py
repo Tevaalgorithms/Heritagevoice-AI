@@ -2,7 +2,7 @@ import httpx
 
 from frontend.api_client import ApiClient, LibraryItem, LibrarySpec
 from frontend.theme import passage_html
-from frontend.views.library import _heading, _kind_options, _language_options
+from frontend.views.library import _heading, kind_options, language_options
 
 ITEM = {
     "evidence_id": "r1:transcript:v1:c0",
@@ -78,6 +78,6 @@ def test_the_heading_names_the_kind_and_the_language_and_credits_only_when_given
 
 
 def test_the_filter_choices_cover_every_language_and_kind_and_start_with_any():
-    assert list(_language_options().values())[0] == ""
-    assert {"ta", "hi", "te", "fr"} <= set(_language_options().values())
-    assert set(_kind_options().values()) == {"", "story", "song", "lesson", "practice", "remedy"}
+    assert list(language_options().values())[0] == ""
+    assert {"ta", "hi", "te", "fr"} <= set(language_options().values())
+    assert set(kind_options().values()) == {"", "story", "song", "lesson", "practice", "remedy"}

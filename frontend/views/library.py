@@ -22,38 +22,50 @@ from frontend.views.playback import Fetch, listen_button
 from frontend.views.report import report_button
 
 ANY = "Any"
+PENDING = "hv-pending-search"  # what the Home page search card asked for
 VIEWS = {"Original language": "original", "English translation": "translation"}
 
 
-def _language_options() -> dict[str, str]:
+def language_options() -> dict[str, str]:
     options = {ANY: ""}
     options.update({f"{lang.name} · {lang.native_name}": lang.code for lang in LANGUAGES})
     return options
 
 
-def _kind_options() -> dict[str, str]:
+def kind_options() -> dict[str, str]:
     options = {ANY: ""}
     options.update({f"{kind.icon} {kind.label}": kind.key for kind in KINDS})
     return options
 
 
+def _take_pending() -> None:
+    """Fill the filters with the search made on the Home page, once."""
+    pending = st.session_state.pop(PENDING, None)
+    if pending:
+        st.session_state.update(zip(("lib-q", "lib-language", "lib-kind"), pending, strict=True))
+
+
 def _filters() -> LibrarySpec:
     """The search box and the choices that narrow it."""
+    _take_pending()
     with st.form("library-search", border=False):
         query = st.text_input(
             "Search",
             placeholder="Search by words, in any language",
             label_visibility="collapsed",
+            key="lib-q",
         )
         languages, kinds, view = st.columns(3)
-        language = languages.selectbox("Language spoken", list(_language_options()))
-        kind = kinds.selectbox("Kind", list(_kind_options()))
+        language = languages.selectbox(
+            "Language spoken", list(language_options()), key="lib-language"
+        )
+        kind = kinds.selectbox("Kind", list(kind_options()), key="lib-kind")
         read_as = view.radio("Read in", list(VIEWS), horizontal=False)
         st.form_submit_button("Search", icon=":material/search:", type="primary")
     return LibrarySpec(
         q=query.strip(),
-        language=_language_options()[str(language)],
-        kind=_kind_options()[str(kind)],
+        language=language_options()[str(language)],
+        kind=kind_options()[str(kind)],
         view=VIEWS[str(read_as)],
     )
 

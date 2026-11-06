@@ -170,3 +170,9 @@ input, textarea, [data-baseweb="select"] > div { border-radius: 10px !important;
 .hv-title { font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif; color: #14284B;
   font-weight: 600; font-size: clamp(2rem, 4.4vw, 3rem); line-height: 1.1; letter-spacing: -0.01em; margin: .2rem 0 .8rem; }
 .hv-lede { font-size: 1.15rem; color: #5B6577; max-width: 34em; margin-bottom: 1.1rem; }
+/* Home like the mock-up: numbered steps with a gold disc; principles plain with a gold rule. */
+.hv-cards.steps { counter-reset: step; }
+.hv-cards.steps .hv-card { border-top: 1px solid #E4D6BC; padding: 1.3rem; }
+.hv-cards.steps .hv-card::before { counter-increment: step; content: counter(step); display: grid; place-items: center;
+  width: 2.1rem; height: 2.1rem; border-radius: 50%; background: #D98A2B; color: #1B1208; font-weight: 700; margin-bottom: .8rem; }
+.hv-cards.principles .hv-card { background: transparent; border: 0; border-top: 3px solid #D98A2B; border-radius: 0; padding: .9rem 0 0; }

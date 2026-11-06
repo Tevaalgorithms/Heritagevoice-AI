@@ -6,7 +6,6 @@ import httpx
 from streamlit.testing.v1 import AppTest
 
 from frontend.api_client import ApiClient, LibrarySpec
-from frontend.views.home import CREATE_LABEL, SIGN_IN_LABEL
 
 APP = Path(__file__).resolve().parents[1] / "frontend" / "streamlit_app.py"
 ITEM = {
@@ -71,8 +70,8 @@ def test_a_visitor_sees_the_landing_page_and_the_sign_in_choice_without_an_error
     assert "How it works" in text
     assert "What we hold to" in text
     labels = [b.label for b in app.button]
-    assert SIGN_IN_LABEL in labels
-    assert CREATE_LABEL in labels
+    assert "Search the shared heritage" in text
+    assert "Search" in [b.label for b in app.get("form_submit_button")]
     assert "Browse the Library" in labels
 
 
