@@ -18,6 +18,8 @@ def _to_assertion(row: GraphAssertionRow) -> GraphAssertion:
         subject=row.subject,
         relation=Relation(row.relation),
         object=row.object,
+        subject_en=row.subject_en,
+        object_en=row.object_en,
         asserted_by=row.asserted_by,
         review_state=ReviewState(row.review_state),
         supporting_segment_id=row.supporting_segment_id,
@@ -44,7 +46,8 @@ class GraphAssertionRepository:
         self._session.flush()
 
     def approved_matching(self, text: str, limit: int) -> list[GraphAssertion]:
-        """Approved assertions that name `text` on either side (any, newest first, if empty)."""
+        """Approved assertions that name `text` on either side, in the speaker's words or in their
+        English meaning (any, newest first, if empty)."""
         query = select(GraphAssertionRow).where(
             GraphAssertionRow.review_state == ReviewState.APPROVED.value
         )
@@ -53,6 +56,8 @@ class GraphAssertionRepository:
             query = query.where(
                 func.lower(GraphAssertionRow.subject).like(pattern, escape="\\")
                 | func.lower(GraphAssertionRow.object).like(pattern, escape="\\")
+                | func.lower(GraphAssertionRow.subject_en).like(pattern, escape="\\")
+                | func.lower(GraphAssertionRow.object_en).like(pattern, escape="\\")
             )
         query = query.order_by(GraphAssertionRow.id).limit(limit)
         return [_to_assertion(row) for row in self._session.scalars(query)]
@@ -119,12 +124,17 @@ class GraphAssertionRepository:
         self._session.flush()
         return True
 
-    def revise(self, assertion_id: str, subject: str, relation: Relation, object_: str) -> bool:
+    def revise(self, corrected: GraphAssertion) -> bool:
         """Correct the words of an assertion in place (its ID stays, so a re-run adds no copy)."""
-        row = self._session.get(GraphAssertionRow, assertion_id)
+        row = self._session.get(GraphAssertionRow, corrected.id)
         if row is None:
             return False
-        row.subject, row.relation, row.object = subject, relation.value, object_
+        row.subject, row.relation, row.object = (
+            corrected.subject,
+            corrected.relation.value,
+            corrected.object,
+        )
+        row.subject_en, row.object_en = corrected.subject_en, corrected.object_en
         self._session.flush()
         return True
 

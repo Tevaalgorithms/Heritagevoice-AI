@@ -8,6 +8,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from app.api.admin import router as admin_router
+from app.api.connection_voice import router as connection_voice_router
 from app.api.connections import router as connections_router
 from app.api.consents import router as consents_router
 from app.api.graph_review import router as graph_review_router
@@ -57,6 +58,7 @@ def aws_error(request: Request, error: ClientError) -> JSONResponse:
 
 app.include_router(admin_router)
 app.include_router(connections_router)
+app.include_router(connection_voice_router)
 app.include_router(consents_router)
 app.include_router(groups_router)
 app.include_router(group_members_router)

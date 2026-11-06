@@ -90,7 +90,8 @@ configuration (no stemming or stop words, so names in any script match). Indexes
 | Column | Meaning |
 | --- | --- |
 | `id` (PK), `recording_id` (FK) | |
-| `subject`, `relation`, `object` | For example *Amma* `TEACHES` *rice songs*. `relation` is one of a fixed list (see [graph.md](graph.md)). |
+| `subject`, `relation`, `object` | For example *Amma* `TEACHES` *rice songs*. `relation` is one of a fixed list (see [graph.md](graph.md)). Names stay in the speaker's language. |
+| `subject_en`, `object_en` | What each name means in English, in a few words (for example *humility*). Proposed by the model, edited by a person; empty when there is none. Used so English readers can follow and search a connection. |
 | `asserted_by` | The agent or person that proposed it. |
 | `review_state` | `pending`, `approved` or `rejected`. Only `approved` is copied to Neo4j. |
 | `supporting_segment_id`, `transcript_version` | The exact words that say it, and which transcript. |

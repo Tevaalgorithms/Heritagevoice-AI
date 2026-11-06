@@ -220,3 +220,10 @@ def test_the_second_proverb_keeps_its_lesson_and_drops_links_to_its_own_words():
         (Relation.TEACHES, "பணிவு"),
         (Relation.TEACHES, "தவறு"),
     ]
+
+
+def test_the_english_meanings_the_model_gives_are_kept_and_tidied():
+    (found,) = extract(proposal("பணிவு", "யானை", subject_en="  humility ", object_en="elephant"))
+    assert (found.subject_en, found.object_en) == ("humility", "elephant")
+    (plain,) = extract(proposal("Amma", "the well"))
+    assert (plain.subject_en, plain.object_en) == ("", "")

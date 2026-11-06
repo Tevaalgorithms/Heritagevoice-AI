@@ -108,6 +108,22 @@ class ChunkRepository:
                 index.setdefault(segment_id, row.evidence_id)
         return index
 
+    def translation_index(self, recording_id: str) -> dict[str, str]:
+        """Each segment ID and the chunk of the newest translation that contains it."""
+        query = (
+            select(EvidenceChunkRow)
+            .where(
+                EvidenceChunkRow.recording_id == recording_id,
+                EvidenceChunkRow.kind == ChunkKind.TRANSLATION,
+            )
+            .order_by(EvidenceChunkRow.version.desc(), EvidenceChunkRow.chunk_index)
+        )
+        index: dict[str, str] = {}
+        for row in self._session.scalars(query):
+            for segment_id in row.segment_ids:
+                index.setdefault(segment_id, row.evidence_id)
+        return index
+
     def recording_ids(self) -> list[str]:
         """Recordings that currently have indexed chunks."""
         return sorted(set(self._session.scalars(select(EvidenceChunkRow.recording_id))))

@@ -17,6 +17,7 @@ from app.ports import AudioStore
 from app.secrets import secrets_for
 from app.usage import UsageLog
 from app.voice_correction import VoiceDeps
+from app.voice_search import SearchVoiceDeps
 from app.worker_setup import transcriber_for
 
 SessionFactory = Callable[[], AbstractContextManager[Session]]
@@ -39,3 +40,11 @@ def build_voice_deps(
     return VoiceDeps(
         store, transcriber, build_translator(registry, keys, usage), interpreter, rules
     )
+
+
+def build_search_voice_deps(
+    settings: Settings, store: AudioStore, rules: AudioRules
+) -> SearchVoiceDeps | None:
+    """None when speech-to-text is not configured on this server."""
+    transcriber = transcriber_for(settings)
+    return None if transcriber is None else SearchVoiceDeps(store, transcriber, rules)

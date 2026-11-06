@@ -34,6 +34,8 @@ class Proposal(BaseModel):
     subject: str
     relation: Relation
     object: str
+    subject_en: str = ""
+    object_en: str = ""
     segment_id: str
     confidence: float = Field(default=0.5, ge=0, le=1)
 
@@ -93,6 +95,8 @@ def _to_assertion(
         subject=subject,
         relation=proposal.relation,
         object=obj,
+        subject_en=_clean(proposal.subject_en)[:MAX_NAME],
+        object_en=_clean(proposal.object_en)[:MAX_NAME],
         asserted_by=speakers[proposal.segment_id],
         review_state=ReviewState.PENDING,
         supporting_segment_id=proposal.segment_id,

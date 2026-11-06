@@ -54,8 +54,9 @@ tools to preserve and share their own heritage.
   plus a reviewed knowledge graph for "how are these connected" questions. Answers carry
   citations, and you can listen to the cited moment.
 - **Follow connections.** The Connections page shows how people, places, songs and customs are
-  linked, each with the words in the recording that say it. Only relationships a person approved
-  are shown.
+  linked, each with the words in the recording that say it. Search by typing or by voice, in the
+  speaker's language or in English, and switch any connection to English. Only relationships a
+  person approved are shown.
 - **Correct by voice.** An administrator can say how a proposed relationship should read; a model
   suggests the wording, and the administrator checks and approves it.
 - **Stay in control.** Groups and coordinators, consent that can be withdrawn at once, "report this
@@ -273,6 +274,7 @@ in-memory fakes and prints a cited answer.
 | Models, keys and services | [`docs/runbooks/models.md`](docs/runbooks/models.md), [`integrations.md`](docs/runbooks/integrations.md), [`secrets.md`](docs/runbooks/secrets.md) |
 | Search and answering | [`docs/runbooks/retrieval.md`](docs/runbooks/retrieval.md), [`answering.md`](docs/runbooks/answering.md) |
 | Languages | [`docs/runbooks/languages.md`](docs/runbooks/languages.md) |
+| Connections: search, English and voice | [`docs/runbooks/connections.md`](docs/runbooks/connections.md) |
 | Correcting relationships by voice | [`docs/runbooks/voice-correction.md`](docs/runbooks/voice-correction.md) |
 | Sign-in domain (Cognito) | [`docs/runbooks/login-domain.md`](docs/runbooks/login-domain.md) |
 | Access tests (the denied cases) | [`docs/runbooks/access-tests.md`](docs/runbooks/access-tests.md) |

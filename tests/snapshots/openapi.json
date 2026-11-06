@@ -52,6 +52,18 @@
             ],
             "title": "Object"
           },
+          "object_en": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Object En"
+          },
           "relation": {
             "anyOf": [
               {
@@ -74,6 +86,18 @@
               }
             ],
             "title": "Subject"
+          },
+          "subject_en": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject En"
           }
         },
         "title": "AssertionEdit",
@@ -109,6 +133,10 @@
             "title": "Object",
             "type": "string"
           },
+          "object_en": {
+            "title": "Object En",
+            "type": "string"
+          },
           "passage": {
             "title": "Passage",
             "type": "string"
@@ -137,6 +165,10 @@
           "subject": {
             "title": "Subject",
             "type": "string"
+          },
+          "subject_en": {
+            "title": "Subject En",
+            "type": "string"
           }
         },
         "required": [
@@ -145,6 +177,8 @@
           "subject",
           "relation",
           "object",
+          "subject_en",
+          "object_en",
           "asserted_by",
           "review_state",
           "confidence",
@@ -358,6 +392,11 @@
             "title": "Object",
             "type": "string"
           },
+          "object_en": {
+            "default": "",
+            "title": "Object En",
+            "type": "string"
+          },
           "passage": {
             "title": "Passage",
             "type": "string"
@@ -375,6 +414,16 @@
           },
           "subject": {
             "title": "Subject",
+            "type": "string"
+          },
+          "subject_en": {
+            "default": "",
+            "title": "Subject En",
+            "type": "string"
+          },
+          "translation": {
+            "default": "",
+            "title": "Translation",
             "type": "string"
           }
         },
@@ -699,6 +748,20 @@
           }
         },
         "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "Heard": {
+        "description": "The words that were said; empty if nothing could be made out.",
+        "properties": {
+          "heard": {
+            "title": "Heard",
+            "type": "string"
+          }
+        },
+        "required": [
+          "heard"
+        ],
+        "title": "Heard",
         "type": "object"
       },
       "HeritageKind": {
@@ -1967,6 +2030,28 @@
         ],
         "title": "SourceKind",
         "type": "string"
+      },
+      "SpokenSearch": {
+        "additionalProperties": false,
+        "description": "The multipart form: a short recording and the language it is in.",
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          },
+          "language": {
+            "pattern": "^[a-z]{2,8}$",
+            "title": "Language",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file",
+          "language"
+        ],
+        "title": "SpokenSearch",
+        "type": "object"
       },
       "StatusChange": {
         "additionalProperties": false,
@@ -4175,6 +4260,53 @@
         ]
       }
     },
+    "/v1/connections/voice": {
+      "post": {
+        "description": "A signed-in reader speaks a name or idea to look for.",
+        "operationId": "reader_voice_v1_connections_voice_post",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/SpokenSearch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Heard"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Reader Voice",
+        "tags": [
+          "connections"
+        ]
+      }
+    },
     "/v1/graph/assertions": {
       "get": {
         "operationId": "list_assertions_v1_graph_assertions_get",
@@ -4711,6 +4843,48 @@
         "summary": "Public Connections",
         "tags": [
           "public"
+        ]
+      }
+    },
+    "/v1/public/connections/voice": {
+      "post": {
+        "description": "A visitor speaks a name or idea to look for. No sign-in; strictly limited.",
+        "operationId": "visitor_voice_v1_public_connections_voice_post",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/SpokenSearch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Heard"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Visitor Voice",
+        "tags": [
+          "connections"
         ]
       }
     },

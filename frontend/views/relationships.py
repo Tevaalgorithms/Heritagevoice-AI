@@ -24,6 +24,7 @@ from frontend.relations import RELATIONS, headline_html, phrase
 from frontend.spoken import LANGUAGE_CHOICES
 
 LESSONS = ("தவறு", "பணிவு", "முயற்சி", "ஒற்றுமை", "நன்றி")  # short lesson words, in Tamil
+MEANING_HELP = "A few words in English, for example: humility. Leave empty if there is none."
 NAME_HELP = (
     "Write it in the language of the recording, as the speaker said it. "
     "Short, general words link best across recordings."
@@ -115,6 +116,8 @@ def _starting_point(item: AssertionView, suggestion: VoiceSuggestionView | None)
             "subject": suggestion.subject,
             "relation": suggestion.relation,
             "object": suggestion.object,
+            "subject_en": "",  # the old English meanings do not belong to new names
+            "object_en": "",
         }
     )
 
@@ -141,11 +144,17 @@ def _name_field(label: str, key: str, start: str, suggestions: tuple[str, ...]) 
     return value
 
 
+def _meaning(label: str, key: str, start: str) -> str:
+    """What a name means in English, so English readers can follow and search it."""
+    return st.text_input(label, start, key=f"{key}-{abs(hash(start))}", help=MEANING_HELP)
+
+
 def _correction_form(
     client: ApiClient, item: AssertionView, start: AssertionView, names: tuple[str, ...]
 ) -> None:
     """From, the relationship, and To: any two things (a saying, a person, a place, an idea)."""
     subject = _name_field("From", f"from-{item.id}", start.subject, names)
+    subject_en = _meaning("From, in English", f"fromen-{item.id}", start.subject_en)
     relation = str(
         st.selectbox(
             "Relationship",
@@ -157,14 +166,20 @@ def _correction_form(
     )
     lessons = LESSONS if relation == "TEACHES" else names
     obj = _name_field("To", f"to-{item.id}", start.object, lessons)
+    object_en = _meaning("To, in English", f"toen-{item.id}", start.object_en)
     st.markdown(
         f"<div class='hv-sentence'>{headline_html(subject, relation, obj)}</div>",
         unsafe_allow_html=True,
     )
     if st.button("Approve with these corrections", key=f"fixok-{item.id}"):
-        _decide(
-            client, item, True, AssertionEditSpec(subject=subject, relation=relation, object=obj)
+        edit = AssertionEditSpec(
+            subject=subject,
+            relation=relation,
+            object=obj,
+            subject_en=subject_en,
+            object_en=object_en,
         )
+        _decide(client, item, True, edit)
 
 
 def _modify(client: ApiClient, item: AssertionView, names: tuple[str, ...]) -> None:
@@ -187,10 +202,21 @@ def _pending_card(client: ApiClient, item: AssertionView, names: tuple[str, ...]
         _modify(client, item, names)
 
 
+def _meanings_form(client: ApiClient, item: AssertionView) -> None:
+    """Add or fix the English meaning of an approved relationship's names. The names stay."""
+    with st.expander("English meanings"):
+        subject_en = _meaning("From, in English", f"afromen-{item.id}", item.subject_en)
+        object_en = _meaning("To, in English", f"atoen-{item.id}", item.object_en)
+        if st.button("Save English meanings", key=f"savemean-{item.id}"):
+            edit = AssertionEditSpec(subject_en=subject_en, object_en=object_en)
+            _decide(client, item, True, edit)
+
+
 def _approved_card(client: ApiClient, item: AssertionView) -> None:
     with theme.card(f"approved-{item.id}"):
         st.markdown(_headline(item), unsafe_allow_html=True)
         _source(item)
+        _meanings_form(client, item)
         if st.button("Withdraw", key=f"withdraw-{item.id}", help="Remove it from the graph."):
             _decide(client, item, False)
 

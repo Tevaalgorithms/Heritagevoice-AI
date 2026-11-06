@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.agents.graph_rag import supporting_chunks
 from app.credits import Origin, origins_in
-from app.db.repositories import GraphAssertionRepository
+from app.db.repositories import ChunkRepository, GraphAssertionRepository
 from app.models.evidence import Evidence
 from app.models.records import GraphAssertion, Relation
 from app.qa import to_citation
@@ -38,6 +38,9 @@ class Connection:
     end_s: float
     notices: tuple[str, ...]
     origin: Origin | None
+    subject_en: str = ""
+    object_en: str = ""
+    translation: str = ""  # the passage in English, when an approved translation may be read
 
 
 def _readable(
@@ -54,6 +57,20 @@ def _readable_assertions(
     return [a for a in candidates if chunk_of.get(a.id) in readable]
 
 
+def _translations(
+    session: Session, principal: Principal, assertions: list[GraphAssertion]
+) -> dict[str, str]:
+    """For each relationship, the English translation of the words that say it, if this reader
+    may read one (the same gate as any passage: approved, current, consented, in their reach)."""
+    chunk_of: dict[str, str] = {}
+    for assertion in assertions:
+        index = ChunkRepository(session).translation_index(assertion.recording_id)
+        if assertion.supporting_segment_id in index:
+            chunk_of[assertion.id] = index[assertion.supporting_segment_id]
+    readable = _readable(session, principal, chunk_of)
+    return {a: readable[c].passage for a, c in chunk_of.items() if c in readable}
+
+
 def find_connections(
     session: Session, principal: Principal, text: str, limit: int
 ) -> list[Connection]:
@@ -63,11 +80,15 @@ def find_connections(
     readable = _readable(session, principal, chunk_of)
     shown = _readable_assertions(candidates, chunk_of, readable)[:limit]
     origins = origins_in(session, [a.recording_id for a in shown])
-    return [_connection(a, readable[chunk_of[a.id]], origins) for a in shown]
+    translations = _translations(session, principal, shown)
+    return [_connection(a, readable[chunk_of[a.id]], origins, translations) for a in shown]
 
 
 def _connection(
-    assertion: GraphAssertion, evidence: Evidence, origins: dict[str, Origin]
+    assertion: GraphAssertion,
+    evidence: Evidence,
+    origins: dict[str, Origin],
+    translations: dict[str, str],
 ) -> Connection:
     citation = to_citation(evidence)
     return Connection(
@@ -82,4 +103,7 @@ def _connection(
         end_s=citation.end_s,
         notices=tuple(citation.notices),
         origin=origins.get(assertion.recording_id),
+        subject_en=assertion.subject_en,
+        object_en=assertion.object_en,
+        translation=translations.get(assertion.id, ""),
     )

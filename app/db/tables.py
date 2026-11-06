@@ -140,6 +140,8 @@ class GraphAssertionRow(Base):
     subject: Mapped[str] = mapped_column(String(200))
     relation: Mapped[str] = mapped_column(String(16))
     object: Mapped[str] = mapped_column(String(200))
+    subject_en: Mapped[str] = mapped_column(String(200), default="", server_default="")
+    object_en: Mapped[str] = mapped_column(String(200), default="", server_default="")
     asserted_by: Mapped[str] = mapped_column(String(64))
     review_state: Mapped[str] = mapped_column(String(16), index=True)
     supporting_segment_id: Mapped[str] = mapped_column(String(64))
