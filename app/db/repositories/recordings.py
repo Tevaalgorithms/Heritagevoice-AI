@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.db.tables import (
     RecordingRow,
 )
+from app.models.credit import SourceKind
 from app.models.library import LibraryFilter
 from app.models.records import (
     HeritageKind,
@@ -29,6 +30,10 @@ def _to_recording(row: RecordingRow) -> Recording:
         content_type=row.content_type,
         size_bytes=row.size_bytes,
         duration_s=row.duration_s,
+        credit_name=row.credit_name,
+        source_kind=SourceKind(row.source_kind) if row.source_kind else None,
+        source_note=row.source_note,
+        added=row.created_at.date().isoformat() if row.created_at else "",
     )
 
 
@@ -40,7 +45,10 @@ class RecordingRepository:
 
     def create(self, recording: Recording, idempotency_key: str | None = None) -> Recording:
         self._session.add(
-            RecordingRow(**recording.model_dump(mode="json"), idempotency_key=idempotency_key)
+            RecordingRow(
+                **recording.model_dump(mode="json", exclude={"added"}),
+                idempotency_key=idempotency_key,
+            )
         )
         self._session.flush()
         return recording

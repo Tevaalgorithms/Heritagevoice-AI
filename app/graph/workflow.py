@@ -16,6 +16,7 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
 from app.agents import evidence_merger
+from app.credits import Origin
 from app.graph.state import StateUpdate, WorkflowState
 from app.models.evidence import Route, Turn
 from app.security.permissions import Principal, require_permitted
@@ -42,6 +43,8 @@ class Agents:
     rewrite: Callable[[str, list[Turn]], str] | None = None  # follow-up questions; optional
     # Asked just before an answer is returned: which cited sources can still be read?
     still_readable: Callable[[list[str], Principal], set[str]] | None = None
+    # Where each cited recording came from (date, kind, and the credit when consent allows it).
+    origins: Callable[[list[str]], dict[str, Origin]] | None = None
 
 
 NEXT_STEPS = {

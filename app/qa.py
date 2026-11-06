@@ -6,10 +6,11 @@ the recording, never access labels or storage details.
 """
 
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import cast
 
 from app.agents.answer_agent import INSUFFICIENT
+from app.credits import Origin
 from app.graph.state import WorkflowState
 from app.graph.workflow import Agents, build_workflow
 from app.models.evidence import Citation, Evidence, Turn
@@ -75,7 +76,29 @@ def answer_question(ask: Ask, principal: Principal, agents: Agents) -> Outcome:
         citations=[to_citation(item) for item in final.get("citations", [])],
         warnings=list(dict.fromkeys(final.get("warnings", []))),
     )
-    return _still_valid(outcome, principal, agents)
+    return _with_origins(_still_valid(outcome, principal, agents), agents)
+
+
+def _with_origins(outcome: Outcome, agents: Agents) -> Outcome:
+    """Say when each cited recording was added and, only if its consent allows, who to credit."""
+    if agents.origins is None or not outcome.citations:
+        return outcome
+    origins = agents.origins([c.recording_id for c in outcome.citations])
+    return replace(outcome, citations=[_described(c, origins) for c in outcome.citations])
+
+
+def _described(citation: Citation, origins: dict[str, Origin]) -> Citation:
+    origin = origins.get(citation.recording_id)
+    if origin is None:
+        return citation
+    return citation.model_copy(
+        update={
+            "added": origin.added,
+            "heritage_kind": origin.heritage_kind,
+            "language": origin.language,
+            "credit": origin.credit,
+        }
+    )
 
 
 def _still_valid(outcome: Outcome, principal: Principal, agents: Agents) -> Outcome:

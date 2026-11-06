@@ -2,10 +2,12 @@
 
 import streamlit as st
 
-from app.languages import LANGUAGES
+from app.languages import BY_CODE, LANGUAGES
 from frontend import theme
 from frontend.api_client import ApiClient, ApiError, CitationView, QueryResult
+from frontend.credit import origin_line
 from frontend.format import format_time
+from frontend.kinds import label_for
 from frontend.messages import message_for
 from frontend.views.playback import listen_button
 from frontend.views.report import report_button
@@ -74,9 +76,31 @@ def answer_for(
     return {"role": "assistant", "content": result.answer or NO_ANSWER, "result": result}
 
 
+def _heading(citation: CitationView) -> str:
+    """`Lesson or proverb · தமிழ்` when the origin is known, else the recording's own title."""
+    if not citation.heritage_kind:
+        return citation.title
+    language = BY_CODE.get(citation.language)
+    spoken = language.native_name if language else citation.language
+    return f"{label_for(citation.heritage_kind)} · {spoken}"
+
+
+def _origin(citation: CitationView) -> str:
+    credit = citation.credit
+    return origin_line(
+        citation.added,
+        credit.name if credit else None,
+        credit.source_kind if credit else None,
+        credit.source_note if credit else None,
+    )
+
+
 def _source(client: ApiClient, number: int, citation: CitationView, scope: str) -> None:
     span = f"{format_time(citation.start_s)} to {format_time(citation.end_s)}"
-    st.markdown(f"**[{number}]** {citation.title} · {span}")
+    st.markdown(f"**[{number}]** {_heading(citation)} · {span}")
+    origin = _origin(citation)
+    if origin:
+        st.caption(origin)
     for notice in citation.notices:
         st.warning(notice, icon=":material/health_and_safety:")
     st.markdown(theme.passage_html(citation.passage), unsafe_allow_html=True)

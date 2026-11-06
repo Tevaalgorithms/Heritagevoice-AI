@@ -78,6 +78,10 @@ class RecordingRow(Base):
     size_bytes: Mapped[int | None] = mapped_column(Integer, default=None)
     duration_s: Mapped[float | None] = mapped_column(Float, default=None)
     idempotency_key: Mapped[str | None] = mapped_column(String(64), default=None)
+    # Optional, given by the contributor; shown only when the consent includes attribution.
+    credit_name: Mapped[str | None] = mapped_column(String(100), default=None)
+    source_kind: Mapped[str | None] = mapped_column(String(16), default=None)
+    source_note: Mapped[str | None] = mapped_column(String(200), default=None)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 

@@ -12,6 +12,7 @@ import streamlit as st
 from app.models.groups import OPEN_COMMUNITY
 from frontend import theme
 from frontend.api_client import ApiClient, ApiError, MyGroupView, RecordingSummary, UploadSpec
+from frontend.credit import UPLOAD_CHOICES
 from frontend.format import failure_message, progress_for
 from frontend.kinds import BY_KEY, KINDS, REMEDY_NOTICE, label_for
 from frontend.messages import message_for
@@ -111,6 +112,31 @@ def _choose_visibility(kind: str) -> str:
     return visibility
 
 
+CREDIT_HELP = (
+    "All optional. Readers see the name and source only if the people who gave the recording "
+    "allow crediting (you choose that below for open sharing; for a group it is in the group's "
+    "consent). Otherwise they see only when it was added."
+)
+
+
+def _choose_credit() -> tuple[str, str, str]:
+    """Who to thank, and where the knowledge came from: a person, a book, a website, a family."""
+    st.markdown("**Credit and source**")
+    st.caption(CREDIT_HELP)
+    name = st.text_input(
+        "Name to credit",
+        max_chars=100,
+        help="Who should be thanked: the speaker, the person who told it, or the author.",
+    )
+    label = str(st.selectbox("Where does this knowledge come from?", list(UPLOAD_CHOICES)))
+    note = st.text_input(
+        "Details about the source",
+        max_chars=200,
+        placeholder="For example: my grandmother, from Jaffna, or a book's title and author",
+    )
+    return name, UPLOAD_CHOICES[label], note
+
+
 def _choose_language() -> str:
     label = st.selectbox(
         "Language spoken",
@@ -152,6 +178,11 @@ def _choose_group(client: ApiClient) -> tuple[str, str] | None:
         format_func=lambda c: f"{describe(c.rights)} (v{c.policy_version}, {c.id[:16]})",
         help="The consent the group agreed to. It decides what may be done with the recording.",
     )
+    st.caption(
+        "Readers will see the credit and source."
+        if "attribution" in consent.rights
+        else "This consent does not include crediting, so readers will see only the date."
+    )
     return group.id, consent.id
 
 
@@ -176,7 +207,10 @@ def _open_destination(client: ApiClient) -> Destination | None:
     """Open sharing: no group. The contributor gives the consent here, on the form."""
     st.info(OPEN_TERMS)
     playback = st.checkbox("People may listen to the recording, not only read it", value=True)
-    credit = st.checkbox("Credit the speaker by name when it is shown", value=False)
+    credit = st.checkbox(
+        "Show the name and source with the recording. Otherwise readers see only the date.",
+        value=False,
+    )
     sure = st.checkbox("I have the right to share this recording, and I agree to the above.")
     if not sure:
         return None
@@ -232,6 +266,7 @@ def render(client: ApiClient) -> None:
     audio = _record_or_upload()
     kind = _choose_kind()
     language = _choose_language()
+    credit_name, source_kind, source_note = _choose_credit()
     destination = _choose_destination(client, kind)
     if st.button("Send for review", disabled=not (audio and destination)) and destination:
         spec = UploadSpec(
@@ -240,6 +275,9 @@ def render(client: ApiClient) -> None:
             community_id="",
             consent_id="",
             heritage_kind=kind,
+            credit_name=credit_name.strip(),
+            source_kind=source_kind,
+            source_note=source_note.strip(),
         )
         _send(client, spec, destination)
     _your_recordings(client)

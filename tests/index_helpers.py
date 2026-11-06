@@ -45,7 +45,8 @@ def published(session: Session, recording_id="r1", community="c1", **content) ->
     """A published recording whose transcript (and translation) are approved.
 
     Options: consent_id, consent (extra kwargs for the consent, e.g. rights), transcript (default
-    TAMIL), translation (default ENGLISH, or None), language, kind, visibility.
+    TAMIL), translation (default ENGLISH, or None), language, kind, visibility, credit_name,
+    source_kind, source_note.
     """
     consent_id = content.get("consent_id", "consent-1")
     transcript = content.get("transcript", TAMIL)
@@ -60,6 +61,9 @@ def published(session: Session, recording_id="r1", community="c1", **content) ->
         heritage_kind=content.get("kind", HeritageKind.STORY),
         visibility=content.get("visibility", Visibility.COMMUNITY),
         status=RecordingStatus.PUBLISHED,
+        credit_name=content.get("credit_name"),
+        source_kind=content.get("source_kind"),
+        source_note=content.get("source_note"),
     )
     RecordingRepository(session).create(recording)
     versions = VersionRepository(session)

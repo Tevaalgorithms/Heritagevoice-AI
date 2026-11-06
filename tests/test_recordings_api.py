@@ -257,3 +257,36 @@ def test_an_unknown_visibility_is_rejected_before_anything_is_stored(client, eng
     assert upload(client, visibility="everyone").status_code == 422
     assert store.objects == {}
     assert count(engine, RecordingRow) == 0
+
+
+def test_the_credit_and_source_are_stored_cleaned_and_optional(client, engine):
+    response = upload(
+        client,
+        credit_name="  Amma   Selvi \n",
+        source_kind="family",
+        source_note="My grandmother",
+    )
+    assert response.status_code == 201
+    with Session(engine) as session:
+        row = session.scalars(select(RecordingRow)).one()
+    assert (row.credit_name, row.source_kind, row.source_note) == (
+        "Amma Selvi",
+        "family",
+        "My grandmother",
+    )
+
+
+def test_an_upload_without_a_credit_stores_none(client, engine):
+    assert upload(client).status_code == 201
+    with Session(engine) as session:
+        row = session.scalars(select(RecordingRow)).one()
+    assert (row.credit_name, row.source_kind, row.source_note) == (None, None, None)
+
+
+@pytest.mark.parametrize(
+    "form",
+    [{"source_kind": "my_cousin"}, {"credit_name": "x" * 101}, {"source_note": "x" * 201}],
+)
+def test_a_bad_credit_is_refused_before_anything_is_stored(client, engine, store, form):
+    assert upload(client, **form).status_code == 422
+    assert not store.objects

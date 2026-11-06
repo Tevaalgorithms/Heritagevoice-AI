@@ -5,6 +5,7 @@ from enum import StrEnum
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.languages import BY_CODE
+from app.models.credit import Credit
 
 
 class Route(StrEnum):
@@ -73,7 +74,8 @@ class QueryRequest(BaseModel):
 
 class Citation(BaseModel):
     """A source as shown to the reader: the passage and where it is in the recording. It carries
-    no access labels, community, uploader or storage location."""
+    no access labels, community, uploader account or storage location. `credit` is present only
+    when the recording's consent allows it to be shown."""
 
     evidence_id: str
     recording_id: str
@@ -82,6 +84,10 @@ class Citation(BaseModel):
     start_s: float
     end_s: float
     notices: list[str] = Field(default_factory=list)
+    added: str = ""
+    heritage_kind: str = ""
+    language: str = ""
+    credit: Credit | None = None
 
 
 class QueryResponse(BaseModel):

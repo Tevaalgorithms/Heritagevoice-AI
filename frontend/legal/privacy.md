@@ -9,7 +9,7 @@ your choices are. The service is run by **{{operator}}** (the "controller"). Con
 | --- | --- | --- |
 | Everyone who searches | The words you search for are used to answer the request. We do not build a profile of searches, but they can appear in short-lived server logs together with your network address and a request number. Your network address is also used briefly to limit how often one visitor can ask. | To run the service and keep it safe |
 | People with an account | Email address (an administrator sees it to approve your request), a password (held by our sign-in provider, never by us), your role and community, the date you accepted these terms, and a record of what you upload or change. | To sign you in, to keep a record of who did what, and to protect communities |
-| Contributors | Recordings (a voice is personal information), their transcripts and translations, the language, the community and the consent record that goes with each recording. | To keep and share heritage as the community agreed |
+| Contributors | Recordings (a voice is personal information), their transcripts and translations, the language, the community and the consent record that goes with each recording. Optionally, a name to credit, where the knowledge came from (for example a family elder, a book or a website) and a short note. These are shown to readers **only** if the consent includes crediting; otherwise readers see only the date a recording was added. | To keep and share heritage as the community agreed, and to thank and trace its source |
 | Reviewers and administrators | Review decisions and administrative actions, with the date. | Accountability |
 
 We do **not** use advertising or analytics trackers, and we do not sell personal information.

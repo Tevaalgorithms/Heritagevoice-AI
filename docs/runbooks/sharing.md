@@ -76,3 +76,24 @@ reason and tick the confirmation, then press **Withdraw now**.
 - **Not reversible** from the app. To share it again, the person uploads it again.
 
 A report from a reader can lead to the same result: Reports → decide → remove.
+
+## Credit and source
+
+When adding a recording, a contributor can give, all optionally:
+
+- a **name to credit** (the speaker, the person who told it, or the author),
+- **where the knowledge comes from**: their own knowledge, a family elder, a community elder or
+  teacher, a book, a website, or another source,
+- a short **note** (for example "my grandmother, from Jaffna" or a book's title and author).
+
+**Who sees it.** The date a recording was added is always shown. The name, source and note are shown
+to readers (in the Library and under an answer's sources) only while the recording's consent
+includes the **attribution** right; otherwise they stay private. For open sharing the contributor
+ticks "Show the name and source with the recording"; for a group, the group's consent decides, and
+the form says which applies. If the consent is withdrawn, the credit disappears with the recording.
+
+**What an admin sees.** The Review page shows exactly what was entered, and whether readers will see
+it, before the recording is published. Everything entered is shown as plain text, never as a link or
+formatting.
+
+The contributor's account (email) is never shown to readers.

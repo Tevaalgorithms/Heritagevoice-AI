@@ -17,6 +17,14 @@ class Readiness(BaseModel):
     checks: dict[str, str]
 
 
+class CreditView(BaseModel):
+    """Who to thank and where the knowledge came from, as far as the consent lets readers see."""
+
+    name: str | None = None
+    source_kind: str | None = None
+    source_note: str | None = None
+
+
 class CitationView(BaseModel):
     """A source for an answer: the passage and where it is in the recording."""
 
@@ -27,6 +35,10 @@ class CitationView(BaseModel):
     start_s: float
     end_s: float
     notices: list[str] = []
+    added: str = ""
+    heritage_kind: str = ""
+    language: str = ""
+    credit: CreditView | None = None
 
 
 class QueryResult(BaseModel):
@@ -48,6 +60,9 @@ class UploadSpec(BaseModel):
     consent_id: str
     heritage_kind: str = "story"
     visibility: str = "community"
+    credit_name: str = ""
+    source_kind: str = ""
+    source_note: str = ""
 
 
 class UploadResult(BaseModel):
@@ -97,6 +112,9 @@ class RecordingView(BaseModel):
     duration_s: float | None = None
     transcript: VersionView | None = None
     translation: VersionView | None = None
+    added: str = ""
+    credit: CreditView | None = None  # what the contributor entered
+    credit_public: bool = False  # whether readers will see it
 
 
 class RecordingSummary(BaseModel):
@@ -352,6 +370,8 @@ class LibraryItem(BaseModel):
     end_s: float
     notices: list[str] = []
     community: str | None = None
+    added: str = ""
+    credit: CreditView | None = None
 
 
 class LibraryResult(BaseModel):

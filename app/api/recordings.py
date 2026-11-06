@@ -28,12 +28,15 @@ from app.api.admin import AdminContext, context_for
 from app.api.auth import SessionFactory, current_principal, get_session_factory
 from app.audio import AudioRules, UploadError
 from app.config import Settings
+from app.credits import credit_for
 from app.db.repositories import (
     AuditRepository,
+    ConsentRepository,
     JobRepository,
     RecordingRepository,
     TranscriptRepository,
 )
+from app.models.credit import MAX_NAME, MAX_NOTE, Credit, SourceKind
 from app.models.job import Job
 from app.models.records import HeritageKind, Recording, Visibility
 from app.models.transcript import Segment
@@ -109,6 +112,9 @@ class UploadForm(BaseModel):
     consent_id: Annotated[str, ID]
     heritage_kind: HeritageKind = HeritageKind.STORY
     visibility: Visibility = Visibility.COMMUNITY
+    credit_name: Annotated[str | None, Field(max_length=MAX_NAME)] = None
+    source_kind: SourceKind | None = None
+    source_note: Annotated[str | None, Field(max_length=MAX_NOTE)] = None
 
 
 class UploadResponse(BaseModel):
@@ -164,6 +170,11 @@ class RecordingResponse(BaseModel):
     duration_s: float | None
     transcript: VersionView | None
     translation: VersionView | None
+    added: str = ""
+    # What the contributor entered, for the people who may open the recording. `credit_public` says
+    # whether readers will see it: only while the consent includes the attribution right.
+    credit: Credit | None = None
+    credit_public: bool = False
 
 
 def _http_error(error: Exception) -> HTTPException:
@@ -190,6 +201,9 @@ async def upload_recording(
         data,
         form.heritage_kind,
         form.visibility,
+        form.credit_name,
+        form.source_kind,
+        form.source_note,
     )
     try:
         accepted = await run_in_threadpool(accept_upload, request, ctx.deps)
@@ -264,6 +278,12 @@ def get_recording(
         transcripts = TranscriptRepository(session)
         transcript = transcripts.latest(recording.id)
         translation = transcripts.latest_translation(recording.id)
+        consent = ConsentRepository(session).get(recording.consent_id)
+        entered = Credit(
+            name=recording.credit_name,
+            source_kind=recording.source_kind,
+            source_note=recording.source_note,
+        )
         return RecordingResponse(
             id=recording.id,
             community_id=recording.community_id,
@@ -274,4 +294,7 @@ def get_recording(
             duration_s=recording.duration_s,
             transcript=None if transcript is None else VersionView(**transcript.model_dump()),
             translation=None if translation is None else VersionView(**translation.model_dump()),
+            added=recording.added,
+            credit=None if entered.is_empty() else entered,
+            credit_public=credit_for(recording, consent) is not None,
         )

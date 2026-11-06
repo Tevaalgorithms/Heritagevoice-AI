@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.api.auth import SessionFactory, current_principal, get_session_factory
 from app.library import LibraryEntry, browse, search
+from app.models.credit import Credit
 from app.models.library import LibraryFilter, LibraryView
 from app.models.records import HeritageKind
 from app.security.permissions import Principal, authorize
@@ -45,6 +46,8 @@ class LibraryItem(BaseModel):
     end_s: float
     notices: list[str]
     community: str | None
+    added: str = ""
+    credit: Credit | None = None
 
 
 class LibraryResponse(BaseModel):
@@ -65,6 +68,8 @@ def _item(entry: LibraryEntry) -> LibraryItem:
         end_s=entry.end_s,
         notices=list(entry.notices),
         community=entry.community,
+        added=entry.added,
+        credit=entry.credit,
     )
 
 

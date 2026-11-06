@@ -4,6 +4,7 @@ from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.models.credit import SourceKind
 from app.models.transcript import Segment
 
 
@@ -79,6 +80,10 @@ class Recording(BaseModel):
     content_type: str | None = None
     size_bytes: int | None = None
     duration_s: float | None = None
+    credit_name: str | None = None
+    source_kind: SourceKind | None = None
+    source_note: str | None = None
+    added: str = ""  # the day it was added, YYYY-MM-DD; set when read, never stored directly
 
 
 class VersionStatus(StrEnum):

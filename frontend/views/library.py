@@ -13,6 +13,7 @@ from app.languages import BY_CODE, LANGUAGES
 from app.models.groups import OPEN_COMMUNITY
 from frontend import theme
 from frontend.api_client import ApiClient, ApiError, LibraryItem, LibraryResult, LibrarySpec
+from frontend.credit import origin_line
 from frontend.format import format_time
 from frontend.kinds import KINDS, label_for
 from frontend.messages import message_for
@@ -69,6 +70,17 @@ def _heading(item: LibraryItem) -> str:
     return f"{label_for(item.heritage_kind)} · {spoken}{source}"
 
 
+def _origin(item: LibraryItem) -> str:
+    """When it was added and, if the consent allows, who to thank and where it came from."""
+    credit = item.credit
+    return origin_line(
+        item.added,
+        credit.name if credit else None,
+        credit.source_kind if credit else None,
+        credit.source_note if credit else None,
+    )
+
+
 def _card(client: ApiClient, play: Fetch, item: LibraryItem) -> None:
     with st.container(border=True):
         st.markdown(f"**{_heading(item)}**")
@@ -78,6 +90,9 @@ def _card(client: ApiClient, play: Fetch, item: LibraryItem) -> None:
         span = f"{format_time(item.start_s)} to {format_time(item.end_s)}"
         shown = "English translation" if item.view == "translation" else "Original words"
         st.caption(f"{shown} · {span}")
+        origin = _origin(item)
+        if origin:
+            st.caption(origin)
         listen_button(
             play, item.recording_id, f"listen-{item.evidence_id}", (item.start_s, item.end_s)
         )

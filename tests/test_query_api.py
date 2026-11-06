@@ -83,7 +83,12 @@ def test_a_citation_gives_the_passage_and_its_time_but_nothing_internal(client):
         "start_s",
         "end_s",
         "notices",
+        "added",
+        "heritage_kind",
+        "language",
+        "credit",
     }
+    assert citation["credit"] is None  # no consent has allowed a credit to be shown
 
 
 def test_the_response_never_names_a_community_an_access_label_or_a_storage_path(client):
@@ -255,3 +260,43 @@ def _answer_with(writer):
 def test_an_unsupported_answer_language_is_refused(client, language):
     serving(agents_object([passage("e1")]))
     assert client.post(URL, json={**ASK, "response_language": language}).status_code == 422
+
+
+def test_a_citation_carries_the_origin_the_agents_report(client):
+    from dataclasses import replace  # noqa: PLC0415
+
+    from app.credits import Origin  # noqa: PLC0415
+    from app.models.credit import Credit, SourceKind  # noqa: PLC0415
+
+    credit = Credit(name="Amma Selvi", source_kind=SourceKind.FAMILY, source_note="Jaffna")
+    agents = replace(
+        agents_object([passage("e1")]),
+        origins=lambda ids: {"rec-e1": Origin("2026-11-05", "proverb", "ta", credit)},
+    )
+    serving(agents)
+    (citation,) = client.post(URL, json=ASK).json()["citations"]
+    assert (citation["added"], citation["heritage_kind"], citation["language"]) == (
+        "2026-11-05",
+        "proverb",
+        "ta",
+    )
+    assert citation["credit"] == {
+        "name": "Amma Selvi",
+        "source_kind": "family",
+        "source_note": "Jaffna",
+    }
+
+
+def test_a_citation_without_a_reported_credit_names_nobody(client):
+    from dataclasses import replace  # noqa: PLC0415
+
+    from app.credits import Origin  # noqa: PLC0415
+
+    agents = replace(
+        agents_object([passage("e1")]),
+        origins=lambda ids: {"rec-e1": Origin("2026-11-05", "story", "ta", None)},
+    )
+    serving(agents)
+    (citation,) = client.post(URL, json=ASK).json()["citations"]
+    assert citation["credit"] is None
+    assert citation["added"] == "2026-11-05"
