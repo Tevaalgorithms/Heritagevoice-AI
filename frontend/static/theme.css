@@ -123,3 +123,16 @@ input, textarea, [data-baseweb="select"] > div { border-radius: 10px !important;
 [data-testid="stSidebarNav"] a[href$="/terms"]:hover, [data-testid="stSidebarNav"] a[href$="/privacy"]:hover,
 [data-testid="stSidebarNav"] a[href$="/acceptable-use"]:hover, [data-testid="stSidebarNav"] a[href$="/accessibility"]:hover,
 [data-testid="stSidebarNav"] a[href$="/contact"]:hover { opacity: 1; }
+/* Top menu bar: parchment with a fine rule, the page you are on underlined in gold. The sidebar is
+   no longer used; the account buttons sit at the top right and the legal links in the footer. */
+[data-testid="stHeader"] { background: #FFFDF8; border-bottom: 1px solid #E4D6BC; }
+[data-testid="stHeader"] a, [data-testid="stHeader"] button { color: #1B2A41; font-weight: 600; }
+[data-testid="stSidebar"], [data-testid="stSidebarCollapsedControl"] { display: none; }
+.st-key-hv-account { position: fixed; top: .55rem; right: 1.25rem; z-index: 1000060; width: auto;
+  flex-direction: row !important; align-items: center; gap: .6rem; }
+.st-key-hv-account .stButton > button { padding: .35rem 1.1rem; }
+.hv-who { font-size: .9rem; color: #5B6577; white-space: nowrap; }
+.st-key-hv-footer { margin-top: 2.4rem; }
+.st-key-hv-footer a, .st-key-hv-footer a * { font-size: .85rem; color: #5B6577 !important; }
+.st-key-hv-footer a:hover, .st-key-hv-footer a:hover * { color: #14284B !important; text-decoration: underline; }
+.hv-foot { font-size: .85rem; color: #5B6577; }

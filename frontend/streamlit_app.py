@@ -7,16 +7,12 @@ import streamlit as st
 
 from app.config import Settings
 from frontend import theme
-from frontend.account import (
-    AwaitingApprovalError,
-    SessionExpiredError,
-    current_role,
-    show_account,
-)
+from frontend.account import AwaitingApprovalError, SessionExpiredError, current_role
 from frontend.api_client import ApiClient, ApiError
 from frontend.auth import COGNITO_PROVIDER, cognito_enabled, resolve_token
-from frontend.legal import PAGES, OrganisationFacts
+from frontend.legal import PAGES, LegalPage, OrganisationFacts
 from frontend.messages import message_for
+from frontend.shell import footer, logo, member_account, visitor_account
 from frontend.views import (
     ask,
     connections,
@@ -36,30 +32,52 @@ st.set_page_config(page_title="HeritageVoice AI", page_icon="🪔", layout="wide
 
 
 def show_status(client: ApiClient) -> None:
+    """Say so when the API cannot be reached or is not fully ready; stay quiet when it is."""
     try:
         report = client.ready()
     except ApiError as error:
-        st.sidebar.error(message_for(error))
+        st.error(message_for(error))
         return
-    label = "API ready" if report.ready else "API running, dependencies not ready"
-    (st.sidebar.success if report.ready else st.sidebar.warning)(label)
+    if not report.ready:
+        st.warning("API running, dependencies not ready")
 
 
 def _page(render: Callable[[ApiClient], None], client: ApiClient, **options: object) -> object:
     return st.Page(lambda: render(client), **options)  # type: ignore[arg-type]
 
 
-def _legal_pages(facts: OrganisationFacts) -> list[object]:
-    """Terms, privacy and the rest. Public: they open without signing in."""
-    return [
-        st.Page(
-            lambda page=page: legal_view.render(page, facts),  # type: ignore[misc]
-            title=page.title,
-            icon=page.icon,
-            url_path=page.slug,
-        )
-        for page in PAGES
-    ]
+CONTACT = "contact"
+
+
+def _legal_page(page: LegalPage, facts: OrganisationFacts, in_menu: bool) -> object:
+    return st.Page(
+        lambda: legal_view.render(page, facts),
+        title="Contact" if in_menu else page.title,
+        icon=page.icon,
+        url_path=page.slug,
+        visibility="visible" if in_menu else "hidden",
+    )
+
+
+def _legal_pages(facts: OrganisationFacts, contact_in_menu: bool = False) -> list[object]:
+    """Terms, privacy and the rest. Public: they open without signing in. They are in the footer,
+    not the menu, except Contact for visitors."""
+    return [_legal_page(p, facts, contact_in_menu and p.slug == CONTACT) for p in PAGES]
+
+
+def _navigate(
+    menu: dict[str, list[object]] | list[object], legal: list[object], facts: OrganisationFacts
+) -> None:
+    """Show the top menu, run the page, then the footer. The legal pages are registered with the
+    navigation so their addresses work, but they are hidden from the menu."""
+    hidden = [page for page in legal if page.visibility == "hidden"]  # type: ignore[attr-defined]
+    if isinstance(menu, dict):
+        first = next(iter(menu))
+        pages: dict[str, list[object]] | list[object] = {**menu, first: [*menu[first], *hidden]}
+    else:
+        pages = [*menu, *hidden]
+    st.navigation(pages, position="top").run()  # type: ignore[arg-type]
+    footer(legal, facts)
 
 
 def _groups_page(client: ApiClient) -> object:
@@ -144,24 +162,37 @@ def _member_sections(client: ApiClient, role: str | None) -> dict[str, list[obje
 
 
 def _run_for_visitors(settings: Settings, facts: OrganisationFacts) -> None:
-    """No account: the open home page, with sign-in beside the search, and the legal pages."""
+    """No account: Home, the Library, Connections and Contact, with Sign in at the top right."""
     client = ApiClient(settings.api_url, None)
+
+    def sign_in() -> None:
+        st.login(COGNITO_PROVIDER)
+
     home = st.Page(
-        lambda: home_view.render(client, lambda: st.login(COGNITO_PROVIDER)),
+        lambda: home_view.render(client, sign_in),
         title="Home",
         icon=":material/home:",
         url_path="home",
         default=True,
     )
-    theme.brand()
-    explore = _page(
+    shelf = st.Page(
+        lambda: library.render_public(client),
+        title="Library",
+        icon=":material/menu_book:",
+        url_path="library",
+    )
+    links = _page(
         connections.render,
         client,
         title="Connections",
         icon=":material/hub:",
         url_path="connections",
     )
-    st.navigation({"Explore": [home, explore], "Legal": _legal_pages(facts)}).run()
+    legal = _legal_pages(facts, contact_in_menu=True)
+    contact = next(page for page in legal if page.visibility == "visible")  # type: ignore[attr-defined]
+    logo()
+    visitor_account(sign_in)
+    _navigate([home, shelf, links, contact], legal, facts)
 
 
 def _run_session_expired(facts: OrganisationFacts) -> None:
@@ -175,12 +206,12 @@ def _run_session_expired(facts: OrganisationFacts) -> None:
         url_path="signin",
         default=True,
     )
-    st.navigation({"Your account": [page], "Legal": _legal_pages(facts)}).run()
+    logo()
+    _navigate([page], _legal_pages(facts), facts)
 
 
-def _run_awaiting_approval(settings: Settings, facts: OrganisationFacts) -> None:
+def _run_awaiting_approval(facts: OrganisationFacts) -> None:
     """Signed in, but not approved yet: say so plainly, with sign-out and the legal pages."""
-    show_account(None, settings)
     page = st.Page(
         home_view.render_waiting,
         title="Account",
@@ -188,7 +219,26 @@ def _run_awaiting_approval(settings: Settings, facts: OrganisationFacts) -> None
         url_path="account",
         default=True,
     )
-    st.navigation({"Your account": [page], "Legal": _legal_pages(facts)}).run()
+    logo()
+    member_account(None, can_sign_out=True)
+    _navigate([page], _legal_pages(facts), facts)
+
+
+def _run_signed_in(settings: Settings, facts: OrganisationFacts, token: str | None) -> None:
+    """Someone with a sign-in: their menu by role, or the page that explains what is missing."""
+    client = ApiClient(settings.api_url, token)
+    try:
+        role = current_role(client)
+    except AwaitingApprovalError:
+        _run_awaiting_approval(facts)
+        return
+    except SessionExpiredError:
+        _run_session_expired(facts)
+        return
+    logo()
+    member_account(role, can_sign_out=cognito_enabled(settings) and st.user.is_logged_in)
+    show_status(client)
+    _navigate(_member_sections(client, role), _legal_pages(facts), facts)
 
 
 def main() -> None:
@@ -198,21 +248,8 @@ def main() -> None:
     token = resolve_token(settings, st.user)
     if token is None and cognito_enabled(settings):
         _run_for_visitors(settings, facts)
-        return
-    client = ApiClient(settings.api_url, token)
-    theme.brand()
-    show_status(client)
-    try:
-        role = current_role(client)
-    except AwaitingApprovalError:
-        _run_awaiting_approval(settings, facts)
-        return
-    except SessionExpiredError:
-        _run_session_expired(facts)
-        return
-    show_account(role, settings)
-    sections = _member_sections(client, role)
-    st.navigation({**sections, "Legal": _legal_pages(facts)}).run()
+    else:
+        _run_signed_in(settings, facts, token)
 
 
 main()
