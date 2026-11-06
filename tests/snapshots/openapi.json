@@ -211,14 +211,39 @@
         "type": "object"
       },
       "Citation": {
-        "description": "A source as shown to the reader: the passage and where it is in the recording. It carries\nno access labels, community, uploader or storage location.",
+        "description": "A source as shown to the reader: the passage and where it is in the recording. It carries\nno access labels, community, uploader account or storage location. `credit` is present only\nwhen the recording's consent allows it to be shown.",
         "properties": {
+          "added": {
+            "default": "",
+            "title": "Added",
+            "type": "string"
+          },
+          "credit": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Credit"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "end_s": {
             "title": "End S",
             "type": "number"
           },
           "evidence_id": {
             "title": "Evidence Id",
+            "type": "string"
+          },
+          "heritage_kind": {
+            "default": "",
+            "title": "Heritage Kind",
+            "type": "string"
+          },
+          "language": {
+            "default": "",
+            "title": "Language",
             "type": "string"
           },
           "notices": {
@@ -369,6 +394,45 @@
           "revoked"
         ],
         "title": "ConsentResponse",
+        "type": "object"
+      },
+      "Credit": {
+        "description": "What may be shown about a recording's origin.",
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "source_kind": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SourceKind"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Note"
+          }
+        },
+        "title": "Credit",
         "type": "object"
       },
       "Decision": {
@@ -701,6 +765,11 @@
       "LibraryItem": {
         "description": "One passage with its context. `notices` must be shown with it.",
         "properties": {
+          "added": {
+            "default": "",
+            "title": "Added",
+            "type": "string"
+          },
           "community": {
             "anyOf": [
               {
@@ -711,6 +780,16 @@
               }
             ],
             "title": "Community"
+          },
+          "credit": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Credit"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "end_s": {
             "title": "End S",
@@ -1287,9 +1366,29 @@
       "RecordingResponse": {
         "description": "A recording with its latest transcript and translation.",
         "properties": {
+          "added": {
+            "default": "",
+            "title": "Added",
+            "type": "string"
+          },
           "community_id": {
             "title": "Community Id",
             "type": "string"
+          },
+          "credit": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Credit"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "credit_public": {
+            "default": false,
+            "title": "Credit Public",
+            "type": "boolean"
           },
           "duration_s": {
             "anyOf": [
@@ -1732,6 +1831,19 @@
         "title": "SignupView",
         "type": "object"
       },
+      "SourceKind": {
+        "description": "Where the knowledge in a recording came from.",
+        "enum": [
+          "own",
+          "family",
+          "elder",
+          "book",
+          "website",
+          "other"
+        ],
+        "title": "SourceKind",
+        "type": "string"
+      },
       "StatusChange": {
         "additionalProperties": false,
         "description": "Request body to change a catalogue model's status.",
@@ -1783,6 +1895,18 @@
             "title": "Consent Id",
             "type": "string"
           },
+          "credit_name": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Credit Name"
+          },
           "file": {
             "contentMediaType": "application/octet-stream",
             "title": "File",
@@ -1796,6 +1920,28 @@
             "pattern": "^[a-z]{2,8}$",
             "title": "Language",
             "type": "string"
+          },
+          "source_kind": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SourceKind"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source_note": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Note"
           },
           "visibility": {
             "$ref": "#/components/schemas/Visibility",

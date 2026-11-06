@@ -9,10 +9,12 @@ from dataclasses import dataclass
 
 from sqlalchemy.orm import Session
 
+from app.credits import credit_for
 from app.db.repositories import ChunkRepository, ConsentRepository, RecordingRepository
+from app.models.credit import Credit
 from app.models.index import ChunkKind, ChunkRecord
 from app.models.library import LibraryFilter, LibraryView
-from app.models.records import REMEDY_NOTICE, HeritageKind, Recording, Right
+from app.models.records import REMEDY_NOTICE, Consent, HeritageKind, Recording, Right
 from app.retrieval.eligibility import eligible_chunks
 from app.retrieval.lexical import lexical_search
 from app.security.permissions import Principal
@@ -38,21 +40,23 @@ class LibraryEntry:
     end_s: float
     notices: tuple[str, ...]
     community: str | None
+    added: str = ""
+    credit: Credit | None = None
 
 
 def _notices(recording: Recording) -> tuple[str, ...]:
     return (REMEDY_NOTICE,) if recording.heritage_kind is HeritageKind.REMEDY else ()
 
 
-def _community(session: Session, recording: Recording) -> str | None:
+def _community(recording: Recording, consent: Consent | None) -> str | None:
     """Named only if the people who gave the recording agreed to be credited."""
-    consent = ConsentRepository(session).get(recording.consent_id)
     return recording.community_id if consent and consent.permits(Right.ATTRIBUTION) else None
 
 
 def _entry(
     session: Session, chunk: ChunkRecord, recording: Recording, view: LibraryView
 ) -> LibraryEntry:
+    consent = ConsentRepository(session).get(recording.consent_id)
     return LibraryEntry(
         evidence_id=chunk.evidence_id,
         recording_id=recording.id,
@@ -63,7 +67,9 @@ def _entry(
         start_s=chunk.start_s,
         end_s=chunk.end_s,
         notices=_notices(recording),
-        community=_community(session, recording),
+        community=_community(recording, consent),
+        added=recording.added,
+        credit=credit_for(recording, consent),
     )
 
 

@@ -23,6 +23,7 @@ from frontend.api_models import (
     CatalogView,
     CitationView,
     ConsentView,
+    CreditView,
     GroupView,
     Health,
     IntegrationGroup,
@@ -79,6 +80,7 @@ __all__ = [
     "UsageView",
     "VoiceSuggestionView",
     "ConsentView",
+    "CreditView",
     "GroupView",
     "MyGroupView",
     "Health",
@@ -103,6 +105,17 @@ __all__ = [
     "VersionResult",
     "VersionView",
 ]
+
+
+def _given(spec: UploadSpec) -> dict[str, str]:
+    """The optional credit fields the contributor filled in; empty ones are not sent."""
+    optional = {
+        "credit_name": spec.credit_name,
+        "source_kind": spec.source_kind,
+        "source_note": spec.source_note,
+    }
+    return {key: value for key, value in optional.items() if value}
+
 
 VOICE_TIMEOUT_S = 150.0  # transcribing speech takes a while
 
@@ -155,6 +168,7 @@ class ApiClient:
             "heritage_kind": spec.heritage_kind,
             "visibility": spec.visibility,
         }
+        form.update(_given(spec))
         response = self._send(
             "POST",
             "/v1/recordings",

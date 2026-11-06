@@ -11,6 +11,7 @@ from frontend.api_client import (
     ReviewSpec,
     VersionView,
 )
+from frontend.credit import long_date, origin_line
 from frontend.format import changed_edits, editor_rows
 from frontend.kinds import label_for
 from frontend.messages import message_for
@@ -94,7 +95,25 @@ def _review_recording(client: ApiClient, recording_id: str) -> None:
     if st.button("Publish approved transcript", disabled=recording.status != "review"):
         _act(lambda: client.publish(recording.id), "Published.")
     _visibility_panel(client, recording)
+    _credit_panel(recording)
     _withdraw_panel(client, recording)
+
+
+def _credit_panel(recording: RecordingView) -> None:
+    """What the contributor entered about who to thank and where it came from, and whether readers
+    will see it. Checked here before the recording is published."""
+    credit = recording.credit
+    if credit is None:
+        st.caption(f"No credit or source was given. Added {long_date(recording.added)}.")
+        return
+    entered = origin_line(recording.added, credit.name, credit.source_kind, credit.source_note)
+    st.markdown("**Credit and source**")
+    st.caption(entered)
+    st.caption(
+        "Readers will see this."
+        if recording.credit_public
+        else "Readers will not see this: the consent does not include crediting."
+    )
 
 
 def can_withdraw(reason: str, understood: bool) -> bool:

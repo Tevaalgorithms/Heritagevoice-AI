@@ -17,6 +17,7 @@ from app.agents.rewriter import QuestionRewriter, Standalone
 from app.agents.supervisor import RouteDecision, Supervisor
 from app.agents.verifier import Verification, Verifier
 from app.config import Settings
+from app.credits import OriginLookup
 from app.graph.workflow import Agents
 from app.graph_setup import RuntimeGraphReader
 from app.model_registry import ModelRegistry
@@ -54,4 +55,5 @@ def build_agents(
         answer=AnswerAgent(runner(ModelRole.ANSWER, ANSWER_PROMPT, AnswerDraft)),
         rewrite=QuestionRewriter(runner(ModelRole.SUPERVISOR, REWRITE_PROMPT, Standalone)),
         still_readable=DeliveryCheck(sessions),
+        origins=OriginLookup(sessions),
     )
