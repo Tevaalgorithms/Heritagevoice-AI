@@ -170,3 +170,12 @@ input, textarea, [data-baseweb="select"] > div { border-radius: 10px !important;
 .hv-title { font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif; color: #14284B;
   font-weight: 600; font-size: clamp(2rem, 4.4vw, 3rem); line-height: 1.1; letter-spacing: -0.01em; margin: .2rem 0 .8rem; }
 .hv-lede { font-size: 1.15rem; color: #5B6577; max-width: 34em; margin-bottom: 1.1rem; }
+/* Signed-in account area: the role and Sign out on one line, never squeezed; Sign out is an outlined pill. */
+.st-key-hv-account { display: flex; flex-direction: row !important; flex-wrap: nowrap; align-items: center; gap: .8rem; }
+.st-key-hv-account > div { flex: 0 0 auto; width: auto !important; }
+.st-key-hv-account .stButton > button { white-space: nowrap; background: transparent; color: #B4532A;
+  border: 1px solid #B4532A; border-radius: 999px; font-weight: 700; opacity: 1; }
+.st-key-hv-account .stButton > button:hover { background: #F5ECD9; }
+.st-key-hv-account .stButton > button * { color: #B4532A !important; }
+.st-key-hv-account .hv-who { line-height: 1.2; display: block; }
+.st-key-hv-account > div:first-child { align-self: center; }
