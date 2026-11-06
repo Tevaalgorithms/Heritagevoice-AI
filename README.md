@@ -11,6 +11,9 @@ knowledge, and answers questions with citations that lead back to the original v
 Record songs, stories, lessons and practices in your own language. Keep them with the consent of the
 people who shared them. Let anyone ask questions and hear the exact moment an answer came from.
 
+**Live site: [heritagevoice.org](https://heritagevoice.org)**. Browse and listen to what communities
+have shared openly, with no account. Sign in to ask questions and add recordings.
+
 ## Why this project exists
 
 Every language carries generations of stories, traditions and knowledge. Many are disappearing as
@@ -256,6 +259,7 @@ in-memory fakes and prints a cited answer.
 | --- | --- |
 | Run it locally | [`docs/runbooks/setup.md`](docs/runbooks/setup.md) |
 | Deploy to AWS and approval gates | [`docs/runbooks/deploy-single-instance.md`](docs/runbooks/deploy-single-instance.md) |
+| Moving the site to a new domain | [`docs/runbooks/change-domain.md`](docs/runbooks/change-domain.md) |
 | Repository settings for maintainers | [`docs/runbooks/repository-settings.md`](docs/runbooks/repository-settings.md) |
 | Accounts, roles, groups and consent | [`docs/runbooks/accounts.md`](docs/runbooks/accounts.md), [`sharing.md`](docs/runbooks/sharing.md) |
 | Models, keys and services | [`docs/runbooks/models.md`](docs/runbooks/models.md), [`integrations.md`](docs/runbooks/integrations.md), [`secrets.md`](docs/runbooks/secrets.md) |
