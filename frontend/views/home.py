@@ -137,7 +137,7 @@ def _recent(client: ApiClient, library_page: object) -> None:
         st.info("Recordings appear here once communities share them openly.")
     for column, item in zip(st.columns(RECENT), items, strict=False):
         with column:
-            library.card(client, client.public_recording_media, item)
+            library.card(client, client.public_recording_media, item, library_page)
     st.page_link(
         library_page, label="See everything in the Library", icon=":material/arrow_forward:"
     )  # type: ignore[arg-type]

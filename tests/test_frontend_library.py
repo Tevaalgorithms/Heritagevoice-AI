@@ -81,3 +81,21 @@ def test_the_filter_choices_cover_every_language_and_kind_and_start_with_any():
     assert list(language_options().values())[0] == ""
     assert {"ta", "hi", "te", "fr"} <= set(language_options().values())
     assert set(kind_options().values()) == {"", "story", "song", "lesson", "practice", "remedy"}
+
+
+def test_a_short_passage_is_shown_whole_and_a_long_one_is_cut_at_a_word():
+    from frontend.views.library import PREVIEW_CHARS, snapshot  # noqa: PLC0415
+
+    assert snapshot("யானைக்கும் அடி சறுக்கும்") == "யானைக்கும் அடி சறுக்கும்"
+    long = " ".join(["கதை"] * 100)
+    cut = snapshot(long)
+    assert cut.endswith("…")
+    assert len(cut) <= PREVIEW_CHARS + 1
+    assert cut[:-1].split() == ["கதை"] * len(cut[:-1].split())  # no half words
+
+
+def test_the_snapshot_does_not_leave_dangling_punctuation_or_break_a_single_long_word():
+    from frontend.views.library import snapshot  # noqa: PLC0415
+
+    assert snapshot("one two three, " + "x" * 120, 20) == "one two three…"
+    assert snapshot("y" * 150, 20) == "y" * 20 + "…"
