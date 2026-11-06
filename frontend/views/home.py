@@ -73,15 +73,15 @@ def _section(title: str, text: str) -> None:
     )
 
 
-def _speak_instead(client: ApiClient) -> tuple[str, bytes | None, bool]:
-    """A small 'speak instead' box in the search form: language, a recording and a button that
-    fills the words box. Returns the language, the clip (if any) and whether the button was used."""
+def _speak_instead(client: ApiClient) -> None:
+    """Say the words instead of typing them. They appear in the box above as soon as the
+    recording stops; nothing else needs pressing. Outside the form, so it can fill the box."""
     with st.expander("Speak instead", icon=":material/mic:"):
         st.caption(voice.HELP)
         label = str(st.selectbox("Language you will speak", list(LANGUAGE_CHOICES), key=VOICE_LANG))
-        recorded = st.audio_input("Say a word or idea", key="home-voice")
-        pressed = st.form_submit_button("Put my words in the box", key="home-voice-go")
-    return label, None if recorded is None else recorded.getvalue(), pressed
+        recorded = st.audio_input("Say a word or idea, then stop", key="home-voice")
+        if recorded is not None:
+            voice.hear_once(client, label, recorded.getvalue(), "home")
 
 
 def _search_card(client: ApiClient, library_page: object) -> None:
@@ -101,24 +101,11 @@ def _search_card(client: ApiClient, library_page: object) -> None:
         language = left.selectbox("Language spoken", list(library.language_options()))
         kind = right.selectbox("Kind", list(library.kind_options()))
         go = st.form_submit_button("Search", type="primary", use_container_width=True)
-        # After Search on purpose: Enter in the box presses the form's first submit button.
-        language_label, clip, spoke = _speak_instead(client)
         st.caption("Reading and listening to what communities share openly needs no account.")
-    if spoke:
-        _fill_from_voice(client, language_label, clip)
-    elif go:
+    _speak_instead(client)
+    if go:
         st.session_state[library.PENDING] = (words.strip(), language, kind)
         st.switch_page(library_page)  # type: ignore[arg-type]
-
-
-def _fill_from_voice(client: ApiClient, language: str, clip: bytes | None) -> None:
-    if clip is None:
-        st.warning("Press the microphone, say a few words, then press the button again.")
-        return
-    heard = voice.heard_words(client, language, clip)
-    if heard:
-        st.session_state[HEARD] = heard
-        st.rerun()
 
 
 def _intro(client: ApiClient, sign_in: Callable[[], None], library_page: object) -> None:

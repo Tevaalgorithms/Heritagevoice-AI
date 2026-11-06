@@ -83,16 +83,14 @@ def _card(client: ApiClient, item: ConnectionItem) -> None:
 
 
 def _voice(client: ApiClient) -> None:
-    """Say a name or idea instead of typing it. The recording is deleted as soon as it is heard."""
+    """Say a name or idea instead of typing it. The words appear in the box as soon as the
+    recording stops, and the search runs from them. The recording is deleted once understood."""
     with st.expander("Search by voice", icon=":material/mic:"):
         st.caption(voice.HELP)
         label = st.selectbox("Language you will speak", list(LANGUAGE_CHOICES), index=0)
-        recorded = st.audio_input("Say a name or idea", key="connections-voice")
-        if st.button("Search with my voice", disabled=recorded is None) and recorded is not None:
-            heard = voice.heard_words(client, str(label), recorded.getvalue())
-            if heard:
-                st.session_state[HEARD] = heard
-                st.rerun()
+        recorded = st.audio_input("Say a name or idea, then stop", key="connections-voice")
+        if recorded is not None:
+            voice.hear_once(client, str(label), recorded.getvalue(), "connections")
 
 
 def _search() -> str:
