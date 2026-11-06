@@ -127,3 +127,13 @@ def test_it_is_unavailable_when_speech_to_text_is_not_set_up(client):
     app.dependency_overrides.pop(get_search_voice_deps)
     response = speak(client, VISITOR)
     assert response.status_code in (500, 503)
+
+
+def test_a_full_stop_and_a_hmm_in_the_transcript_do_not_reach_the_search_box():
+    said = [Segment(segment_id="s1", start_s=0, end_s=2, text="Hmm... பணிவு.")]
+    assert hear(Spoken(wav_bytes(2.0), "ta"), deps(FakeTranscriber(said))) == "பணிவு"
+
+
+def test_only_a_hmm_counts_as_silence():
+    said = [Segment(segment_id="s1", start_s=0, end_s=2, text="Hmm...")]
+    assert hear(Spoken(wav_bytes(2.0), "ta"), deps(FakeTranscriber(said))) == ""

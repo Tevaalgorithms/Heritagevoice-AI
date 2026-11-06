@@ -17,6 +17,7 @@ from app.models.evidence import Evidence
 from app.models.records import GraphAssertion, Relation
 from app.qa import to_citation
 from app.retrieval.evidence_store import hydrate
+from app.search_text import clean_search_text
 from app.security.permissions import Principal
 
 CANDIDATE_FACTOR = 4
@@ -71,11 +72,21 @@ def _translations(
     return {a: readable[c].passage for a, c in chunk_of.items() if c in readable}
 
 
+def _matching(session: Session, text: str, limit: int) -> list[GraphAssertion]:
+    """Approved relationships that name the words in `text`, ignoring punctuation. Typing only
+    punctuation finds nothing (rather than everything); typing nothing shows the newest."""
+    words = clean_search_text(text)
+    if words == "" and text.strip():
+        return []
+    return GraphAssertionRepository(session).approved_matching(words, limit)
+
+
 def find_connections(
     session: Session, principal: Principal, text: str, limit: int
 ) -> list[Connection]:
-    """Approved relationships naming `text` (the newest if empty) that this reader may see."""
-    candidates = GraphAssertionRepository(session).approved_matching(text, limit * CANDIDATE_FACTOR)
+    """Approved relationships naming `text` (the newest if empty) that this reader may see.
+    Punctuation in `text` is ignored, so "பணிவு." finds what "பணிவு" finds."""
+    candidates = _matching(session, text, limit * CANDIDATE_FACTOR)
     chunk_of = supporting_chunks(session, {a.id: a for a in candidates})
     readable = _readable(session, principal, chunk_of)
     shown = _readable_assertions(candidates, chunk_of, readable)[:limit]

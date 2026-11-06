@@ -10,6 +10,7 @@ from uuid import uuid4
 
 from app.audio import AudioRules, check_language, validate_audio
 from app.ports import AudioStore, Transcriber
+from app.search_text import clean_search_text
 from app.voice_correction import Spoken
 
 SEARCH_MAX_SECONDS = 15.0  # a name or an idea, not a story
@@ -35,7 +36,7 @@ def short_rules(rules: AudioRules) -> AudioRules:
 
 
 def hear(spoken: Spoken, deps: SearchVoiceDeps) -> str:
-    """The words in the clip, or an empty string if nothing could be made out."""
+    """The words in the clip, without punctuation or "hmm"; empty if nothing could be made out."""
     rules = short_rules(deps.rules)
     check_language(spoken.language, rules)
     validate_audio(spoken.data, rules)
@@ -45,4 +46,4 @@ def hear(spoken: Spoken, deps: SearchVoiceDeps) -> str:
         segments = deps.transcriber.transcribe(key, spoken.language)
     finally:
         deps.store.delete(key)
-    return " ".join(segment.text for segment in segments).strip()
+    return clean_search_text(" ".join(segment.text for segment in segments), drop_fillers=True)

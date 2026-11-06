@@ -267,3 +267,16 @@ def test_no_translation_is_shown_when_there_is_none_or_it_is_no_longer_current(e
     (stale,) = found(other)
     assert stale.translation == ""
     assert stale.passage  # the original words are still shown
+
+
+def test_punctuation_in_a_search_is_ignored(engine):
+    seed(engine, [assertion("a1", subject="பணிவு", object="யானை")])
+    for text in ("பணிவு.", "பணிவு,", "!பணிவு?", "  பணிவு  ", "(பணிவு)"):
+        assert [c.assertion_id for c in found(engine, text=text)] == ["a1"], text
+
+
+def test_a_search_of_only_punctuation_finds_nothing_rather_than_everything(engine):
+    seed(engine)
+    assert found(engine, text="...") == []
+    assert found(engine, text="?!") == []
+    assert len(found(engine)) == 1  # an empty search still shows the newest
