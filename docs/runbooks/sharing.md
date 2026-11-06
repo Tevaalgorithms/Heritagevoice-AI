@@ -10,7 +10,7 @@ below; the interface only asks.
 | --- | --- |
 | **Member** (signed in with username and password) | Record or upload audio and MP4 video into a community they belong to. Read the Library: public recordings plus their own communities'. See and edit their own drafts. |
 | **Admin** | Everything a member can, plus: review (approve or reject transcripts and translations), publish, change who may read a recording, manage consent records, models and users. Admins act across all communities. |
-| The old **reviewer** role | Still exists for compatibility but has no review right. Only admins review. |
+| **Coordinator** (the `reviewer` role) | Everything a member can, plus managing groups and consents for the groups they belong to. Has no review right: only admins review. |
 
 An admin cannot approve their own upload; another admin must. A deployment with a single admin can
 turn this off with `HERITAGEVOICE_ALLOW_SELF_REVIEW=true`. That removes a safeguard, so use it only
@@ -21,7 +21,8 @@ until a second admin exists.
 Every recording is one of:
 
 - **Community** (the default): only members of its community can read it.
-- **Public**: every signed-in user can read it in the Library. There is no anonymous access.
+- **Public**: anyone can read it in the Library, with or without an account (visitors see only public
+  recordings, and are rate-limited).
 
 A recording becomes readable by outsiders only when **all** of these hold, and the check is made
 again on every request, so a change takes effect at once:

@@ -26,6 +26,8 @@ recordings, have a native speaker check the transcript, and note the result here
 
 ## Not language-specific yet
 
-The embedding model for vector search has not been chosen or tested on these languages. Run the
-embedding bake-off (`python -m evals.embedding_bakeoff <model>`) on native-speaker examples first.
+Vector search uses `multilingual-e5-large` (1024 dimensions) by default, set by
+`HERITAGEVOICE_EMBEDDING_MODEL`. It is a multilingual default, not a model measured on each of these
+languages: no per-language retrieval results are published yet. To compare models on native-speaker
+examples, run the embedding bake-off (`python -m evals.embedding_bakeoff <model>`).
 Singing and very quiet or noisy recordings transcribe worse than clear speech in any language.

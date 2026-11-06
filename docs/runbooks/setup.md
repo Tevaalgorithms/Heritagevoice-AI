@@ -1,8 +1,10 @@
 # Local setup: web app, API and worker
 
 Start all three processes from a clean clone. Nothing here needs a real API key: the API,
-worker and UI run against a local PostgreSQL, and the AI parts are still fakes (see
-`uv run python -m app.skeleton`).
+worker and UI run against a local PostgreSQL. Without keys the AI steps do not run (no translation,
+no model-written answers) and speech-to-text can be a canned fake locally; add keys (below) to try
+the real thing. For a one-command synthetic run that needs no setup at all, use
+`uv run python -m app.skeleton`.
 
 ## Prerequisites
 
@@ -23,7 +25,7 @@ Edit `.env` (it is git-ignored and must never be committed):
 | --- | --- |
 | `HERITAGEVOICE_DEV_API_TOKEN` | a long random string, local use only (`python -c "import secrets; print(secrets.token_hex(24))"`) |
 | `POSTGRES_PASSWORD` | a long random string |
-| `NEO4J_PASSWORD` | any string for now (Neo4j is not used until the graph work) |
+| `NEO4J_PASSWORD` | any string. Only needed if you start the optional Neo4j container; without Neo4j, relationship questions are answered from the text with a warning |
 | `HERITAGEVOICE_DATABASE_URL` | `postgresql+psycopg://heritagevoice:<POSTGRES_PASSWORD>@127.0.0.1:5432/heritagevoice?connect_timeout=5` |
 
 ## 2. Start PostgreSQL and create the tables
@@ -54,9 +56,9 @@ curl -i http://127.0.0.1:8000/ready       # 200 when PostgreSQL is reachable, ot
 - Every response carries an `X-Trace-ID` header; the same ID appears in the API logs.
 - `/ready` lists each configured dependency (`ok`, `failed`, `not_configured` or `skipped`).
   Unconfigured optional services (for example the audio bucket) are skipped, not failed.
-- The UI is at <http://127.0.0.1:8501>; the sidebar shows the API status. Locally the UI signs in
-  with the development token (see below). `/query` answers "not enough" until a model key is saved
-  on the Settings page.
+- The UI is at <http://127.0.0.1:8501>. Locally it signs in with the development token (see below;
+  set `HERITAGEVOICE_DEV_ROLE=admin` to see every page). Questions get "not enough evidence" until a
+  model key is set (Settings, **Keys and services**, or `HERITAGEVOICE_LLM_API_KEY` in `.env`).
 
 ## Uploading and transcribing a recording
 
@@ -64,8 +66,9 @@ curl -i http://127.0.0.1:8000/ready       # 200 when PostgreSQL is reachable, ot
    git-ignored) and `HERITAGEVOICE_ASR_PROVIDER=fake`, which makes the worker produce a short
    canned draft instead of calling a speech service. The fake is refused outside the local
    environment.
-2. An upload needs a **consent record** for the community. There is no endpoint for creating
-   consents yet; until one exists, insert one with a script (see `tests/helpers.py::consent`).
+2. An upload needs a **consent record** for the group. As an administrator or coordinator, create a
+   group and record what it allows under **Groups and consent** (API: `/admin/consents`), then
+   choose that group and consent when you upload.
 3. Upload in the UI (Upload page) or with curl; the same `Idempotency-Key` returns the same result:
 
    ```sh
@@ -123,18 +126,20 @@ consent, current approved version) before it can reach a prompt.
 
 ## Choosing the language model (admin Settings page)
 
-Admins pick the model and parameters for each job (today: translation) on the **Settings** page,
+Admins pick the model and parameters for each job (translation, supervisor, verifier, answer
+writer and graph extractor) on the **Settings** page,
 or with `GET/PUT/DELETE /admin/models/{role}`. Choices come from a fixed list in
 `app/models/llm.py` (`ALLOWED_MODELS`); to offer a new model, add it there and release. A saved
 setting applies within about a minute without a redeploy; with nothing saved, the server
 defaults (`HERITAGEVOICE_LLM_MODEL` and friends) apply. The **Test** button sends one tiny
 request (a few tokens) with the form values and saves nothing.
 
-**API keys are never entered, shown or stored through the app.** Put the key in AWS Systems
-Manager Parameter Store as a SecureString named `HERITAGEVOICE_LLM_API_KEY` under the
-environment's parameter path (see `deploy/render-config.sh`); it reaches the app as an
-environment variable. Locally, set it in `.env`. The Settings page only says whether a key is
-configured. Without a key, ingestion stops at the draft transcript (no translation).
+**API keys are never shown again after they are saved.** Deployed, an admin pastes a key under
+Settings, **Keys and services**; the server writes it to AWS Systems Manager Parameter Store as an
+encrypted SecureString and forgets it (see [integrations.md](integrations.md) for what is kept and
+the trade-off). You can also create the parameter yourself under the environment's parameter path
+(see `deploy/render-config.sh`). Locally, set the key in `.env`. The Settings page only says whether
+a key is configured. Without a key, ingestion stops at the draft transcript (no translation).
 
 ## Sign-in and roles (Amazon Cognito)
 
@@ -163,7 +168,7 @@ In any other environment only Cognito access tokens are accepted.
 
 3. Create the first admin: invite yourself in the Cognito console, add yourself to the `admin`
    group, then run `uv run python -m app.bootstrap --sub <your Cognito sub>`.
-4. Admins manage everyone else through the API: `POST /admin/users` (invite),
+4. Admins manage everyone else in the **People** page, or through the API: `POST /admin/users` (invite),
    `PUT /admin/users/{sub}/role`, `PUT /admin/users/{sub}/communities` and
    `POST /admin/users/{sub}/disable`. A disabled user is blocked on their next request.
 
@@ -187,5 +192,5 @@ uv run ruff check . && uv run ruff format --check . && uv run mypy \
 | `/ready` returns 503 with `postgres: not_configured` | `HERITAGEVOICE_DATABASE_URL` is not set in `.env` |
 | `/ready` returns 503 with `postgres: failed` | database not running, wrong password, or wrong port |
 | `password authentication failed` | the URL is reaching a different PostgreSQL than the compose one (check the port) |
-| Worker marks jobs `failed` with `no_handler` | expected until the transcription and indexing handlers exist |
-| UI sidebar says the API is unavailable | the API is not running on `HERITAGEVOICE_API_URL` |
+| Worker marks jobs `failed` with a short code (`asr`, `consent`, `no_handler`) | `asr`: the speech service failed or is not configured; `consent`: the consent was withdrawn; `no_handler`: the worker is older than the job kind |
+| The UI says the service is unavailable | the API is not running on `HERITAGEVOICE_API_URL` |
