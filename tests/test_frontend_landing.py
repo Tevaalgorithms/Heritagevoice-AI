@@ -50,3 +50,23 @@ def test_the_about_page_names_who_runs_it_and_links_to_the_code():
     assert about.REPOSITORY.startswith("https://github.com/")
     facts = OrganisationFacts("Example Heritage Trust", "legal@example.org")
     assert facts.operator == "Example Heritage Trust"
+
+
+def test_words_heard_by_voice_are_put_in_the_search_box_before_it_is_drawn():
+    """Streamlit forbids changing a box's value after it is drawn, so the words wait in a
+    separate key and are moved into the box at the start of the next run."""
+    from streamlit.testing.v1 import AppTest  # noqa: PLC0415
+
+    def script():
+        import streamlit as st  # noqa: PLC0415
+
+        from frontend.views import connections  # noqa: PLC0415
+
+        st.write(connections._search())
+
+    app = AppTest.from_function(script)
+    app.session_state["connections-heard"] = "பணிவு"
+    app.run()
+    assert not app.exception
+    assert app.text_input[0].value == "பணிவு"
+    assert "connections-heard" not in app.session_state

@@ -25,6 +25,7 @@ INTRO = (
     "them. Each connection shows the words in the recording that say it."
 )
 QUERY = "connections-q"
+HEARD = "connections-heard"  # words just heard; put in the box before it is drawn
 VOICE_HELP = (
     "Pick your language, record a few words, and the search fills in. The recording is deleted "
     "as soon as it has been understood. It needs no account."
@@ -93,7 +94,7 @@ def _use_voice(client: ApiClient, language: str, audio: bytes) -> None:
         st.error(message_for(error))
         return
     if heard:
-        st.session_state[QUERY] = heard
+        st.session_state[HEARD] = heard
         st.rerun()
     st.warning("I could not make out any words. Try again, a little closer and slower.")
 
@@ -110,6 +111,9 @@ def _voice(client: ApiClient) -> None:
 
 def _search() -> str:
     """The search box with a Search button; returns what to look for."""
+    heard = st.session_state.pop(HEARD, None)
+    if heard:
+        st.session_state[QUERY] = heard  # allowed here: the box is not drawn yet in this run
     with st.form("connections-search", border=False):
         box, button = st.columns([5, 1], vertical_alignment="bottom")
         text = box.text_input(
