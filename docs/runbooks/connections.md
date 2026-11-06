@@ -17,6 +17,10 @@ each with the words in the recording that say it.
 - **Search by voice**: pick the language, record a few words, press the button. The words fill the
   box. Clips are limited to 15 seconds; the recording is deleted as soon as it is heard and nothing
   about it is kept.
+- The Home page search has the same **Speak instead** box. It puts the heard words in the words
+  box; the person then presses Search. It uses the same endpoints and limits.
+- Typed and spoken text is tidied first: punctuation and sounds like "hmm" are ignored, so
+  "பணிவு." finds what "பணிவு" finds.
 - Limits (each use costs a transcription): signed-in readers 6 a minute; a visitor 3 a minute; all
   visitors together 20 a minute. Beyond that the page asks them to wait.
 

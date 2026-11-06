@@ -10,12 +10,16 @@ from collections.abc import Callable
 
 import streamlit as st
 
-from frontend import theme
+from frontend import theme, voice
 from frontend.api_client import ApiClient, ApiError
 from frontend.api_models import LibrarySpec
+from frontend.spoken import LANGUAGE_CHOICES
 from frontend.views import library
 
 RECENT = 3
+WORDS = "home-q"
+HEARD = "home-heard"  # words just heard; put in the box before it is drawn
+VOICE_LANG = "home-voice-language"
 TRUST = ("Shared with consent", "Reviewed by a person", "Credited when the speaker agrees")
 CHECK = (
     "<svg viewBox='0 0 24 24' width='18' height='18' fill='none' stroke='#B4532A' "
@@ -69,25 +73,55 @@ def _section(title: str, text: str) -> None:
     )
 
 
-def _search_card(library_page: object) -> None:
-    """Search from the Home page: the Library opens with these words and choices filled in."""
+def _speak_instead(client: ApiClient) -> tuple[str, bytes | None, bool]:
+    """A small 'speak instead' box in the search form: language, a recording and a button that
+    fills the words box. Returns the language, the clip (if any) and whether the button was used."""
+    with st.expander("Speak instead", icon=":material/mic:"):
+        st.caption(voice.HELP)
+        label = str(st.selectbox("Language you will speak", list(LANGUAGE_CHOICES), key=VOICE_LANG))
+        recorded = st.audio_input("Say a word or idea", key="home-voice")
+        pressed = st.form_submit_button("Put my words in the box", key="home-voice-go")
+    return label, None if recorded is None else recorded.getvalue(), pressed
+
+
+def _search_card(client: ApiClient, library_page: object) -> None:
+    """Search from the Home page, typing or speaking: the Library opens with these words and
+    choices filled in."""
+    heard = st.session_state.pop(HEARD, None)
+    if heard:
+        st.session_state[WORDS] = heard  # allowed here: the box is not drawn yet in this run
     with st.form("home-search", border=False):
         st.markdown("#### Search the shared heritage")
         words = st.text_input(
-            "Search by words, in any language",
+            "Search by words, in any language: type or speak",
             placeholder="For example: harvest, grandmother, humility",
+            key=WORDS,
         )
         left, right = st.columns(2)
         language = left.selectbox("Language spoken", list(library.language_options()))
         kind = right.selectbox("Kind", list(library.kind_options()))
         go = st.form_submit_button("Search", type="primary", use_container_width=True)
+        # After Search on purpose: Enter in the box presses the form's first submit button.
+        language_label, clip, spoke = _speak_instead(client)
         st.caption("Reading and listening to what communities share openly needs no account.")
-    if go:
+    if spoke:
+        _fill_from_voice(client, language_label, clip)
+    elif go:
         st.session_state[library.PENDING] = (words.strip(), language, kind)
         st.switch_page(library_page)  # type: ignore[arg-type]
 
 
-def _intro(sign_in: Callable[[], None], library_page: object) -> None:
+def _fill_from_voice(client: ApiClient, language: str, clip: bytes | None) -> None:
+    if clip is None:
+        st.warning("Press the microphone, say a few words, then press the button again.")
+        return
+    heard = voice.heard_words(client, language, clip)
+    if heard:
+        st.session_state[HEARD] = heard
+        st.rerun()
+
+
+def _intro(client: ApiClient, sign_in: Callable[[], None], library_page: object) -> None:
     left, right = st.columns([5, 4], gap="large")
     with left:
         st.markdown(
@@ -102,7 +136,7 @@ def _intro(sign_in: Callable[[], None], library_page: object) -> None:
         share.button("Share a recording", icon=":material/mic:", on_click=sign_in)
         st.markdown(_trust_html(), unsafe_allow_html=True)
     with right:
-        _search_card(library_page)
+        _search_card(client, library_page)
 
 
 def _recent(client: ApiClient, library_page: object) -> None:
@@ -125,7 +159,7 @@ def _recent(client: ApiClient, library_page: object) -> None:
 def render(client: ApiClient, sign_in: Callable[[], None], library_page: object) -> None:
     """The landing page for visitors."""
     st.image(str(theme.BANNER), use_container_width=True)
-    _intro(sign_in, library_page)
+    _intro(client, sign_in, library_page)
     with theme.band("how"):
         _section("How it works", "From a voice to an answer you can trace back to who said it.")
         st.markdown(theme.cards_html(HOW, 3, "steps"), unsafe_allow_html=True)
