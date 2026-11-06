@@ -120,6 +120,18 @@ def sign_in_button(on_click: Callable[[], None], label: str = "Sign in securely"
     )
 
 
+def kinds_and_languages() -> None:
+    """What we preserve, and the languages the service speaks, for the landing page."""
+    st.markdown(_kind_chips(), unsafe_allow_html=True)
+    st.markdown(_languages(), unsafe_allow_html=True)
+
+
+def cards_html(items: tuple[tuple[str, str], ...], columns: int) -> str:
+    """Titled cards in a grid of `columns`. The titles and texts are fixed strings in the code."""
+    cards = "".join(f"<div class='hv-card'><b>{t}</b><p>{d}</p></div>" for t, d in items)
+    return f"<div class='hv-cards cols{columns}'>{cards}</div>"
+
+
 def landing_details() -> None:
     """What the project stands for, shown below the sign-in button."""
     st.markdown(_cards(), unsafe_allow_html=True)

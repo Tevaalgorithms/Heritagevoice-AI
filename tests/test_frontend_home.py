@@ -6,7 +6,7 @@ import httpx
 from streamlit.testing.v1 import AppTest
 
 from frontend.api_client import ApiClient, LibrarySpec
-from frontend.views.home import CREATE_LABEL, OPEN_NOTE, SIGN_IN_LABEL
+from frontend.views.home import CREATE_LABEL, SIGN_IN_LABEL
 
 APP = Path(__file__).resolve().parents[1] / "frontend" / "streamlit_app.py"
 ITEM = {
@@ -63,15 +63,17 @@ def visitor_app(monkeypatch):
     return AppTest.from_file(str(APP), default_timeout=20).run()
 
 
-def test_a_visitor_sees_the_search_and_the_sign_in_choice_without_an_error(monkeypatch):
+def test_a_visitor_sees_the_landing_page_and_the_sign_in_choice_without_an_error(monkeypatch):
     app = visitor_app(monkeypatch)
     assert not app.exception
     text = " ".join(m.value for m in app.markdown)
-    assert "Search the shared heritage" in text
+    assert "Every elder's voice is a library." in text
+    assert "How it works" in text
+    assert "What we hold to" in text
     labels = [b.label for b in app.button]
     assert SIGN_IN_LABEL in labels
     assert CREATE_LABEL in labels
-    assert any(OPEN_NOTE in c.value for c in app.caption)
+    assert "Browse the Library" in labels
 
 
 def test_a_visitor_is_never_shown_the_signed_in_sections(monkeypatch):

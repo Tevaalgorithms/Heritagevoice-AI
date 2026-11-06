@@ -14,6 +14,7 @@ from frontend.legal import PAGES, LegalPage, OrganisationFacts
 from frontend.messages import message_for
 from frontend.shell import footer, logo, member_account, visitor_account
 from frontend.views import (
+    about,
     ask,
     connections,
     groups,
@@ -168,18 +169,24 @@ def _run_for_visitors(settings: Settings, facts: OrganisationFacts) -> None:
     def sign_in() -> None:
         st.login(COGNITO_PROVIDER)
 
-    home = st.Page(
-        lambda: home_view.render(client, sign_in),
-        title="Home",
-        icon=":material/home:",
-        url_path="home",
-        default=True,
-    )
     shelf = st.Page(
         lambda: library.render_public(client),
         title="Library",
         icon=":material/menu_book:",
         url_path="library",
+    )
+    home = st.Page(
+        lambda: home_view.render(client, sign_in, shelf),
+        title="Home",
+        icon=":material/home:",
+        url_path="home",
+        default=True,
+    )
+    how = st.Page(
+        about.render_how, title="How it works", icon=":material/route:", url_path="how-it-works"
+    )
+    why = st.Page(
+        lambda: about.render_about(facts), title="About", icon=":material/info:", url_path="about"
     )
     links = _page(
         connections.render,
@@ -192,7 +199,7 @@ def _run_for_visitors(settings: Settings, facts: OrganisationFacts) -> None:
     contact = next(page for page in legal if page.visibility == "visible")  # type: ignore[attr-defined]
     logo()
     visitor_account(sign_in)
-    _navigate([home, shelf, links, contact], legal, facts)
+    _navigate([home, shelf, links, how, why, contact], legal, facts)
 
 
 def _run_session_expired(facts: OrganisationFacts) -> None:
