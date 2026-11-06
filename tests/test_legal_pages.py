@@ -95,3 +95,15 @@ def test_the_organisation_details_can_be_set_from_the_environment():
     )
     assert (facts.operator, facts.contact) == ("Example Trust", "hello@example.org")
     assert OrganisationFacts.from_environment({}).operator == "HeritageVoice Collective"
+
+
+@pytest.mark.parametrize("page", PAGES, ids=lambda p: p.slug)
+def test_each_page_has_its_own_one_line_summary(page):
+    assert 20 < len(page.summary) < 100
+    assert page.summary.endswith(".")
+
+
+def test_no_two_pages_share_a_summary_and_none_is_the_old_generic_line():
+    summaries = [page.summary for page in PAGES]
+    assert len(set(summaries)) == len(summaries)
+    assert not any("read this carefully" in s for s in summaries)

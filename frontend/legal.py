@@ -29,14 +29,45 @@ class LegalPage:
     title: str
     file: str
     icon: str
+    summary: str  # one line under the title, specific to the page
 
 
 PAGES = (
-    LegalPage("terms", "Terms of Use", "terms.md", ":material/gavel:"),
-    LegalPage("privacy", "Privacy Notice", "privacy.md", ":material/shield:"),
-    LegalPage("acceptable-use", "Acceptable Use", "acceptable-use.md", ":material/rule:"),
-    LegalPage("accessibility", "Accessibility", "accessibility.md", ":material/accessibility_new:"),
-    LegalPage("contact", "Contact and takedown", "contact.md", ":material/mail:"),
+    LegalPage(
+        "terms",
+        "Terms of Use",
+        "terms.md",
+        ":material/gavel:",
+        "The rules for using HeritageVoice AI. They apply to everyone.",
+    ),
+    LegalPage(
+        "privacy",
+        "Privacy Notice",
+        "privacy.md",
+        ":material/shield:",
+        "What we collect, why we collect it, and the choices you have.",
+    ),
+    LegalPage(
+        "acceptable-use",
+        "Acceptable Use",
+        "acceptable-use.md",
+        ":material/rule:",
+        "What is welcome here, and what is not.",
+    ),
+    LegalPage(
+        "accessibility",
+        "Accessibility",
+        "accessibility.md",
+        ":material/accessibility_new:",
+        "How we aim to serve everyone, and how to tell us about a problem.",
+    ),
+    LegalPage(
+        "contact",
+        "Contact and takedown",
+        "contact.md",
+        ":material/mail:",
+        "How to reach us, and how to ask for a recording to be removed.",
+    ),
 )
 
 

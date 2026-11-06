@@ -137,7 +137,8 @@ def _run_for_visitors(settings: Settings, facts: OrganisationFacts) -> None:
         default=True,
     )
     theme.brand()
-    st.navigation({"Explore": [home], "Legal": _legal_pages(facts)}).run()
+    # One page: no heading over it (a heading is for a group of pages).
+    st.navigation({"": [home], "Legal": _legal_pages(facts)}).run()
 
 
 def _run_session_expired(facts: OrganisationFacts) -> None:
