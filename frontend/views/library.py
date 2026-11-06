@@ -6,6 +6,7 @@ is always shown next to the passage.
 """
 
 from collections.abc import Callable
+from html import escape
 
 import streamlit as st
 
@@ -82,8 +83,8 @@ def _origin(item: LibraryItem) -> str:
 
 
 def card(client: ApiClient, play: Fetch, item: LibraryItem) -> None:
-    with st.container(border=True):
-        st.markdown(f"**{_heading(item)}**")
+    with theme.card(item.evidence_id):
+        st.markdown(f"<div class='hv-kind'>{escape(_heading(item))}</div>", unsafe_allow_html=True)
         for notice in item.notices:
             st.warning(notice, icon=":material/health_and_safety:")
         st.markdown(theme.passage_html(item.passage), unsafe_allow_html=True)

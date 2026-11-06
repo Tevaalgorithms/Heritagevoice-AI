@@ -71,7 +71,7 @@ def _steps_html() -> str:
 
 def _account_card(sign_in: Callable[[], None]) -> None:
     """Where contributors and administrators start. Everyone signs in the same secure way."""
-    with st.container(border=True):
+    with theme.card("share"):
         st.markdown("#### Share your heritage")
         st.markdown(_steps_html(), unsafe_allow_html=True)
         st.button(

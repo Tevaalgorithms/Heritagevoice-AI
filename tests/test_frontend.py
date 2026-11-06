@@ -103,3 +103,4 @@ def test_a_visitor_gets_a_sign_in_button_at_the_top_and_no_error(monkeypatch):
     app = AppTest.from_file(str(APP), default_timeout=20).run()
     assert not app.exception
     assert any(b.key == "hv-header-signin" for b in app.button)
+    assert any(b.key == "hv-header-create" for b in app.button)

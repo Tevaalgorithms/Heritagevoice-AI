@@ -9,6 +9,7 @@ from html import escape
 
 import streamlit as st
 
+from frontend import theme
 from frontend.api_client import AccountView, ApiClient, ApiError, GroupView
 from frontend.messages import message_for
 from frontend.roles import ROLE_CHOICES, role_label
@@ -87,7 +88,7 @@ def _note(person: AccountView) -> str | None:
 
 def _card(client: ApiClient, person: AccountView, groups: list[GroupView]) -> None:
     names = {g.id: g.name for g in groups}
-    with st.container(border=True):
+    with theme.card(f"account-{person.sub}"):
         st.markdown(_title(person), unsafe_allow_html=True)
         where = describe_groups(person.communities, names)
         st.caption(f"Joined {person.created} · Groups: {where}")

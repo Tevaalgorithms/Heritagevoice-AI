@@ -132,7 +132,7 @@ def _modify(client: ApiClient, item: AssertionView) -> None:
 
 
 def _pending_card(client: ApiClient, item: AssertionView) -> None:
-    with st.container(border=True):
+    with theme.card(f"pending-{item.id}"):
         st.markdown(_headline(item), unsafe_allow_html=True)
         _source(item)
         approve, reject, _ = st.columns([1, 1, 3])
@@ -144,7 +144,7 @@ def _pending_card(client: ApiClient, item: AssertionView) -> None:
 
 
 def _approved_card(client: ApiClient, item: AssertionView) -> None:
-    with st.container(border=True):
+    with theme.card(f"approved-{item.id}"):
         st.markdown(_headline(item), unsafe_allow_html=True)
         _source(item)
         if st.button("Withdraw", key=f"withdraw-{item.id}", help="Remove it from the graph."):

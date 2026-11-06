@@ -6,6 +6,7 @@ This page can only say whether each one is set. Plain settings (an index name) a
 
 import streamlit as st
 
+from frontend import theme
 from frontend.api_client import (
     ApiClient,
     ApiError,
@@ -107,7 +108,7 @@ def _field(client: ApiClient, item: IntegrationItem) -> None:
 
 
 def _item(client: ApiClient, item: IntegrationItem) -> None:
-    with st.container(border=True):
+    with theme.card(f"setting-{item.name}"):
         head, status = st.columns([4, 1])
         head.markdown(f"**{item.label}**" + (" · not used yet" if item.planned else ""))
         status.markdown(f":green[**{_status(item)}**]" if item.configured else _status(item))
