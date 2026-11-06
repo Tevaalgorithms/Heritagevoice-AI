@@ -3,7 +3,8 @@
 #
 #   render-config.sh /heritagevoice/<env> /path/to/config.env
 #
-# config.env holds the non-secret settings (written by cloud-init from Terraform values).
+# config.env holds the non-secret settings (written by cloud-init from Terraform values). A
+# parameter of the same name in Parameter Store takes precedence.
 # Secrets are read from AWS SSM Parameter Store (SecureString) under the given path, using the
 # instance's IAM role; nothing secret is stored in the repository, the image or Terraform state.
 # Output (mode 0600): /etc/heritagevoice/app.env (root only) and /etc/heritagevoice/secrets.toml,
@@ -27,6 +28,13 @@ aws ssm get-parameters-by-path --path "$PARAM_PATH" --with-decryption \
     [[ "$value" =~ $SAFE_VALUE ]] || { echo "Parameter ${name##*/} has unsupported characters" >&2; exit 1; }
     echo "${name##*/}=$value"
   done >>"$tmp"
+
+# One line per setting, and a Parameter Store value replaces the same setting from config.env (which
+# cloud-init wrote once, at first boot). This is how the site's domain, or any other first-boot
+# setting, is changed later without rebuilding the host.
+awk -F= '{ if (!($1 in seen)) order[n++] = $1; seen[$1] = $0 }
+         END { for (i = 0; i < n; i++) print seen[order[i]] }' "$tmp" >"$tmp.one"
+mv "$tmp.one" "$tmp"
 
 get() { grep -m1 "^$1=" "$tmp" | cut -d= -f2- || true; }
 require() { [[ -n "$(get "$1")" ]] || { echo "Missing setting: $1" >&2; exit 1; }; }
