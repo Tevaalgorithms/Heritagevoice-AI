@@ -16,6 +16,12 @@ from frontend.api_models import LibrarySpec
 from frontend.views import library
 
 RECENT = 3
+TRUST = ("Shared with consent", "Reviewed by a person", "Credited when the speaker agrees")
+CHECK = (
+    "<svg viewBox='0 0 24 24' width='18' height='18' fill='none' stroke='#B4532A' "
+    "stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='M20 6 9 17l-5-5'/>"
+    "</svg>"
+)
 HOW = (
     (
         "Record in your own language",
@@ -49,6 +55,12 @@ PRINCIPLES = (
         "Families and groups choose who may hear what, and can change their mind later.",
     ),
 )
+
+
+def _trust_html() -> str:
+    """The product's three promises as a short line of checks, fixed text."""
+    items = "".join(f"<li>{CHECK}<span>{text}</span></li>" for text in TRUST)
+    return f"<ul class='hv-trust'>{items}</ul>"
 
 
 def _section(title: str, text: str) -> None:
@@ -88,6 +100,7 @@ def _intro(sign_in: Callable[[], None], library_page: object) -> None:
         if browse.button("Browse the Library", type="primary", icon=":material/menu_book:"):
             st.switch_page(library_page)  # type: ignore[arg-type]
         share.button("Share a recording", icon=":material/mic:", on_click=sign_in)
+        st.markdown(_trust_html(), unsafe_allow_html=True)
     with right:
         _search_card(library_page)
 
@@ -113,13 +126,16 @@ def render(client: ApiClient, sign_in: Callable[[], None], library_page: object)
     """The landing page for visitors."""
     st.image(str(theme.BANNER), use_container_width=True)
     _intro(sign_in, library_page)
-    _section("How it works", "From a voice to an answer you can trace back to who said it.")
-    st.markdown(theme.cards_html(HOW, 3, "steps"), unsafe_allow_html=True)
+    with theme.band("how"):
+        _section("How it works", "From a voice to an answer you can trace back to who said it.")
+        st.markdown(theme.cards_html(HOW, 3, "steps"), unsafe_allow_html=True)
     _section("What we hold to", "The rules the product is built around.")
     st.markdown(theme.cards_html(PRINCIPLES, 4, "principles"), unsafe_allow_html=True)
-    _recent(client, library_page)
-    theme.kinds_and_languages()
-    theme.footer()
+    with theme.band("recent"):
+        _recent(client, library_page)
+    theme.kinds()
+    theme.languages_band()
+    theme.footer(languages=False)
 
 
 def render_expired(sign_out: Callable[[], None]) -> None:
