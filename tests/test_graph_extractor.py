@@ -199,3 +199,24 @@ def test_a_saying_is_never_linked_to_a_word_that_is_part_of_it():
     assert _part_of("Amma", "amma")
     assert not _part_of("யானைக்கும் அடி சறுக்கும்", "தவறு")  # the lesson is a different thing
     assert not _part_of("பொன்னம்மா", "நல்லூர்")
+
+
+def test_the_second_proverb_keeps_its_lesson_and_drops_links_to_its_own_words():
+    """கற்றது கைமண் அளவு கல்லாதது உலகளவு: what is learned is a handful of soil, what is not is the
+    size of the world. It teaches humility, not 'about the soil' or 'about what is learned'."""
+    saying = "கற்றது கைமண் அளவு கல்லாதது உலகளவு"
+    src = source(
+        [Segment(segment_id="s1", start_s=1, end_s=4.5, text=saying + ".", speaker="unknown")]
+    )
+    found = extract(
+        proposal(saying, "கைமண்", relation=Relation.DESCRIBES),  # a word inside the saying
+        proposal(saying, "கற்றது", relation=Relation.TEACHES),  # the first word of the saying
+        proposal(saying, "உலகளவு", relation=Relation.MENTIONS),  # the last word
+        proposal(saying, "பணிவு", relation=Relation.TEACHES),  # the lesson
+        proposal(saying, "தவறு", relation=Relation.TEACHES),  # a different lesson is not rejected
+        src=src,
+    )
+    assert [(a.relation, a.object) for a in found] == [
+        (Relation.TEACHES, "பணிவு"),
+        (Relation.TEACHES, "தவறு"),
+    ]
