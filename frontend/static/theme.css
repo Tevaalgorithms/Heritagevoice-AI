@@ -114,3 +114,12 @@ input, textarea, [data-baseweb="select"] > div { border-radius: 10px !important;
 [data-testid="stSidebarNav"] a:hover { background: rgba(255,255,255,.07); }
 [data-testid="stSidebarNav"] a[aria-current="page"] { background: rgba(217,138,43,.2); box-shadow: inset 3px 0 0 #D98A2B; }
 [data-testid="stSidebarNav"] a[aria-current="page"] * { color: #FFF7E6; font-weight: 600; }
+/* The legal pages stay reachable but quieter than the working pages. A section heading with no
+   text (the visitor's single Home page) takes no space. */
+[data-testid="stNavSectionHeader"]:empty { display: none; }
+[data-testid="stSidebarNav"] a[href$="/terms"], [data-testid="stSidebarNav"] a[href$="/privacy"],
+[data-testid="stSidebarNav"] a[href$="/acceptable-use"], [data-testid="stSidebarNav"] a[href$="/accessibility"],
+[data-testid="stSidebarNav"] a[href$="/contact"] { padding: .3rem .75rem; font-size: .84rem; opacity: .78; }
+[data-testid="stSidebarNav"] a[href$="/terms"]:hover, [data-testid="stSidebarNav"] a[href$="/privacy"]:hover,
+[data-testid="stSidebarNav"] a[href$="/acceptable-use"]:hover, [data-testid="stSidebarNav"] a[href$="/accessibility"]:hover,
+[data-testid="stSidebarNav"] a[href$="/contact"]:hover { opacity: 1; }
