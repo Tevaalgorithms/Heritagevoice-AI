@@ -15,14 +15,7 @@ from frontend.api_client import ApiClient, ApiError
 from frontend.api_models import LibrarySpec
 from frontend.views import library
 
-SIGN_IN_LABEL = "Sign in"
-CREATE_LABEL = "Create an account"
 RECENT = 3
-STEPS = (
-    ("Create an account", "Choose Sign up on the next page and confirm your email."),
-    ("We approve it", "An administrator checks the request and links you to your group."),
-    ("Add recordings", "Sign in, record or upload, and tell us what may be shared."),
-)
 HOW = (
     (
         "Record in your own language",
@@ -64,35 +57,26 @@ def _section(title: str, text: str) -> None:
     )
 
 
-def _steps_html() -> str:
-    items = "".join(f"<li><b>{title}</b><span>{text}</span></li>" for title, text in STEPS)
-    return f"<ol class='hv-steps'>{items}</ol>"
-
-
-def _account_card(sign_in: Callable[[], None]) -> None:
-    """Where contributors and administrators start. Everyone signs in the same secure way."""
-    with theme.card("share"):
-        st.markdown("#### Share your heritage")
-        st.markdown(_steps_html(), unsafe_allow_html=True)
-        st.button(
-            SIGN_IN_LABEL,
-            icon=":material/login:",
-            type="primary",
-            use_container_width=True,
-            on_click=sign_in,
-            key="hv-sign-in",
+def _search_card(library_page: object) -> None:
+    """Search from the Home page: the Library opens with these words and choices filled in."""
+    with st.form("home-search", border=False):
+        st.markdown("#### Search the shared heritage")
+        words = st.text_input(
+            "Search by words, in any language",
+            placeholder="For example: harvest, grandmother, humility",
         )
-        st.button(
-            CREATE_LABEL,
-            icon=":material/person_add:",
-            use_container_width=True,
-            on_click=sign_in,
-            key="hv-create-account",
-        )
+        left, right = st.columns(2)
+        language = left.selectbox("Language spoken", list(library.language_options()))
+        kind = right.selectbox("Kind", list(library.kind_options()))
+        go = st.form_submit_button("Search", type="primary", use_container_width=True)
+        st.caption("Reading and listening to what communities share openly needs no account.")
+    if go:
+        st.session_state[library.PENDING] = (words.strip(), language, kind)
+        st.switch_page(library_page)  # type: ignore[arg-type]
 
 
 def _intro(sign_in: Callable[[], None], library_page: object) -> None:
-    left, right = st.columns([5, 3], gap="large")
+    left, right = st.columns([5, 4], gap="large")
     with left:
         st.markdown(
             "<div class='hv-title'>Every elder's voice is a library.</div>"
@@ -100,12 +84,12 @@ def _intro(sign_in: Callable[[], None], library_page: object) -> None:
             "knowledge alive, in their own voices and with their consent.</p>",
             unsafe_allow_html=True,
         )
-        browse, share = st.columns(2)
+        browse, share, _ = st.columns([4, 4, 2])
         if browse.button("Browse the Library", type="primary", icon=":material/menu_book:"):
             st.switch_page(library_page)  # type: ignore[arg-type]
         share.button("Share a recording", icon=":material/mic:", on_click=sign_in)
     with right:
-        _account_card(sign_in)
+        _search_card(library_page)
 
 
 def _recent(client: ApiClient, library_page: object) -> None:
@@ -117,8 +101,9 @@ def _recent(client: ApiClient, library_page: object) -> None:
         items = []
     if not items:
         st.info("Recordings appear here once communities share them openly.")
-    for item in items:
-        library.card(client, client.public_recording_media, item)
+    for column, item in zip(st.columns(RECENT), items, strict=False):
+        with column:
+            library.card(client, client.public_recording_media, item)
     st.page_link(
         library_page, label="See everything in the Library", icon=":material/arrow_forward:"
     )  # type: ignore[arg-type]
@@ -129,9 +114,9 @@ def render(client: ApiClient, sign_in: Callable[[], None], library_page: object)
     st.image(str(theme.BANNER), use_container_width=True)
     _intro(sign_in, library_page)
     _section("How it works", "From a voice to an answer you can trace back to who said it.")
-    st.markdown(theme.cards_html(HOW, 3), unsafe_allow_html=True)
+    st.markdown(theme.cards_html(HOW, 3, "steps"), unsafe_allow_html=True)
     _section("What we hold to", "The rules the product is built around.")
-    st.markdown(theme.cards_html(PRINCIPLES, 4), unsafe_allow_html=True)
+    st.markdown(theme.cards_html(PRINCIPLES, 4, "principles"), unsafe_allow_html=True)
     _recent(client, library_page)
     theme.kinds_and_languages()
     theme.footer()

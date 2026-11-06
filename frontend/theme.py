@@ -133,10 +133,11 @@ def kinds_and_languages() -> None:
     st.markdown(_languages(), unsafe_allow_html=True)
 
 
-def cards_html(items: tuple[tuple[str, str], ...], columns: int) -> str:
-    """Titled cards in a grid of `columns`. The titles and texts are fixed strings in the code."""
+def cards_html(items: tuple[tuple[str, str], ...], columns: int, style: str = "") -> str:
+    """Titled cards in a grid of `columns`; `style` is "steps" (numbered) or "principles" (plain).
+    The titles and texts are fixed strings in the code."""
     cards = "".join(f"<div class='hv-card'><b>{t}</b><p>{d}</p></div>" for t, d in items)
-    return f"<div class='hv-cards cols{columns}'>{cards}</div>"
+    return f"<div class='hv-cards cols{columns} {style}'>{cards}</div>"
 
 
 def landing_details() -> None:
