@@ -99,18 +99,13 @@ jobs:
           echo "release=$release" >> "$GITHUB_OUTPUT"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
-      # The image is built here, with a layer cache, and shipped next to the code tarball, so the
-      # instance loads it instead of compiling every dependency on the production machine.
-      - uses: docker/setup-buildx-action@v3
-
+      # The image is built here and shipped next to the code tarball, so the instance loads it
+      # instead of compiling every dependency on the production machine. Plain docker commands:
+      # the repository only allows a short list of third-party actions (Settings, Actions).
       - name: Build the image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          load: true
-          tags: heritagevoice:${{ steps.release.outputs.release }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+        env:
+          RELEASE: ${{ steps.release.outputs.release }}
+        run: docker build -t "heritagevoice:$RELEASE" .
 
       - name: Upload the image
         env:
