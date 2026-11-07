@@ -126,8 +126,10 @@ the first two.
 ## Releasing and rolling back
 
 Actions, deploy, Run workflow with a tag or branch, and type `deploy`. Each run uploads
-`releases/<commit>.tar.gz` and runs `hv-deploy <commit>` on the instance. **Rolling back** is
-the same workflow on the previous tag. The workflow refuses a commit whose CI checks are not
+`releases/<commit>.tar.gz`, builds the image in CI and uploads it as
+`releases/<commit>.image.tar.gz`, then runs `hv-deploy <commit>` on the instance, which loads that
+image (nothing is built on the server). **Rolling back** is the same workflow on the previous tag;
+a release made before images were shipped has none, so the server builds it as it used to. The workflow refuses a commit whose CI checks are not
 all green and accepts only refs made of letters, digits and `. _ / -`.
 
 ## Update, roll back, stop, tear down
