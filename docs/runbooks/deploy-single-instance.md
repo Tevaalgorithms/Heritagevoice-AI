@@ -132,6 +132,18 @@ image (nothing is built on the server). **Rolling back** is the same workflow on
 a release made before images were shipped has none, so the server builds it as it used to. The workflow refuses a commit whose CI checks are not
 all green and accepts only refs made of letters, digits and `. _ / -`.
 
+## Rehearsal before every merge
+
+The `image` check in CI runs `scripts/rehearse.sh`. It starts the real stack (the real compose
+file, the real `render-config.sh`, the image just built) on a throwaway database, migrates it with
+the commit production is on and then with the new migrations, and checks that the API is ready, a
+visitor's search answers, the interface serves and the worker runs. A change that builds but cannot
+start, such as a broken migration or a missing setting, fails there instead of in production.
+
+Run it yourself with `scripts/rehearse.sh <commit-production-is-on>` (Docker needed, about a
+minute). It does not start Caddy (that needs a real domain), has no sample data, and cannot see
+things only the real server has, such as its CPU type or the Systems Manager agent.
+
 ## Update, roll back, stop, tear down
 
 - **Update or roll back:** run the `deploy` workflow (previous tag to roll back).
