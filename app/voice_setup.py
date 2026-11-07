@@ -10,12 +10,12 @@ from app.agents.correction_interpreter import CorrectionInterpreter, Interpretat
 from app.agents.prompts.correction import CORRECTION_PROMPT
 from app.agents.translator import build_translator
 from app.audio import AudioRules
+from app.budget import GuardedUsageLog
 from app.config import Settings
 from app.model_registry import ModelRegistry
 from app.models.llm import ModelRole
 from app.ports import AudioStore
 from app.secrets import secrets_for
-from app.usage import UsageLog
 from app.voice_correction import VoiceDeps
 from app.voice_search import SearchVoiceDeps
 from app.worker_setup import transcriber_for
@@ -33,7 +33,7 @@ def build_voice_deps(
     registry, keys, usage = (
         ModelRegistry(sessions, settings),
         secrets_for(settings),
-        UsageLog(sessions),
+        GuardedUsageLog(sessions),
     )
     chain = structured_chain(CORRECTION_PROMPT, Interpretation, usage)
     interpreter = CorrectionInterpreter(ModelRunner(registry, keys, ModelRole.GRAPH, chain))

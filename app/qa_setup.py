@@ -16,6 +16,7 @@ from app.agents.prompts.verifier import VERIFIER_PROMPT
 from app.agents.rewriter import QuestionRewriter, Standalone
 from app.agents.supervisor import RouteDecision, Supervisor
 from app.agents.verifier import Verification, Verifier
+from app.budget import GuardedUsageLog
 from app.config import Settings
 from app.credits import OriginLookup
 from app.graph.workflow import Agents
@@ -25,7 +26,6 @@ from app.models.llm import ModelRole
 from app.ports import VectorStore
 from app.retrieval.delivery import DeliveryCheck
 from app.secrets import SecretReader, secrets_for
-from app.usage import UsageLog
 
 SessionFactory = Callable[[], AbstractContextManager[Session]]
 
@@ -38,7 +38,7 @@ def build_agents(
 ) -> Agents:
     """The real agents: each model call goes through the job's models and fall-backs."""
     registry = ModelRegistry(sessions, settings)
-    usage = UsageLog(sessions)
+    usage = GuardedUsageLog(sessions)
     keys = secrets or secrets_for(settings)
     graph = RuntimeGraphReader(keys)
 

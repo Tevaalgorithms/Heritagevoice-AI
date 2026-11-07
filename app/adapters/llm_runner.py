@@ -18,6 +18,7 @@ from langchain_core.runnables import Runnable
 from pydantic import BaseModel, SecretStr
 
 from app.adapters.chat_models import ChatOptions, chat_model, structured
+from app.budget import BudgetExceededError
 from app.errors import ProviderError
 from app.model_registry import ModelRegistry
 from app.models.llm import ModelRole, ModelSetting
@@ -89,6 +90,8 @@ class ModelRunner:
                 continue
             try:
                 return self._chain(link.setting, key).invoke(inputs)
+            except BudgetExceededError:
+                raise  # the day's share is spent: no other model may be tried either
             except Exception as error:  # provider and parser errors alike; log the type only
                 logger.warning(
                     "%s: model %s failed (%s)", self._role, link.setting.model, type(error).__name__

@@ -18,7 +18,7 @@ from frontend.api_client import (
     NewModelSpec,
 )
 from frontend.messages import message_for, probe_message
-from frontend.views import integrations, usage
+from frontend.views import budget, integrations, usage
 
 PROVIDERS = ("anthropic", "openai")
 STATUSES = ("active", "deprecated", "disabled")
@@ -250,4 +250,6 @@ def render(client: ApiClient) -> None:
     with keys:
         integrations.render(client)
     with used:
+        budget.render(client)
+        st.divider()
         usage.render(client)
