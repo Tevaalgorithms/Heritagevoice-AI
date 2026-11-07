@@ -28,6 +28,9 @@ class UsageSink(Protocol):
 
     def record(self, role: str, model: str, input_tokens: int, output_tokens: int) -> None: ...
 
+    def check(self) -> None:
+        """Raise before a model call that should not be made (for example, over budget)."""
+
 
 class UsageLog:
     """Stores one row per model call."""
@@ -38,6 +41,9 @@ class UsageLog:
     def record(self, role: str, model: str, input_tokens: int, output_tokens: int) -> None:
         with self._sessions() as session:
             UsageRepository(session).add(role, model, input_tokens, output_tokens)
+
+    def check(self) -> None:
+        """Counting only; `GuardedUsageLog` adds the spending limit."""
 
 
 def _counts(response: LLMResult) -> tuple[int, int]:
@@ -52,10 +58,19 @@ def _counts(response: LLMResult) -> tuple[int, int]:
 
 
 class UsageCallback(BaseCallbackHandler):
-    """Reports the tokens of every call the chat model makes (retries are billed, so they count)."""
+    """Reports the tokens of every call the chat model makes (retries are billed, so they count).
+
+    It also asks the sink, before each call, whether the call may go ahead. `raise_error` makes
+    LangChain pass that refusal on to the caller instead of swallowing it.
+    """
+
+    raise_error = True
 
     def __init__(self, role: str, model: str, sink: UsageSink) -> None:
         self._role, self._model, self._sink = role, model, sink
+
+    def on_chat_model_start(self, *_: Any, **__: Any) -> None:
+        self._sink.check()
 
     def on_llm_end(self, response: LLMResult, **_: Any) -> None:
         try:

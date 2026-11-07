@@ -18,6 +18,7 @@ from pydantic import BaseModel, SecretStr
 from app.adapters.chat_models import ChatOptions, chat_model, structured
 from app.adapters.llm_runner import MAX_OUTPUT_TOKENS, counting
 from app.agents.prompts.translation import TRANSLATION_PROMPT
+from app.budget import BudgetExceededError
 from app.errors import ProviderError
 from app.model_registry import ModelRegistry
 from app.models.llm import ModelRole, ModelSetting
@@ -66,6 +67,8 @@ class LangChainTranslator:
         }
         try:
             result = self._chain.invoke(inputs)
+        except BudgetExceededError:
+            raise
         except Exception as error:  # provider and parser errors alike; log the type only
             logger.warning("translation call failed: %s", type(error).__name__)
             raise ProviderError("translation call failed", code=MT) from error
@@ -136,6 +139,8 @@ class ConfiguredTranslator:
                 continue
             try:
                 result = self._translator(link.setting, key).translate(segments, target_language)
+            except BudgetExceededError:
+                raise
             except ProviderError as error:
                 logger.warning("model %s failed (%s); trying the next", link.setting.model, error)
                 last_error = error

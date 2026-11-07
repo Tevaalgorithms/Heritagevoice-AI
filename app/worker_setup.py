@@ -11,6 +11,7 @@ from app.adapters.transcribe import AmazonTranscribe, TranscribeConfig
 from app.agents.graph_extractor import GraphExtractor, Proposals
 from app.agents.prompts.graph import GRAPH_PROMPT
 from app.agents.translator import build_translator
+from app.budget import GuardedUsageLog
 from app.config import Settings
 from app.db.session import session_scope
 from app.fakes import FakeTranscriber
@@ -26,7 +27,6 @@ from app.models.transcript import Segment
 from app.ports import Transcriber
 from app.secrets import secrets_for
 from app.uploads import INGEST_KIND
-from app.usage import UsageLog
 from app.vector_setup import vector_store_for
 
 logger = logging.getLogger("heritagevoice.worker")
@@ -63,7 +63,7 @@ def _ingest_handlers(settings: Settings, engine: Engine) -> dict[str, Handler]:
         logger.warning("No speech service configured; ingestion jobs will fail with no_handler")
         return {}
     registry = ModelRegistry(lambda: session_scope(engine), settings)
-    usage = UsageLog(lambda: session_scope(engine))
+    usage = GuardedUsageLog(lambda: session_scope(engine))
     translator = build_translator(registry, secrets_for(settings), usage)
     deps = IngestDeps(lambda: session_scope(engine), transcriber, translator)
     return {INGEST_KIND: ingest_handler(deps)}
@@ -71,7 +71,9 @@ def _ingest_handlers(settings: Settings, engine: Engine) -> dict[str, Handler]:
 
 def _graph_handlers(settings: Settings, engine: Engine) -> dict[str, Handler]:
     registry = ModelRegistry(lambda: session_scope(engine), settings)
-    chain = structured_chain(GRAPH_PROMPT, Proposals, UsageLog(lambda: session_scope(engine)))
+    chain = structured_chain(
+        GRAPH_PROMPT, Proposals, GuardedUsageLog(lambda: session_scope(engine))
+    )
     runner = ModelRunner(registry, secrets_for(settings), ModelRole.GRAPH, chain)
     deps = ExtractDeps(lambda: session_scope(engine), GraphExtractor(runner))
     return {EXTRACT_KIND: partial(extract_recording, deps=deps)}

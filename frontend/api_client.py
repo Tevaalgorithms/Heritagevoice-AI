@@ -20,6 +20,7 @@ from frontend.api_models import (
     AccountView,
     AssertionEditSpec,
     AssertionView,
+    BudgetView,
     CatalogView,
     CitationView,
     ConnectionResult,
@@ -78,6 +79,7 @@ __all__ = [
     "ApiRequestError",
     "ApiUnavailableError",
     "AccountView",
+    "BudgetView",
     "CatalogView",
     "UsageView",
     "VoiceSuggestionView",
@@ -442,6 +444,13 @@ class ApiClient:
             "PUT", f"/admin/models/catalog/{model_id}/price", auth=True, json=body
         )
         return CatalogView.model_validate(response.json())
+
+    def budget(self) -> BudgetView:
+        return BudgetView.model_validate(self._send("GET", "/admin/budget", auth=True).json())
+
+    def set_budget(self, monthly_usd: float | None) -> BudgetView:
+        response = self._send("PUT", "/admin/budget", auth=True, json={"monthly_usd": monthly_usd})
+        return BudgetView.model_validate(response.json())
 
     def usage(self, days: int) -> UsageView:
         response = self._send("GET", "/admin/usage", auth=True, params={"days": days})
