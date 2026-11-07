@@ -99,6 +99,28 @@ jobs:
           echo "release=$release" >> "$GITHUB_OUTPUT"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
+      # The image is built here, with a layer cache, and shipped next to the code tarball, so the
+      # instance loads it instead of compiling every dependency on the production machine.
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build the image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: heritagevoice:${{ steps.release.outputs.release }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Upload the image
+        env:
+          RELEASES_BUCKET: ${{ vars.RELEASES_BUCKET }}
+          RELEASE: ${{ steps.release.outputs.release }}
+        run: |
+          docker save "heritagevoice:$RELEASE" | gzip -1 > image.tar.gz
+          ls -lh image.tar.gz
+          aws s3 cp --only-show-errors image.tar.gz "s3://$RELEASES_BUCKET/releases/$RELEASE.image.tar.gz"
+
       - name: Deploy through Systems Manager
         env:
           INSTANCE_ID: ${{ vars.INSTANCE_ID }}
