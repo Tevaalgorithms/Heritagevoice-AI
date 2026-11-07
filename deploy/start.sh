@@ -19,11 +19,24 @@ ssm_path="$(grep -m1 '^HV_SSM_PATH=' "$CONFIG_DIR/config.env" | cut -d= -f2-)"
 # Fails quietly when CI shipped none; a half-loaded image stops the deploy instead.
 have_image() {
   local bucket key="releases/$HV_VERSION.image.tar.gz"
-  docker image inspect "heritagevoice:$HV_VERSION" >/dev/null 2>&1 && return 0
-  bucket="$(grep -m1 '^HV_RELEASES_BUCKET=' "$CONFIG_DIR/config.env" | cut -d= -f2- || true)"
-  [[ -n "$bucket" ]] || return 1
-  aws s3api head-object --bucket "$bucket" --key "$key" >/dev/null 2>&1 || return 1
-  aws s3 cp --only-show-errors "s3://$bucket/$key" - | docker load >/dev/null || exit 1
+  if ! docker image inspect "heritagevoice:$HV_VERSION" >/dev/null 2>&1; then
+    bucket="$(grep -m1 '^HV_RELEASES_BUCKET=' "$CONFIG_DIR/config.env" | cut -d= -f2- || true)"
+    [[ -n "$bucket" ]] || return 1
+    aws s3api head-object --bucket "$bucket" --key "$key" >/dev/null 2>&1 || return 1
+    aws s3 cp --only-show-errors "s3://$bucket/$key" - | docker load >/dev/null || exit 1
+  fi
+  fits_this_machine
+}
+
+# An image built for another kind of CPU loads fine and then cannot run ("exec format error"), so
+# one that does not match this machine is not used; the caller builds here instead.
+fits_this_machine() {
+  local host image
+  case "$(uname -m)" in x86_64) host=amd64 ;; aarch64 | arm64) host=arm64 ;; *) host=unknown ;; esac
+  image="$(docker image inspect --format '{{.Architecture}}' "heritagevoice:$HV_VERSION")"
+  [[ "$image" == "$host" ]] && return 0
+  echo "Shipped image is for $image but this machine is $host"
+  return 1
 }
 
 HV_VERSION="$(cat RELEASE)"
