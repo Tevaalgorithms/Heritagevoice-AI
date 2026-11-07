@@ -18,9 +18,12 @@ echo "{name} $*" >> "$STUB_LOG"
 {body}
 """
 DOCKER = """case "$1 $2" in
-  "image inspect") [[ -n "$STUB_HAVE_IMAGE" ]] ;;
+  "image inspect")
+    [[ "$3" == "--format" ]] && { echo "${STUB_IMAGE_ARCH:-arm64}"; exit 0; }
+    [[ -n "$STUB_HAVE_IMAGE" ]] ;;
   "load "*|"load") cat >/dev/null; [[ -z "$STUB_LOAD_FAILS" ]] ;;
 esac"""
+UNAME = 'echo "${STUB_HOST_CPU:-aarch64}"'
 AWS = """case "$1 $2" in
   "s3api head-object") [[ -z "$STUB_NO_SHIPPED_IMAGE" ]] ;;
   "s3 cp") echo image-bytes; [[ -z "$STUB_COPY_FAILS" ]] ;;
@@ -28,9 +31,9 @@ esac"""
 
 
 def stand_ins(bin_dir):
-    """`docker` and `aws` commands that only write down what they were asked."""
+    """`docker`, `aws` and `uname` commands that only write down what they were asked."""
     bin_dir.mkdir()
-    for name, body in (("docker", DOCKER), ("aws", AWS)):
+    for name, body in (("docker", DOCKER), ("aws", AWS), ("uname", UNAME)):
         script = bin_dir / name
         script.write_text(STUB.format(name=name, body=body))
         script.chmod(0o755)
@@ -58,7 +61,14 @@ def server(tmp_path):
         "HV_CONFIG_DIR": str(config),
         "STUB_LOG": str(log),
     }
-    for name in ("STUB_HAVE_IMAGE", "STUB_NO_SHIPPED_IMAGE", "STUB_LOAD_FAILS", "STUB_COPY_FAILS"):
+    for name in (
+        "STUB_HAVE_IMAGE",
+        "STUB_NO_SHIPPED_IMAGE",
+        "STUB_LOAD_FAILS",
+        "STUB_COPY_FAILS",
+        "STUB_IMAGE_ARCH",
+        "STUB_HOST_CPU",
+    ):
         env.pop(name, None)
 
     def run(**extra):
@@ -108,3 +118,24 @@ def test_a_damaged_image_stops_the_deploy_instead_of_starting_something_else(ser
     done, calls = server(**{broken: "1"})
     assert done.returncode != 0
     assert not any(c.startswith("docker compose") and " up " in c for c in calls)
+
+
+@pytest.mark.parametrize(
+    ("image_arch", "host_cpu"),
+    [("amd64", "aarch64"), ("arm64", "x86_64")],
+    ids=["x86-on-arm", "arm-on-x86"],
+)
+def test_an_image_built_for_another_cpu_is_not_used_and_the_server_builds_instead(
+    server, image_arch, host_cpu
+):
+    """The wrong-CPU image loads without complaint but cannot run, so it must never be started."""
+    done, calls = server(STUB_IMAGE_ARCH=image_arch, STUB_HOST_CPU=host_cpu)
+    assert done.returncode == 0, done.stderr
+    assert f"Shipped image is for {image_arch}" in done.stdout
+    assert compose_up(calls).endswith("up -d --build")
+
+
+def test_an_image_for_the_same_cpu_is_used(server):
+    done, calls = server(STUB_IMAGE_ARCH="amd64", STUB_HOST_CPU="x86_64")
+    assert done.returncode == 0, done.stderr
+    assert "--no-build" in compose_up(calls)
