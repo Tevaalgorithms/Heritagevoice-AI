@@ -1,0 +1,122 @@
+{
+  "_note": "SYNTHETIC demo corpus written for product demos and evaluation. Not real community material: no speaker exists and there is no audio. Native speakers have not reviewed the non-English text yet.",
+  "recordings": [
+    {
+      "id": "demo-ta-pongal",
+      "language": "ta",
+      "kind": "practice",
+      "credit": "Demo storyteller (synthetic)",
+      "segments": [
+        {"segment_id": "s1", "start_s": 0.0, "end_s": 6.0, "text": "தை மாதத்தில் பொங்கல் அன்று புதுப்பானையில் புத்தரிசி பொங்குவோம்.", "translation": "In the month of Thai, on Pongal day, we cook the new rice in a new pot."},
+        {"segment_id": "s2", "start_s": 6.0, "end_s": 12.0, "text": "பானையில் பால் பொங்கி வழியும் போது எல்லோரும் பொங்கலோ பொங்கல் என்று கூவுவோம்.", "translation": "When the milk boils over the pot, everyone shouts Pongalo Pongal."},
+        {"segment_id": "s3", "start_s": 12.0, "end_s": 18.0, "text": "முதலில் சூரியனுக்கும் பிறகு மாடுகளுக்கும் நன்றி சொல்வோம்.", "translation": "First we give thanks to the sun, and then to the cattle."}
+      ]
+    },
+    {
+      "id": "demo-hi-lori",
+      "language": "hi",
+      "kind": "song",
+      "credit": "Demo storyteller (synthetic)",
+      "segments": [
+        {"segment_id": "s1", "start_s": 0.0, "end_s": 6.0, "text": "हमारी दादी हर शाम आँगन में बैठकर हमें लोरी सुनाती थीं।", "translation": "Every evening our grandmother sat in the courtyard and sang us a lullaby."},
+        {"segment_id": "s2", "start_s": 6.0, "end_s": 12.0, "text": "चाँद को मामा कहकर वह बच्चों को सुलाती थीं।", "translation": "Calling the moon our maternal uncle, she put the children to sleep."},
+        {"segment_id": "s3", "start_s": 12.0, "end_s": 18.0, "text": "उस लोरी में नदी, चिड़िया और चाँदनी की बातें होती थीं।", "translation": "The lullaby spoke of the river, the birds and the moonlight."}
+      ]
+    },
+    {
+      "id": "demo-te-ugadi",
+      "language": "te",
+      "kind": "practice",
+      "credit": "Demo storyteller (synthetic)",
+      "segments": [
+        {"segment_id": "s1", "start_s": 0.0, "end_s": 6.0, "text": "ఉగాది రోజున మేము ఉగాది పచ్చడి తయారు చేస్తాము.", "translation": "On Ugadi day we make ugadi pachadi."},
+        {"segment_id": "s2", "start_s": 6.0, "end_s": 12.0, "text": "అందులో బెల్లం, వేప పువ్వు, చింతపండు, మామిడి కలుపుతాము.", "translation": "We add jaggery, neem flowers, tamarind and mango to it."},
+        {"segment_id": "s3", "start_s": 12.0, "end_s": 18.0, "text": "జీవితంలో తీపి చేదు అన్నీ ఉంటాయని ఇది గుర్తు చేస్తుంది.", "translation": "It reminds us that life holds both sweet and bitter."}
+      ]
+    },
+    {
+      "id": "demo-ml-onam",
+      "language": "ml",
+      "kind": "practice",
+      "credit": "Demo storyteller (synthetic)",
+      "segments": [
+        {"segment_id": "s1", "start_s": 0.0, "end_s": 6.0, "text": "ഓണത്തിന് ഞങ്ങൾ മുറ്റത്ത് പൂക്കളം ഇടും.", "translation": "At Onam we make a flower carpet in the courtyard."},
+        {"segment_id": "s2", "start_s": 6.0, "end_s": 12.0, "text": "കുട്ടികൾ രാവിലെ തന്നെ തൊടിയിൽ പോയി പൂക്കൾ പറിക്കും.", "translation": "The children go to the garden early in the morning to pick flowers."},
+        {"segment_id": "s3", "start_s": 12.0, "end_s": 18.0, "text": "തിരുവോണത്തിന് എല്ലാവരും ചേർന്ന് വാഴയിലയിൽ സദ്യ കഴിക്കും.", "translation": "On Thiruvonam everyone eats the feast together on banana leaves."}
+      ]
+    },
+    {
+      "id": "demo-bn-bhatiyali",
+      "language": "bn",
+      "kind": "song",
+      "credit": "Demo storyteller (synthetic)",
+      "segments": [
+        {"segment_id": "s1", "start_s": 0.0, "end_s": 6.0, "text": "বর্ষার দিনে আমরা নদীর ধারে বসে ভাটিয়ালি গান গাইতাম।", "translation": "On rainy days we sat by the river and sang bhatiyali songs."},
+        {"segment_id": "s2", "start_s": 6.0, "end_s": 12.0, "text": "মাঝিরা নৌকা বাইতে বাইতে এই গান গাইত।", "translation": "The boatmen sang these songs as they rowed."},
+        {"segment_id": "s3", "start_s": 12.0, "end_s": 18.0, "text": "গানে নদী আর মনের টানের কথা থাকত।", "translation": "The songs spoke of the river and the pull of the heart."}
+      ]
+    },
+    {
+      "id": "demo-fr-pain",
+      "language": "fr",
+      "kind": "lesson",
+      "credit": "Demo storyteller (synthetic)",
+      "segments": [
+        {"segment_id": "s1", "start_s": 0.0, "end_s": 6.0, "text": "Mon grand-père pétrissait la pâte à pain tous les samedis matin.", "translation": "My grandfather kneaded the bread dough every Saturday morning."},
+        {"segment_id": "s2", "start_s": 6.0, "end_s": 12.0, "text": "Il disait qu'il faut laisser le levain se reposer toute la nuit.", "translation": "He said the sourdough must be left to rest all night."},
+        {"segment_id": "s3", "start_s": 12.0, "end_s": 18.0, "text": "Le four du village chauffait au bois de chêne.", "translation": "The village oven was heated with oak wood."}
+      ]
+    },
+    {
+      "id": "demo-es-vendimia",
+      "language": "es",
+      "kind": "story",
+      "credit": "Demo storyteller (synthetic)",
+      "segments": [
+        {"segment_id": "s1", "start_s": 0.0, "end_s": 6.0, "text": "En septiembre toda la familia se reunía para la vendimia.", "translation": "In September the whole family gathered for the grape harvest."},
+        {"segment_id": "s2", "start_s": 6.0, "end_s": 12.0, "text": "Las abuelas cantaban coplas mientras cortaban los racimos.", "translation": "The grandmothers sang folk verses while cutting the bunches."},
+        {"segment_id": "s3", "start_s": 12.0, "end_s": 18.0, "text": "Al terminar el día compartíamos pan, queso y vino nuevo bajo la parra.", "translation": "At the end of the day we shared bread, cheese and new wine under the vine."}
+      ]
+    },
+    {
+      "id": "demo-pt-pescadores",
+      "language": "pt",
+      "kind": "story",
+      "credit": "Demo storyteller (synthetic)",
+      "segments": [
+        {"segment_id": "s1", "start_s": 0.0, "end_s": 6.0, "text": "Na minha aldeia, os pescadores saíam ao mar antes do nascer do sol.", "translation": "In my village the fishermen went out to sea before sunrise."},
+        {"segment_id": "s2", "start_s": 6.0, "end_s": 12.0, "text": "As mulheres esperavam na praia e ajudavam a puxar as redes.", "translation": "The women waited on the beach and helped pull in the nets."},
+        {"segment_id": "s3", "start_s": 12.0, "end_s": 18.0, "text": "Quando o barco chegava, todos agradeciam ao mar com uma pequena oração.", "translation": "When the boat came in, everyone thanked the sea with a short prayer."}
+      ]
+    },
+    {
+      "id": "demo-en-quilt",
+      "language": "en",
+      "kind": "practice",
+      "credit": "Demo storyteller (synthetic)",
+      "segments": [
+        {"segment_id": "s1", "start_s": 0.0, "end_s": 6.0, "text": "Every winter my aunt sewed a quilt from the worn-out saris of the women in our family."},
+        {"segment_id": "s2", "start_s": 6.0, "end_s": 12.0, "text": "Each patch carried a memory: a wedding, a festival, or a baby's first blanket."},
+        {"segment_id": "s3", "start_s": 12.0, "end_s": 18.0, "text": "She said a quilt is a family's story that you can wrap yourself in."}
+      ]
+    }
+  ],
+  "questions": [
+    {"id": "dq01", "category": "exact_term", "language": "ta", "question": "பொங்கல்", "expected_sources": ["demo-ta-pongal:s1", "demo-ta-pongal:s2"], "answerable": true},
+    {"id": "dq02", "category": "exact_term", "language": "hi", "question": "लोरी", "expected_sources": ["demo-hi-lori:s1", "demo-hi-lori:s3"], "answerable": true},
+    {"id": "dq03", "category": "exact_term", "language": "te", "question": "ఉగాది", "expected_sources": ["demo-te-ugadi:s1"], "answerable": true},
+    {"id": "dq04", "category": "exact_term", "language": "ml", "question": "പൂക്കളം", "expected_sources": ["demo-ml-onam:s1"], "answerable": true},
+    {"id": "dq05", "category": "exact_term", "language": "bn", "question": "ভাটিয়ালি", "expected_sources": ["demo-bn-bhatiyali:s1"], "answerable": true},
+    {"id": "dq06", "category": "exact_term", "language": "fr", "question": "levain", "expected_sources": ["demo-fr-pain:s2"], "answerable": true},
+    {"id": "dq07", "category": "exact_term", "language": "es", "question": "vendimia", "expected_sources": ["demo-es-vendimia:s1"], "answerable": true},
+    {"id": "dq08", "category": "exact_term", "language": "pt", "question": "pescadores", "expected_sources": ["demo-pt-pescadores:s1"], "answerable": true},
+    {"id": "dq09", "category": "exact_term", "language": "en", "question": "quilt", "expected_sources": ["demo-en-quilt:s1", "demo-en-quilt:s3"], "answerable": true},
+    {"id": "dq10", "category": "cross_language", "language": "en", "question": "flower carpet in the courtyard", "expected_sources": ["demo-ml-onam:s1"], "answerable": true},
+    {"id": "dq11", "category": "cross_language", "language": "en", "question": "neem flowers and jaggery", "expected_sources": ["demo-te-ugadi:s2"], "answerable": true},
+    {"id": "dq12", "category": "cross_language", "language": "en", "question": "boatmen singing while rowing", "expected_sources": ["demo-bn-bhatiyali:s2"], "answerable": true},
+    {"id": "dq13", "category": "cross_language", "language": "en", "question": "grape harvest with grandmothers singing", "expected_sources": ["demo-es-vendimia:s1", "demo-es-vendimia:s2"], "answerable": true},
+    {"id": "dq14", "category": "cross_language", "language": "en", "question": "thanks to the sun and the cattle", "expected_sources": ["demo-ta-pongal:s3"], "answerable": true},
+    {"id": "dq15", "category": "unsupported", "language": "en", "question": "How do I treat a fever at home?", "expected_sources": [], "answerable": false},
+    {"id": "dq16", "category": "unsupported", "language": "en", "question": "What did the elders say about the monsoon in Gujarat?", "expected_sources": [], "answerable": false}
+  ]
+}
