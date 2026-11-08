@@ -14,6 +14,9 @@ MAX_NOTE = 200
 CONTROL = re.compile(r"[\x00-\x1f\x7f]+")
 
 
+SYNTHETIC_NOTE = "Synthetic test recording"  # the source note that marks invented demo material
+
+
 class SourceKind(StrEnum):
     """Where the knowledge in a recording came from."""
 

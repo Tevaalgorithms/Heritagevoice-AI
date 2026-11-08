@@ -6,11 +6,17 @@ from sqlalchemy import create_engine
 
 from app.api.auth import get_session_factory
 from app.api.main import app
+from app.api.public import get_media_limiter
+from app.api.recordings import get_audio_store
+from app.audio import sniff_type
 from app.db.session import session_scope
 from app.db.tables import Base
-from app.demo_seed import PREFIX, load_corpus, remove, seed
+from app.demo_seed import AUDIO, PREFIX, load_corpus, remove, seed
+from app.fakes import FakeAudioStore
 from app.indexing import IndexDeps
 from app.languages import BY_CODE
+from app.models.credit import SYNTHETIC_NOTE
+from app.ratelimit import SlidingWindowLimiter
 
 
 @pytest.fixture
@@ -26,8 +32,16 @@ def deps(engine):
 
 
 @pytest.fixture
-def visitor(engine):
+def store():
+    return FakeAudioStore()
+
+
+@pytest.fixture
+def visitor(engine, store):
     app.dependency_overrides[get_session_factory] = lambda: lambda: session_scope(engine)
+    app.dependency_overrides[get_audio_store] = lambda: store
+    limiter = SlidingWindowLimiter(1000, 60.0)
+    app.dependency_overrides[get_media_limiter] = lambda: limiter
     yield TestClient(app)
     app.dependency_overrides.clear()
 
@@ -92,3 +106,38 @@ def test_removing_takes_the_demo_out_of_the_library_and_can_be_repeated(deps, vi
     assert shown(visitor, limit=20) == []
     assert shown(visitor, q="लोरी") == []
     assert remove(deps) == []
+
+
+def test_every_voice_clip_belongs_to_a_demo_recording_and_is_audio_the_site_can_play():
+    ids = {r["id"] for r in load_corpus()["recordings"]}
+    clips = sorted(AUDIO.glob("*.m4a"))
+    assert len(clips) >= 8
+    for clip in clips:
+        assert clip.stem in ids
+        assert sniff_type(clip.read_bytes()[:16]) == "audio/mp4"
+
+
+def test_a_visitor_can_play_a_demo_recording_and_it_says_the_voice_is_synthetic(
+    deps, visitor, store
+):
+    seed(deps, store)
+    played = visitor.get("/v1/public/recordings/demo-hi-lori/media")
+    assert played.status_code == 200
+    assert played.headers["content-type"] == "audio/mp4"
+    item = next(i for i in shown(visitor, language="hi"))
+    assert item["credit"]["source_note"] == SYNTHETIC_NOTE
+
+
+def test_a_recording_with_no_voice_available_stays_silent_and_is_not_found(deps, visitor, store):
+    seed(deps, store)
+    assert visitor.get("/v1/public/recordings/demo-ml-onam/media").status_code == 404
+
+
+def test_seeding_again_gives_recordings_added_earlier_their_voice(deps, visitor, store):
+    seed(deps)  # added before voices existed: text only
+    assert visitor.get("/v1/public/recordings/demo-fr-pain/media").status_code == 404
+    added, present = seed(deps, store)
+    assert added == []
+    assert len(present) == len(load_corpus()["recordings"])
+    assert visitor.get("/v1/public/recordings/demo-fr-pain/media").status_code == 200
+    assert {i["credit"]["source_note"] for i in shown(visitor, language="fr")} == {SYNTHETIC_NOTE}

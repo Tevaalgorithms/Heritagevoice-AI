@@ -3,6 +3,9 @@ text: markdown characters are escaped, so a name or a note can never add formatt
 
 import re
 from datetime import date
+from typing import Protocol
+
+from app.models.credit import SYNTHETIC_NOTE
 
 SOURCE_LABELS = {
     "own": "Their own knowledge or experience",
@@ -48,3 +51,16 @@ def origin_line(added: str, name: str | None, kind: str | None, note: str | None
     if added:
         parts.append(f"Added {long_date(added)}")
     return plain(" · ".join(parts))
+
+
+class _Credited(Protocol):
+    @property
+    def source_note(self) -> str | None: ...
+
+
+SYNTHETIC_VOICE = "Synthetic voice: computer-generated speech for testing, not a real speaker."
+
+
+def voice_note(credit: _Credited | None) -> str | None:
+    """What to say under the player when the recording is invented demo material."""
+    return SYNTHETIC_VOICE if credit is not None and credit.source_note == SYNTHETIC_NOTE else None

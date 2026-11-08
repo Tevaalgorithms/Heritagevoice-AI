@@ -130,8 +130,8 @@ def _segments(recording: dict[str, Any], translated: bool) -> list[Segment]:
 def publish_fixture(session: Session, recording: dict[str, Any]) -> None:
     """Add one fixture recording as published, with its transcript and translation approved.
 
-    Optional keys: `kind`, `visibility`, `uploader`, and `credit` (a name; shown only if the consent
-    includes attribution)."""
+    Optional keys: `kind`, `visibility`, `uploader`, and `credit` and `note` (who to thank and a
+    source note; shown only if the consent includes attribution)."""
     consent = recording["consent"]
     rights = frozenset(Right(r) for r in consent["rights"])
     ConsentRepository(session).add(
@@ -154,6 +154,7 @@ def publish_fixture(session: Session, recording: dict[str, Any]) -> None:
             status=RecordingStatus.PUBLISHED,
             credit_name=recording.get("credit"),
             source_kind=SourceKind.OTHER if recording.get("credit") else None,
+            source_note=recording.get("note"),
         )
     )
     versions = VersionRepository(session)
