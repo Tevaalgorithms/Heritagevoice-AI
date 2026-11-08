@@ -14,11 +14,11 @@ from app.languages import BY_CODE, LANGUAGES
 from app.models.groups import OPEN_COMMUNITY
 from frontend import theme
 from frontend.api_client import ApiClient, ApiError, LibraryItem, LibraryResult, LibrarySpec
-from frontend.credit import origin_line
+from frontend.credit import origin_line, voice_note
 from frontend.format import format_time
 from frontend.kinds import KINDS, label_for
 from frontend.messages import message_for
-from frontend.views.playback import Fetch, listen_button
+from frontend.views.playback import Fetch, Moment, listen_button
 from frontend.views.report import report_button
 
 ANY = "Any"
@@ -130,9 +130,8 @@ def card(client: ApiClient, play: Fetch, item: LibraryItem, more: object | None 
         origin = _origin(item)
         if origin:
             st.caption(origin)
-        listen_button(
-            play, item.recording_id, f"listen-{item.evidence_id}", (item.start_s, item.end_s)
-        )
+        moment = Moment(item.start_s, item.end_s, voice_note(item.credit))
+        listen_button(play, item.recording_id, f"listen-{item.evidence_id}", moment)
         report_button(client, item.recording_id, item.evidence_id)
 
 

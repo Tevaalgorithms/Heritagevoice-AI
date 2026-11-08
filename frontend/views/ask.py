@@ -5,11 +5,11 @@ import streamlit as st
 from app.languages import BY_CODE, LANGUAGES
 from frontend import theme
 from frontend.api_client import ApiClient, ApiError, CitationView, QueryResult
-from frontend.credit import origin_line, plain
+from frontend.credit import origin_line, plain, voice_note
 from frontend.format import format_time
 from frontend.kinds import label_for
 from frontend.messages import message_for
-from frontend.views.playback import listen_button
+from frontend.views.playback import Moment, listen_button
 from frontend.views.report import report_button
 
 NO_ANSWER = "No answer was returned."
@@ -110,7 +110,7 @@ def _source(client: ApiClient, number: int, citation: CitationView, scope: str) 
         client.recording_media,
         citation.recording_id,
         f"listen-{scope}-{number}",
-        (citation.start_s, citation.end_s),
+        Moment(citation.start_s, citation.end_s, voice_note(citation.credit)),
     )
     report_button(client, citation.recording_id, f"{scope}-{number}")
 

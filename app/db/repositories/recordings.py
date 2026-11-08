@@ -1,5 +1,7 @@
 """Recordings and their lifecycle status."""
 
+from dataclasses import dataclass
+
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
@@ -35,6 +37,17 @@ def _to_recording(row: RecordingRow) -> Recording:
         source_note=row.source_note,
         added=row.created_at.date().isoformat() if row.created_at else "",
     )
+
+
+@dataclass(frozen=True)
+class Media:
+    """The stored audio of a recording and the note about where it came from."""
+
+    audio_key: str
+    content_type: str
+    size_bytes: int
+    duration_s: float
+    source_note: str | None = None
 
 
 class RecordingRepository:
@@ -123,6 +136,17 @@ class RecordingRepository:
     def ids_by_consent(self, consent_id: str) -> list[str]:
         query = select(RecordingRow.id).where(RecordingRow.consent_id == consent_id)
         return list(self._session.scalars(query))
+
+    def set_media(self, recording_id: str, media: Media) -> None:
+        """Attach audio, and a source note, to a recording that was added without them."""
+        row = self._session.get(RecordingRow, recording_id)
+        if row is None:
+            raise KeyError(recording_id)
+        row.audio_key = media.audio_key
+        row.content_type = media.content_type
+        row.size_bytes = media.size_bytes
+        row.duration_s = media.duration_s
+        row.source_note = media.source_note
 
     def set_status(self, recording_id: str, status: RecordingStatus) -> None:
         row = self._session.get(RecordingRow, recording_id)
