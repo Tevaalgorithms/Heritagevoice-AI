@@ -207,3 +207,7 @@ input, textarea, [data-baseweb="select"] > div { border-radius: 10px !important;
 [class*="st-key-hv-band-"] .hv-section { margin-top: 0; }
 /* The sentence a relationship form builds: "this teaches that". */
 .hv-sentence { background: #F5ECD9; border-left: 3px solid #D98A2B; border-radius: 8px; padding: .6rem .9rem; margin: .4rem 0 .8rem; color: #14284B; }
+/* Home snapshots: every recent card the same size. The words are cut to three lines. */
+[class*="st-key-hvcard-recent-"] .hv-passage { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3;
+  overflow: hidden; min-height: calc(3 * 1.7em + .4rem); }
+[class*="st-key-hvcard-recent-"] [data-testid="stPageLink"] a { font-size: .9rem; font-weight: 600; color: #B4532A !important; }

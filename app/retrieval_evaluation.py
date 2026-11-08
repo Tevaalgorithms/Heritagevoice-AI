@@ -20,14 +20,17 @@ from app.db.repositories import (
     RecordingRepository,
     VersionRepository,
 )
+from app.models.credit import SourceKind
 from app.models.evidence import Evidence
 from app.models.records import (
     Consent,
+    HeritageKind,
     Recording,
     RecordingStatus,
     Right,
     Subject,
     VersionStatus,
+    Visibility,
 )
 from app.models.transcript import Segment
 
@@ -125,7 +128,10 @@ def _segments(recording: dict[str, Any], translated: bool) -> list[Segment]:
 
 
 def publish_fixture(session: Session, recording: dict[str, Any]) -> None:
-    """Add one fixture recording as published, with its transcript and translation approved."""
+    """Add one fixture recording as published, with its transcript and translation approved.
+
+    Optional keys: `kind`, `visibility`, `uploader`, and `credit` and `note` (who to thank and a
+    source note; shown only if the consent includes attribution)."""
     consent = recording["consent"]
     rights = frozenset(Right(r) for r in consent["rights"])
     ConsentRepository(session).add(
@@ -140,10 +146,15 @@ def publish_fixture(session: Session, recording: dict[str, Any]) -> None:
         Recording(
             id=recording["id"],
             community_id=recording["community_id"],
-            uploader_id="fixture",
+            uploader_id=recording.get("uploader", "fixture"),
             language=recording["language"],
             consent_id=f"consent-{recording['id']}",
+            heritage_kind=HeritageKind(recording.get("kind", "story")),
+            visibility=Visibility(recording.get("visibility", "community")),
             status=RecordingStatus.PUBLISHED,
+            credit_name=recording.get("credit"),
+            source_kind=SourceKind.OTHER if recording.get("credit") else None,
+            source_note=recording.get("note"),
         )
     )
     versions = VersionRepository(session)

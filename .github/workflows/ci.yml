@@ -58,6 +58,8 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the rehearsal migrates from the commit production is on first
       - name: Build the image
         run: docker build -t heritagevoice:ci .
       - name: Scan for fixable high and critical vulnerabilities
@@ -65,6 +67,14 @@ jobs:
           docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.58.1
           image --quiet --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1
           heritagevoice:ci
+      - name: Rehearse the deployment (the real stack on a throwaway database)
+        env:
+          # Production is on the commit before this change: the pull request's base, or the
+          # previous main. A tag push has neither, and the rehearsal then starts from empty.
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          docker tag heritagevoice:ci heritagevoice:rehearsal
+          REHEARSAL_SKIP_BUILD=1 scripts/rehearse.sh "$BASE"
       - name: Validate the deployment compose file
         run: |
           mkdir -p "$RUNNER_TEMP/cfg" && touch "$RUNNER_TEMP/cfg/app.env" "$RUNNER_TEMP/cfg/secrets.toml"

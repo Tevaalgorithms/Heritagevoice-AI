@@ -1,0 +1,58 @@
+# Adds the synthetic multilingual demo library to the live site, or withdraws it again. The text
+# comes from app/demo_recordings.json in this repository (invented, no real community material).
+# Also stores each recording's synthetic-voice clip (app/demo_audio) in the private audio bucket.
+# Runs on the instance in the worker container, which has the database and search settings.
+# Safe to repeat. Uses the deploy role, so it waits for approval under the `prod` environment.
+name: seed-demo
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: seed adds the demo recordings; remove withdraws them
+        type: choice
+        options: [seed, remove]
+        default: seed
+
+concurrency:
+  group: seed-demo
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  demo:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: prod
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      INSTANCE_ID: ${{ vars.INSTANCE_ID }}
+      ACTION: ${{ inputs.action }}
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-session-name: heritagevoice-seed-demo
+      - name: Run it on the instance
+        run: |
+          set -euo pipefail
+          [[ "$ACTION" == "seed" || "$ACTION" == "remove" ]] || { echo "Unknown action" >&2; exit 1; }
+          script="cd /opt/heritagevoice && docker compose --env-file /etc/heritagevoice/app.env -f deploy/docker-compose.yml exec -T worker python -m app.demo_seed $ACTION"
+          command_id="$(aws ssm send-command --instance-ids "$INSTANCE_ID" \
+            --document-name AWS-RunShellScript --comment "demo $ACTION" --timeout-seconds 600 \
+            --parameters "$(jq -cn --arg c "$script" '{commands:[$c]}')" \
+            --query Command.CommandId --output text)"
+          for _ in $(seq 1 150); do
+            status="$(aws ssm get-command-invocation --command-id "$command_id" --instance-id "$INSTANCE_ID" \
+              --query Status --output text 2>/dev/null || echo Pending)"
+            case "$status" in Success|Failed|Cancelled|TimedOut) break ;; esac
+            sleep 4
+          done
+          aws ssm get-command-invocation --command-id "$command_id" --instance-id "$INSTANCE_ID" \
+            --query '[StandardOutputContent,StandardErrorContent]' --output text | tail -n 15
+          [[ "$status" == "Success" ]] || { echo "Demo $ACTION: $status" >&2; exit 1; }

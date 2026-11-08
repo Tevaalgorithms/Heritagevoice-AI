@@ -99,6 +99,29 @@ jobs:
           echo "release=$release" >> "$GITHUB_OUTPUT"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
+      # The image is built here and shipped next to the code tarball, so the instance loads it
+      # instead of compiling every dependency on the production machine. Plain docker commands:
+      # the repository only allows a short list of third-party actions (Settings, Actions).
+      # The instance is a t4g (ARM, Graviton) machine and this runner is x86, so the image is built
+      # for ARM through emulation (binfmt registers it; plain docker commands, no extra actions).
+      - name: Build the image for the instance's CPU
+        env:
+          RELEASE: ${{ steps.release.outputs.release }}
+          PLATFORM: linux/arm64
+        run: |
+          docker run --privileged --rm tonistiigi/binfmt --install arm64
+          docker buildx build --platform "$PLATFORM" --load -t "heritagevoice:$RELEASE" .
+          docker image inspect --format 'built for {{.Os}}/{{.Architecture}}' "heritagevoice:$RELEASE"
+
+      - name: Upload the image
+        env:
+          RELEASES_BUCKET: ${{ vars.RELEASES_BUCKET }}
+          RELEASE: ${{ steps.release.outputs.release }}
+        run: |
+          docker save "heritagevoice:$RELEASE" | gzip -1 > image.tar.gz
+          ls -lh image.tar.gz
+          aws s3 cp --only-show-errors image.tar.gz "s3://$RELEASES_BUCKET/releases/$RELEASE.image.tar.gz"
+
       - name: Deploy through Systems Manager
         env:
           INSTANCE_ID: ${{ vars.INSTANCE_ID }}

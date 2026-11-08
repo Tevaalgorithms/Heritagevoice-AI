@@ -154,6 +154,8 @@ What exists today:
   exact-term, 3 paraphrase, 3 relationship, 2 unsupported), with a small harness
   (`uv run python -m evals.retrieval_check`). The fixtures are synthetic and need review by a native
   Tamil speaker before they count as ground truth.
+- A multilingual **synthetic demo library** (nine languages, `app/demo_recordings.json`) with 16 more
+  questions, and a LangSmith experiment runner (`uv run python -m evals.langsmith_eval --local`).
 
 | Area | What will be published | Status |
 | --- | --- | --- |

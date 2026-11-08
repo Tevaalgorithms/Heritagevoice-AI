@@ -70,3 +70,37 @@ def test_words_heard_by_voice_are_put_in_the_search_box_before_it_is_drawn():
     assert not app.exception
     assert app.text_input[0].value == "பணிவு"
     assert "connections-heard" not in app.session_state
+
+
+def test_a_synthetic_voice_is_labelled_under_the_player_and_a_real_one_is_not():
+    from streamlit.testing.v1 import AppTest  # noqa: PLC0415
+
+    def script():
+        from types import SimpleNamespace  # noqa: PLC0415
+
+        import streamlit as st  # noqa: PLC0415
+
+        from app.models.credit import SYNTHETIC_NOTE  # noqa: PLC0415
+        from frontend.credit import voice_note  # noqa: PLC0415
+        from frontend.views.playback import Moment, listen_button  # noqa: PLC0415
+
+        def play(recording_id):
+            return b"audio", "audio/mp4"
+
+        for key, note in (("fake", SYNTHETIC_NOTE), ("real", "Told by an elder")):
+            credit = SimpleNamespace(source_note=note)
+            listen_button(play, key, key, Moment(0.0, 6.0, voice_note(credit)))
+        st.write("ready")
+
+    app = AppTest.from_function(script).run()
+    assert not app.exception
+    app.button(key="fake").click().run()
+    assert any("Synthetic voice" in c.value for c in app.caption)
+    app.button(key="real").click().run()
+    assert not any("Synthetic voice" in c.value for c in app.caption)
+
+
+def test_a_recording_with_no_credit_has_no_voice_note():
+    from frontend.credit import voice_note  # noqa: PLC0415
+
+    assert voice_note(None) is None

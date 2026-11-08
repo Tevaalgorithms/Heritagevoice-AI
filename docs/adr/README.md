@@ -12,5 +12,6 @@ instead of rewriting history.
 | [0004](0004-answers-are-built-from-verified-claims.md) | Answers are built from verified claims, with citations added by code | Accepted |
 | [0005](0005-one-small-instance-deployed-only-by-ci.md) | One small AWS instance, deployed only by CI/CD | Accepted |
 | [0006](0006-streamlit-interface-and-a-separate-sign-in-domain.md) | Streamlit for the interface; Cognito on its own sign-in domain | Accepted |
+| [0007](0007-build-the-image-in-ci-and-ship-it-through-the-releases-bucket.md) | Build the image in CI and ship it through the releases bucket | Accepted |
 
 Template: copy any record and keep the headings *Context*, *Decision*, *Consequences*.

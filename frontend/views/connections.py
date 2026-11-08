@@ -11,13 +11,13 @@ from app.languages import BY_CODE
 from frontend import theme, voice
 from frontend.api_client import ApiClient, ApiError
 from frontend.api_models import ConnectionItem
-from frontend.credit import origin_line
+from frontend.credit import origin_line, voice_note
 from frontend.format import format_time
 from frontend.kinds import label_for
 from frontend.messages import message_for
 from frontend.relations import headline_html
 from frontend.spoken import LANGUAGE_CHOICES
-from frontend.views.playback import listen_button
+from frontend.views.playback import Moment, listen_button
 from frontend.views.report import report_button
 
 INTRO = (
@@ -78,7 +78,8 @@ def _card(client: ApiClient, item: ConnectionItem) -> None:
             st.caption(origin)
         if st.toggle("English", key=f"{key}-en", help="Show this connection in English"):
             _english(item)
-        listen_button(play, item.recording_id, key, (item.start_s, item.end_s))
+        moment = Moment(item.start_s, item.end_s, voice_note(item.credit))
+        listen_button(play, item.recording_id, key, moment)
         report_button(client, item.recording_id, key)
 
 
