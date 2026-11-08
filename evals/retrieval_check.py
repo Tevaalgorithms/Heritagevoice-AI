@@ -11,6 +11,8 @@ retrieval: use it to check the plumbing. A real measurement needs a multilingual
 import argparse
 import json
 import tempfile
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from pathlib import Path
 
 from sqlalchemy import create_engine
@@ -52,8 +54,11 @@ def _vector_store(engine, with_vectors: bool) -> VectorStore | None:
     return PineconeVectorStore(FakePineconeIndex(), FakeEmbedder(), hydrate_for, dimension=64)
 
 
-def run(with_vectors: bool = True) -> dict:
-    recordings, questions = load_fixtures(FIXTURES)
+@contextmanager
+def retriever_for(
+    recordings: list[dict], with_vectors: bool = True
+) -> Iterator[Callable[[str], list[Evidence]]]:
+    """Publish and index these fixtures in a throwaway database; yield `retrieve(question)`."""
     with tempfile.TemporaryDirectory() as tmp:
         engine = create_engine(f"sqlite:///{tmp}/retrieval.db")
         Base.metadata.create_all(engine)
@@ -70,8 +75,16 @@ def run(with_vectors: bool = True) -> dict:
         def retrieve(question: str) -> list[Evidence]:
             return retriever({"question": question}, reader)["hybrid_evidence"]
 
+        try:
+            yield retrieve
+        finally:
+            engine.dispose()
+
+
+def run(with_vectors: bool = True) -> dict:
+    recordings, questions = load_fixtures(FIXTURES)
+    with retriever_for(recordings, with_vectors) as retrieve:
         results = run_cases(retrieve, questions)
-        engine.dispose()
     return {"vectors": "fake word-based" if with_vectors else "none", **summarize(results)}
 
 
