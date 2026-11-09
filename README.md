@@ -160,7 +160,7 @@ What exists today:
 
 | Area | What will be published | Status |
 | --- | --- | --- |
-| Retrieval | Recall@k on a labelled set | First run published ([report](evals/results/published/)): 23 of 24 synthetic questions found in the top 5, with a fake word-based index. Real embeddings pending |
+| Retrieval | Recall@k on a labelled set | First run published ([report](evals/results/published/)): 24 of 24 synthetic questions found in the top 5 with real multilingual embeddings (23 of 24 with a fake word-based index); a small synthetic set, so not a rate for real recordings |
 | Answer quality | Supported-claim rate and citation correctness | Pending |
 | Unsupported questions | How often the system correctly declines | Pending |
 | Languages | Results per language, reviewed by native speakers | Per-language scores published (mostly one question each); native review pending |
