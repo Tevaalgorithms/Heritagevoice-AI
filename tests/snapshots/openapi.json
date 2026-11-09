@@ -189,6 +189,69 @@
         "title": "AssertionView",
         "type": "object"
       },
+      "BudgetStatus": {
+        "description": "Where today stands against the limit. `monthly_usd` is None when no limit is set.",
+        "properties": {
+          "daily_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Daily Usd"
+          },
+          "exhausted": {
+            "title": "Exhausted",
+            "type": "boolean"
+          },
+          "monthly_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Monthly Usd"
+          },
+          "remaining_today": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remaining Today"
+          },
+          "spent_today": {
+            "title": "Spent Today",
+            "type": "number"
+          },
+          "unpriced_models": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Unpriced Models",
+            "type": "array"
+          }
+        },
+        "required": [
+          "monthly_usd",
+          "daily_usd",
+          "spent_today",
+          "remaining_today",
+          "exhausted",
+          "unpriced_models"
+        ],
+        "title": "BudgetStatus",
+        "type": "object"
+      },
       "CatalogView": {
         "description": "A catalogue model as shown to admins, with whether its key is configured.",
         "properties": {
@@ -1058,6 +1121,29 @@
         ],
         "title": "LibraryView",
         "type": "string"
+      },
+      "LimitChange": {
+        "description": "The new monthly limit in US dollars, or None to remove the limit.",
+        "properties": {
+          "monthly_usd": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 1000000.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Monthly Usd"
+          }
+        },
+        "required": [
+          "monthly_usd"
+        ],
+        "title": "LimitChange",
+        "type": "object"
       },
       "Me": {
         "description": "The signed-in user as the server knows them: ID, role and communities.",
@@ -2662,6 +2748,77 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/admin/budget": {
+      "get": {
+        "description": "The limit, today's share of it, what has been spent today and what is left.",
+        "operationId": "status_admin_budget_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Status",
+        "tags": [
+          "admin"
+        ]
+      },
+      "put": {
+        "operationId": "change_admin_budget_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LimitChange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Change",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
     "/admin/consents": {
       "get": {
         "operationId": "list_consents_admin_consents_get",

@@ -17,6 +17,7 @@ from collections.abc import Callable, Mapping, Sequence
 
 from sqlalchemy import Engine
 
+from app.budget import BUDGET
 from app.config import Settings
 from app.db.engine import engine_from_settings
 from app.db.repositories import JobRepository
@@ -36,7 +37,7 @@ HANDLERS: dict[str, Handler] = {}
 
 
 def _provider_outcome(job: Job, error: ProviderError) -> Outcome:
-    if job.attempts < MAX_ATTEMPTS:
+    if job.attempts < MAX_ATTEMPTS and error.code != BUDGET:  # retrying cannot help today
         return Outcome(status=JobStatus.QUEUED)
     return Outcome(status=JobStatus.FAILED, error=error.code)
 

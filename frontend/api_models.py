@@ -317,6 +317,17 @@ class UsageView(BaseModel):
     unpriced_models: list[str]
 
 
+class BudgetView(BaseModel):
+    """The monthly limit, today's share of it and today's spending."""
+
+    monthly_usd: float | None
+    daily_usd: float | None
+    spent_today: float
+    remaining_today: float | None
+    exhausted: bool
+    unpriced_models: list[str]
+
+
 class NewModelSpec(BaseModel):
     """What the Settings page sends to add a model."""
 

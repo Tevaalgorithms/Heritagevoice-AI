@@ -239,6 +239,17 @@ class ModelUsageRow(Base):
     output_tokens: Mapped[int] = mapped_column(Integer, default=0)
 
 
+class CostLimitRow(Base):
+    """The one monthly spending limit an admin set, in US dollars. No row means no limit."""
+
+    __tablename__ = "cost_limit"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, default=1)
+    monthly_usd: Mapped[float] = mapped_column(Float)
+    updated_by: Mapped[str] = mapped_column(String(64), default="system")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
 class ModelSettingRow(Base):
     """Admin-chosen model parameters per role. Never holds an API key."""
 

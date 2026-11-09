@@ -8,6 +8,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from app.api.admin import router as admin_router
+from app.api.budget import router as budget_router
 from app.api.connection_voice import router as connection_voice_router
 from app.api.connections import router as connections_router
 from app.api.consents import router as consents_router
@@ -68,6 +69,7 @@ app.include_router(open_sharing_router)
 app.include_router(graph_voice_router)
 app.include_router(reports_router)
 app.include_router(usage_router)
+app.include_router(budget_router)
 app.include_router(my_groups_router)
 app.include_router(integrations_router)
 app.include_router(library_router)
