@@ -4,6 +4,17 @@ Keep the release evaluation suite separate from the development questions. Label
 
 Write versioned reports under `results/` with commit, corpus, prompt and model identifiers, per-case outcomes, aggregate denominators and latency. A passing unit-test suite is not a quality evaluation.
 
+`uv run python -m evals.report` does this for retrieval and writes `results/published/<date>-retrieval-<index>-<commit>.json`. Each report holds the commit (and whether the tree was clean), the corpus and its size, whether it is synthetic, the kind of vector index, the models used (none yet), every case's outcome, totals with their denominators (overall, per language, per question type), latency (median and slowest), and a list of limits. Only the `published/` folder is committed, and only synthetic fixtures may be run into it. Everything else in `results/` stays git-ignored, so a run on real material can never be committed by accident. Prompt identifiers will appear once answer quality is measured.
+
+Published so far:
+
+| Report | What | Result |
+| --- | --- | --- |
+| `2026-11-09-retrieval-fake-vectors-*` | Keyword plus a fake word-based index, 28 synthetic questions, 9 languages | Found in the top 5: 23 of 24 answerable questions (0.96), mean reciprocal rank 0.89. The miss is the Tamil paraphrase `q06`. |
+| `2026-11-09-retrieval-keyword-*` | Keyword search only | Same questions; compare the ranking. |
+
+These show that search and indexing work across scripts. They say nothing about how well a real embedding model understands meaning: that needs the next run.
+
 ## Development fixtures
 
 `fixtures/recordings.json` (six recordings, Tamil and English) and `fixtures/questions.json` (twelve questions: 4 exact-term, 3 paraphrase, 3 relationship, 2 unsupported) are **synthetic**, written for evaluation. They are not real community material. Have a native Tamil speaker review the Tamil text and translations before treating them as ground truth. Expected sources are `recording:segment` IDs from the recordings file. `tests/test_eval_fixtures.py` checks the mix and that every expected source exists.
