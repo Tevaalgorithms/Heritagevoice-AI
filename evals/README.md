@@ -12,8 +12,9 @@ Published so far:
 | --- | --- | --- |
 | `2026-11-09-retrieval-fake-vectors-*` | Keyword plus a fake word-based index, 28 synthetic questions, 9 languages | Found in the top 5: 23 of 24 answerable questions (0.96), mean reciprocal rank 0.89. The miss is the Tamil paraphrase `q06`. |
 | `2026-11-09-retrieval-keyword-*` | Keyword search only | Same questions; compare the ranking. |
+| `2026-11-09-retrieval-real-embeddings-*` | Real `multilingual-e5-large` embeddings (Pinecone Inference, held in memory), same 28 questions | Found in the top 5: 24 of 24 (1.0), mean reciprocal rank 1.0, every language and question type. The Tamil paraphrase `q06` is found. Median latency about 130 ms (a network call to embed each question). |
 
-These show that search and indexing work across scripts. They say nothing about how well a real embedding model understands meaning. For that, put your Pinecone key in your shell (never in a file) and run:
+The first two show that search and indexing work across scripts. The real-embeddings run shows how the embedding model does on the same questions, but 24 answerable questions in a small synthetic library is too few to claim a rate for real recordings, and four unsupported questions still return passages (refusing them is the verifier's job, not yet measured). To repeat it, put your Pinecone key in your shell (never in a file) and run:
 
 ```
 PINECONE_API_KEY=... uv run python -m evals.report --embedding-model multilingual-e5-large
