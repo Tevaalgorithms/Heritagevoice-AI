@@ -13,7 +13,13 @@ Published so far:
 | `2026-11-09-retrieval-fake-vectors-*` | Keyword plus a fake word-based index, 28 synthetic questions, 9 languages | Found in the top 5: 23 of 24 answerable questions (0.96), mean reciprocal rank 0.89. The miss is the Tamil paraphrase `q06`. |
 | `2026-11-09-retrieval-keyword-*` | Keyword search only | Same questions; compare the ranking. |
 
-These show that search and indexing work across scripts. They say nothing about how well a real embedding model understands meaning: that needs the next run.
+These show that search and indexing work across scripts. They say nothing about how well a real embedding model understands meaning. For that, put your Pinecone key in your shell (never in a file) and run:
+
+```
+PINECONE_API_KEY=... uv run python -m evals.report --embedding-model multilingual-e5-large
+```
+
+Only the embedding calls go to Pinecone Inference (about 130 short texts, a fraction of a cent); the index itself stays in memory and nothing is stored in your Pinecone project. The report is named `...-retrieval-real-embeddings-<commit>.json` and records the model.
 
 ## Development fixtures
 

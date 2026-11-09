@@ -25,7 +25,7 @@ from app.evaluation import load_fixtures
 from app.fakes import FakeEmbedder, FakePineconeIndex
 from app.indexing import IndexDeps, index_one
 from app.models.evidence import Evidence
-from app.ports import VectorStore
+from app.ports import Embedder, VectorStore
 from app.retrieval.evidence_store import hydrate
 from app.retrieval_evaluation import publish_fixture, run_cases, summarize
 from app.security.permissions import Principal, community_label
@@ -43,7 +43,12 @@ def _reader(recordings: list[dict]) -> Principal:
     )
 
 
-def _vector_store(engine, with_vectors: bool) -> VectorStore | None:
+FAKE_DIMENSION = 64
+
+
+def _vector_store(
+    engine, with_vectors: bool, embedder: Embedder | None, dimension: int
+) -> VectorStore | None:
     if not with_vectors:
         return None
 
@@ -51,18 +56,26 @@ def _vector_store(engine, with_vectors: bool) -> VectorStore | None:
         with session_scope(engine) as session:
             return hydrate(session, ids, principal, "vector")
 
-    return PineconeVectorStore(FakePineconeIndex(), FakeEmbedder(), hydrate_for, dimension=64)
+    return PineconeVectorStore(
+        FakePineconeIndex(), embedder or FakeEmbedder(dimension), hydrate_for, dimension=dimension
+    )
 
 
 @contextmanager
 def retriever_for(
-    recordings: list[dict], with_vectors: bool = True
+    recordings: list[dict],
+    with_vectors: bool = True,
+    embedder: Embedder | None = None,
+    dimension: int = FAKE_DIMENSION,
 ) -> Iterator[Callable[[str], list[Evidence]]]:
-    """Publish and index these fixtures in a throwaway database; yield `retrieve(question)`."""
+    """Publish and index these fixtures in a throwaway database; yield `retrieve(question)`.
+
+    The vectors live in memory. By default they come from a fake word-based embedder; pass a real
+    `embedder` (and its `dimension`) to measure what a real embedding model finds."""
     with tempfile.TemporaryDirectory() as tmp:
         engine = create_engine(f"sqlite:///{tmp}/retrieval.db")
         Base.metadata.create_all(engine)
-        store = _vector_store(engine, with_vectors)
+        store = _vector_store(engine, with_vectors, embedder, dimension)
         with session_scope(engine) as session:
             for recording in recordings:
                 publish_fixture(session, recording)
