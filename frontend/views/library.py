@@ -130,8 +130,9 @@ def card(client: ApiClient, play: Fetch, item: LibraryItem, more: object | None 
         origin = _origin(item)
         if origin:
             st.caption(origin)
-        moment = Moment(item.start_s, item.end_s, voice_note(item.credit))
-        listen_button(play, item.recording_id, f"listen-{item.evidence_id}", moment)
+        if item.has_audio:
+            moment = Moment(item.start_s, item.end_s, voice_note(item.credit))
+            listen_button(play, item.recording_id, f"listen-{item.evidence_id}", moment)
         report_button(client, item.recording_id, item.evidence_id)
 
 

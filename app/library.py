@@ -42,6 +42,7 @@ class LibraryEntry:
     community: str | None
     added: str = ""
     credit: Credit | None = None
+    has_audio: bool = True
 
 
 def _notices(recording: Recording) -> tuple[str, ...]:
@@ -70,6 +71,7 @@ def _entry(
         community=_community(recording, consent),
         added=recording.added,
         credit=credit_for(recording, consent),
+        has_audio=recording.audio_key is not None,
     )
 
 

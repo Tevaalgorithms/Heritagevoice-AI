@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.api.auth import current_principal, get_session_factory
 from app.api.main import app
-from app.db.repositories import ChunkRepository, ConsentRepository, RecordingRepository
+from app.db.repositories import ChunkRepository, ConsentRepository, Media, RecordingRepository
 from app.db.session import session_scope
 from app.db.tables import Base, ConsentRow
 from app.indexing import IndexDeps, index_one
@@ -206,6 +206,17 @@ def test_no_response_exposes_the_uploader_or_the_audio_location(client, engine):
     body = browse(client).text + browse(client, q="water", view="translation").text
     for secret in ("uploader", "audio_key", "recordings/c2", "consent"):
         assert secret not in body
+
+
+def test_each_item_says_whether_there_is_audio_to_play(client, engine):
+    add(engine, "r-audio", visibility=Visibility.PUBLIC)
+    add(engine, "r-silent", visibility=Visibility.PUBLIC)
+    with session_scope(engine) as session:
+        media = Media("recordings/c2/r-audio/original", "audio/mp4", 10, 6.0, None)
+        RecordingRepository(session).set_media("r-audio", media)
+    items = {i["recording_id"]: i for i in browse(client).json()["items"]}
+    assert items["r-audio"]["has_audio"] is True
+    assert items["r-silent"]["has_audio"] is False
 
 
 # --- the endpoint itself -----------------------------------------------------------------

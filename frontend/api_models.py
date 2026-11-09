@@ -421,6 +421,7 @@ class LibraryItem(BaseModel):
     community: str | None = None
     added: str = ""
     credit: CreditView | None = None
+    has_audio: bool = True
 
 
 class LibraryResult(BaseModel):
