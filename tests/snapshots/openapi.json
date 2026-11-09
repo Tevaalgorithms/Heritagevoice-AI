@@ -1049,6 +1049,11 @@
             "title": "Evidence Id",
             "type": "string"
           },
+          "has_audio": {
+            "default": true,
+            "title": "Has Audio",
+            "type": "boolean"
+          },
           "heritage_kind": {
             "title": "Heritage Kind",
             "type": "string"

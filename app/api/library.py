@@ -48,6 +48,7 @@ class LibraryItem(BaseModel):
     community: str | None
     added: str = ""
     credit: Credit | None = None
+    has_audio: bool = True
 
 
 class LibraryResponse(BaseModel):
@@ -70,6 +71,7 @@ def _item(entry: LibraryEntry) -> LibraryItem:
         community=entry.community,
         added=entry.added,
         credit=entry.credit,
+        has_audio=entry.has_audio,
     )
 
 

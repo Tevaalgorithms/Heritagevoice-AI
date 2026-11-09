@@ -99,3 +99,29 @@ def test_the_snapshot_does_not_leave_dangling_punctuation_or_break_a_single_long
 
     assert snapshot("one two three, " + "x" * 120, 20) == "one two three…"
     assert snapshot("y" * 150, 20) == "y" * 20 + "…"
+
+
+def test_a_card_offers_listen_only_when_there_is_audio():
+    from streamlit.testing.v1 import AppTest  # noqa: PLC0415
+
+    def script():
+        from frontend.api_client import LibraryItem  # noqa: PLC0415
+        from frontend.views.library import card  # noqa: PLC0415
+
+        base = {
+            "recording_id": "r1",
+            "heritage_kind": "story",
+            "language": "ta",
+            "view": "original",
+            "passage": "x",
+            "start_s": 0.0,
+            "end_s": 4.0,
+        }
+        for name, has_audio in (("with", True), ("without", False)):
+            item = LibraryItem(evidence_id=name, has_audio=has_audio, **base)
+            card(None, lambda _id: (b"", "audio/mp4"), item)  # type: ignore[arg-type]
+
+    app = AppTest.from_function(script).run()
+    assert not app.exception
+    keys = [b.key for b in app.button if b.label == "Listen"]
+    assert keys == ["listen-with"]
