@@ -46,3 +46,27 @@ def test_the_report_is_written_under_the_published_folder(built, tmp_path, monke
 
 def test_the_latency_summary_has_a_median_and_a_slow_tail(built):
     assert 0 <= built["latency"]["median_ms"] <= built["latency"]["p95_ms"]
+
+
+def test_a_real_embedding_model_is_named_in_the_report_and_needs_no_network_to_test(
+    tmp_path, monkeypatch
+):
+    from app.fakes import FakeEmbedder  # noqa: PLC0415
+
+    stand_in = r.RealEmbeddings("test-model", FakeEmbedder(32), 32)
+    monkeypatch.setattr(r, "PUBLISHED", tmp_path)  # never write a test report to the real folder
+    built = r.build(real=stand_in)
+    assert "test-model" in built["vector_index"]
+    assert built["models"] == {"embedding": "test-model", "language_model": None}
+    assert not any("fake index" in limit for limit in built["limits"])
+    assert r.write(built).name.split("-retrieval-")[1].startswith("real-embeddings")
+
+
+def test_without_a_pinecone_key_a_real_run_stops_and_says_what_to_do(monkeypatch):
+    from types import SimpleNamespace  # noqa: PLC0415
+
+    monkeypatch.setattr(
+        r, "Settings", lambda: SimpleNamespace(pinecone_api_key=None, embedding_dimension=1024)
+    )
+    with pytest.raises(SystemExit, match="PINECONE_API_KEY"):
+        r.real_embeddings("multilingual-e5-large")

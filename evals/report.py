@@ -2,6 +2,7 @@
 
     uv run python -m evals.report              # fake word-based vector index plus keyword search
     uv run python -m evals.report --keyword    # keyword search only
+    PINECONE_API_KEY=... uv run python -m evals.report --embedding-model multilingual-e5-large
 
 Writes `evals/results/published/<date>-retrieval-<index>-<commit>.json`: the commit, the corpus
 (synthetic, with its size), the kind of vector index, every case's outcome, the totals with their
@@ -14,11 +15,17 @@ import argparse
 import json
 import statistics
 import subprocess
+import sys
 import time
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from pinecone import Pinecone
+
+from app.adapters.pinecone_store import PineconeEmbedder
+from app.config import Settings
+from app.ports import Embedder
 from app.retrieval_evaluation import TOP, distinct_recordings, first_rank, recording_of
 from evals.langsmith_eval import _fixtures
 from evals.retrieval_check import retriever_for
@@ -76,10 +83,35 @@ def _latency(cases: list[dict[str, Any]]) -> dict[str, float]:
     return {"median_ms": round(statistics.median(millis), 1), "p95_ms": p95}
 
 
-def build(with_vectors: bool = True) -> dict[str, Any]:
+class RealEmbeddings:
+    """A real embedding model, used only for this run: its name, the embedder and its size."""
+
+    def __init__(self, model: str, embedder: Embedder, dimension: int) -> None:
+        self.model, self.embedder, self.dimension = model, embedder, dimension
+
+
+def real_embeddings(model: str) -> RealEmbeddings:
+    """Pinecone Inference with `model`. Needs PINECONE_API_KEY in the environment."""
+    settings = Settings()
+    if settings.pinecone_api_key is None:
+        sys.exit(
+            "Set PINECONE_API_KEY in your shell (not in a file) to use a real embedding model."
+        )
+    client = Pinecone(api_key=settings.pinecone_api_key.get_secret_value())
+    return RealEmbeddings(model, PineconeEmbedder(client, model), settings.embedding_dimension)
+
+
+def build(with_vectors: bool = True, real: RealEmbeddings | None = None) -> dict[str, Any]:
     recordings, questions = _fixtures()
-    with retriever_for(recordings, with_vectors) as retrieve:
+    options = {"embedder": real.embedder, "dimension": real.dimension} if real else {}
+    with retriever_for(recordings, with_vectors, **options) as retrieve:
         cases = [_ask(retrieve, question) for question in questions]
+    if real:
+        index = f"real: {real.model} through Pinecone Inference, held in memory"
+        models = {"embedding": real.model, "language_model": None}
+    else:
+        index = "fake word-based (no meaning)" if with_vectors else "none (keyword only)"
+        models = "none: no embedding or language model is used in this run"
     return {
         "schema": SCHEMA,
         "date": datetime.now(UTC).date().isoformat(),
@@ -92,8 +124,8 @@ def build(with_vectors: bool = True) -> dict[str, Any]:
             "questions": len(questions),
             "languages_of_recordings": sorted({r["language"] for r in recordings}),
         },
-        "vector_index": "fake word-based (no meaning)" if with_vectors else "none (keyword only)",
-        "models": "none: no embedding or language model is used in this run",
+        "vector_index": index,
+        "models": models,
         "top": TOP,
         "overall": _share(cases),
         "by_question_language": _grouped(cases, "language"),
@@ -106,14 +138,15 @@ def build(with_vectors: bool = True) -> dict[str, Any]:
         "limits": [
             "Synthetic questions and recordings; native speakers have not reviewed them.",
             "Most languages have one question, so a per-language score is a single case.",
-            "The fake index matches shared words only: paraphrase questions are expected to miss.",
+            *([] if real else ["The fake index matches shared words only: paraphrases will miss."]),
             "Answer quality and correct refusals are not measured here.",
         ],
     }
 
 
 def write(report: dict[str, Any]) -> Path:
-    index = "keyword" if report["vector_index"].startswith("none") else "fake-vectors"
+    kinds = {"none": "keyword", "fake": "fake-vectors", "real": "real-embeddings"}
+    index = kinds[report["vector_index"].split(" ", 1)[0].rstrip(":")]
     PUBLISHED.mkdir(parents=True, exist_ok=True)
     path = PUBLISHED / f"{report['date']}-retrieval-{index}-{report['commit']}.json"
     path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
@@ -123,7 +156,12 @@ def write(report: dict[str, Any]) -> Path:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Write a published retrieval report")
     parser.add_argument("--keyword", action="store_true", help="keyword search only")
-    report = build(with_vectors=not parser.parse_args().keyword)
+    parser.add_argument(
+        "--embedding-model", help="use this Pinecone Inference model, e.g. multilingual-e5-large"
+    )
+    args = parser.parse_args()
+    real = real_embeddings(args.embedding_model) if args.embedding_model else None
+    report = build(with_vectors=not args.keyword, real=real)
     print(f"wrote {write(report)}")
     print(json.dumps({"overall": report["overall"], "latency": report["latency"]}, indent=2))
 
