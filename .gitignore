@@ -10,6 +10,7 @@ data/*
 !data/README.md
 evals/results/*
 !evals/results/.gitkeep
+!evals/results/published/
 
 # secrets, Terraform state and plans: must never be committed
 .env.*

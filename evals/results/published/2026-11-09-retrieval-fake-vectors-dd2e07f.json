@@ -1,0 +1,695 @@
+{
+  "schema": 1,
+  "date": "2026-11-09",
+  "commit": "dd2e07f",
+  "uncommitted_changes": false,
+  "what": "retrieval: is an expected recording among the top results for each question",
+  "corpus": {
+    "synthetic": true,
+    "recordings": 15,
+    "questions": 28,
+    "languages_of_recordings": [
+      "bn",
+      "en",
+      "es",
+      "fr",
+      "hi",
+      "ml",
+      "pt",
+      "ta",
+      "te"
+    ]
+  },
+  "vector_index": "fake word-based (no meaning)",
+  "models": "none: no embedding or language model is used in this run",
+  "top": 5,
+  "overall": {
+    "answerable_questions": 24,
+    "found_in_top_5": 23,
+    "recall_at_5": 0.958,
+    "mean_reciprocal_rank": 0.889
+  },
+  "by_question_language": {
+    "bn": {
+      "answerable_questions": 1,
+      "found_in_top_5": 1,
+      "recall_at_5": 1.0,
+      "mean_reciprocal_rank": 1.0
+    },
+    "en": {
+      "answerable_questions": 13,
+      "found_in_top_5": 13,
+      "recall_at_5": 1.0,
+      "mean_reciprocal_rank": 0.872
+    },
+    "es": {
+      "answerable_questions": 1,
+      "found_in_top_5": 1,
+      "recall_at_5": 1.0,
+      "mean_reciprocal_rank": 1.0
+    },
+    "fr": {
+      "answerable_questions": 1,
+      "found_in_top_5": 1,
+      "recall_at_5": 1.0,
+      "mean_reciprocal_rank": 1.0
+    },
+    "hi": {
+      "answerable_questions": 1,
+      "found_in_top_5": 1,
+      "recall_at_5": 1.0,
+      "mean_reciprocal_rank": 1.0
+    },
+    "ml": {
+      "answerable_questions": 1,
+      "found_in_top_5": 1,
+      "recall_at_5": 1.0,
+      "mean_reciprocal_rank": 1.0
+    },
+    "pt": {
+      "answerable_questions": 1,
+      "found_in_top_5": 1,
+      "recall_at_5": 1.0,
+      "mean_reciprocal_rank": 1.0
+    },
+    "ta": {
+      "answerable_questions": 4,
+      "found_in_top_5": 3,
+      "recall_at_5": 0.75,
+      "mean_reciprocal_rank": 0.75
+    },
+    "te": {
+      "answerable_questions": 1,
+      "found_in_top_5": 1,
+      "recall_at_5": 1.0,
+      "mean_reciprocal_rank": 1.0
+    }
+  },
+  "by_category": {
+    "cross_language": {
+      "answerable_questions": 5,
+      "found_in_top_5": 5,
+      "recall_at_5": 1.0,
+      "mean_reciprocal_rank": 0.767
+    },
+    "exact_term": {
+      "answerable_questions": 13,
+      "found_in_top_5": 13,
+      "recall_at_5": 1.0,
+      "mean_reciprocal_rank": 1.0
+    },
+    "paraphrase": {
+      "answerable_questions": 3,
+      "found_in_top_5": 2,
+      "recall_at_5": 0.667,
+      "mean_reciprocal_rank": 0.667
+    },
+    "relationship": {
+      "answerable_questions": 3,
+      "found_in_top_5": 3,
+      "recall_at_5": 1.0,
+      "mean_reciprocal_rank": 0.833
+    },
+    "unsupported": {
+      "answerable_questions": 0,
+      "found_in_top_5": 0,
+      "recall_at_5": null,
+      "mean_reciprocal_rank": null
+    }
+  },
+  "unsupported_questions_that_returned_passages": [
+    "q11",
+    "q12",
+    "dq15",
+    "dq16"
+  ],
+  "latency": {
+    "median_ms": 5.9,
+    "p95_ms": 9.7
+  },
+  "cases": [
+    {
+      "id": "q01",
+      "corpus": "dev",
+      "category": "exact_term",
+      "language": "ta",
+      "question": "ஏற்றம்",
+      "expected": [
+        "rec-01"
+      ],
+      "returned": [
+        "rec-01",
+        "demo-fr-pain",
+        "rec-05",
+        "demo-en-quilt",
+        "rec-02"
+      ],
+      "rank": 1,
+      "hit_at_5": 1,
+      "latency_ms": 4.8
+    },
+    {
+      "id": "q02",
+      "corpus": "dev",
+      "category": "exact_term",
+      "language": "en",
+      "question": "kanmai tank",
+      "expected": [
+        "rec-02"
+      ],
+      "returned": [
+        "rec-02",
+        "rec-04",
+        "demo-ta-pongal",
+        "rec-03",
+        "demo-pt-pescadores"
+      ],
+      "rank": 1,
+      "hit_at_5": 1,
+      "latency_ms": 3.7
+    },
+    {
+      "id": "q03",
+      "corpus": "dev",
+      "category": "exact_term",
+      "language": "en",
+      "question": "kummi",
+      "expected": [
+        "rec-03",
+        "rec-05"
+      ],
+      "returned": [
+        "rec-03",
+        "rec-05",
+        "demo-ta-pongal",
+        "rec-06",
+        "demo-bn-bhatiyali"
+      ],
+      "rank": 1,
+      "hit_at_5": 1,
+      "latency_ms": 4.6
+    },
+    {
+      "id": "q04",
+      "corpus": "dev",
+      "category": "exact_term",
+      "language": "ta",
+      "question": "ஆடிப்பட்டம்",
+      "expected": [
+        "rec-06"
+      ],
+      "returned": [
+        "rec-06",
+        "demo-bn-bhatiyali",
+        "rec-02",
+        "demo-te-ugadi",
+        "rec-01"
+      ],
+      "rank": 1,
+      "hit_at_5": 1,
+      "latency_ms": 3.4
+    },
+    {
+      "id": "q05",
+      "corpus": "dev",
+      "category": "paraphrase",
+      "language": "en",
+      "question": "How did villagers manage farming when there was little rain?",
+      "expected": [
+        "rec-01",
+        "rec-04"
+      ],
+      "returned": [
+        "rec-01",
+        "rec-03",
+        "rec-04",
+        "rec-05",
+        "demo-ta-pongal"
+      ],
+      "rank": 1,
+      "hit_at_5": 1,
+      "latency_ms": 8.0
+    },
+    {
+      "id": "q06",
+      "corpus": "dev",
+      "category": "paraphrase",
+      "language": "ta",
+      "question": "வறட்சியில் தண்ணீரை எப்படி பகிர்ந்தார்கள்?",
+      "expected": [
+        "rec-01",
+        "rec-04"
+      ],
+      "returned": [
+        "rec-06",
+        "demo-bn-bhatiyali",
+        "demo-ta-pongal",
+        "rec-02",
+        "rec-05"
+      ],
+      "rank": null,
+      "hit_at_5": 0,
+      "latency_ms": 5.1
+    },
+    {
+      "id": "q07",
+      "corpus": "dev",
+      "category": "paraphrase",
+      "language": "en",
+      "question": "What do people do together before the monsoon to prepare water storage?",
+      "expected": [
+        "rec-02"
+      ],
+      "returned": [
+        "rec-02",
+        "rec-05",
+        "rec-04",
+        "demo-ml-onam",
+        "rec-03"
+      ],
+      "rank": 1,
+      "hit_at_5": 1,
+      "latency_ms": 9.7
+    },
+    {
+      "id": "q08",
+      "corpus": "dev",
+      "category": "relationship",
+      "language": "en",
+      "question": "Which harvest songs are connected to Pongal in both villages?",
+      "expected": [
+        "rec-03",
+        "rec-05"
+      ],
+      "returned": [
+        "rec-05",
+        "rec-03",
+        "demo-ta-pongal",
+        "demo-bn-bhatiyali",
+        "demo-ml-onam"
+      ],
+      "rank": 1,
+      "hit_at_5": 1,
+      "latency_ms": 9.7
+    },
+    {
+      "id": "q09",
+      "corpus": "dev",
+      "category": "relationship",
+      "language": "en",
+      "question": "How are the water-sharing customs of the two villages related?",
+      "expected": [
+        "rec-01",
+        "rec-04"
+      ],
+      "returned": [
+        "demo-bn-bhatiyali",
+        "rec-04",
+        "rec-05",
+        "rec-01",
+        "demo-es-vendimia"
+      ],
+      "rank": 2,
+      "hit_at_5": 1,
+      "latency_ms": 9.1
+    },
+    {
+      "id": "q10",
+      "corpus": "dev",
+      "category": "relationship",
+      "language": "en",
+      "question": "How have harvest songs changed between generations across the two villages?",
+      "expected": [
+        "rec-03",
+        "rec-05"
+      ],
+      "returned": [
+        "rec-05",
+        "rec-03",
+        "demo-bn-bhatiyali",
+        "demo-es-vendimia",
+        "demo-hi-lori"
+      ],
+      "rank": 1,
+      "hit_at_5": 1,
+      "latency_ms": 8.8
+    },
+    {
+      "id": "q11",
+      "corpus": "dev",
+      "category": "unsupported",
+      "language": "en",
+      "question": "What was the exact population of the village in 1950?",
+      "expected": [],
+      "returned": [
+        "demo-pt-pescadores",
+        "demo-bn-bhatiyali",
+        "demo-fr-pain",
+        "rec-06",
+        "demo-ml-onam"
+      ],
+      "rank": null,
+      "hit_at_5": null,
+      "latency_ms": 9.1
+    },
+    {
+      "id": "q12",
+      "corpus": "dev",
+      "category": "unsupported",
+      "language": "en",
+      "question": "Which king built the tank in the village?",
+      "expected": [],
+      "returned": [
+        "demo-pt-pescadores",
+        "rec-05",
+        "demo-ml-onam",
+        "rec-04",
+        "rec-02"
+      ],
+      "rank": null,
+      "hit_at_5": null,
+      "latency_ms": 9.8
+    },
+    {
+      "id": "dq01",
+      "corpus": "demo",
+      "category": "exact_term",
+      "language": "ta",
+      "question": "பொங்கல்",
+      "expected": [
+        "demo-ta-pongal"
+      ],
+      "returned": [
+        "demo-ta-pongal",
+        "rec-03",
+        "rec-02",
+        "demo-pt-pescadores"
+      ],
+      "rank": 1,
+      "hit_at_5": 1,
+      "latency_ms": 3.2
+    },
+    {
+      "id": "dq02",
+      "corpus": "demo",
+      "category": "exact_term",
+      "language": "hi",
+      "question": "लोरी",
+      "expected": [
+        "demo-hi-lori"
+      ],
+      "returned": [
+        "demo-hi-lori",
+        "demo-bn-bhatiyali",
+        "demo-te-ugadi",
+        "demo-ml-onam",
+        "demo-fr-pain"
+      ],
+      "rank": 1,
+      "hit_at_5": 1,
+      "latency_ms": 3.3
+    },
+    {
+      "id": "dq03",
+      "corpus": "demo",
+      "category": "exact_term",
+      "language": "te",
+      "question": "ఉగాది",
+      "expected": [
+        "demo-te-ugadi"
+      ],
+      "returned": [
+        "demo-te-ugadi",
+        "demo-en-quilt",
+        "demo-fr-pain",
+        "demo-ml-onam",
+        "demo-ta-pongal"
+      ],
+      "rank": 1,
+      "hit_at_5": 1,
+      "latency_ms": 3.2
+    },
+    {
+      "id": "dq04",
+      "corpus": "demo",
+      "category": "exact_term",
+      "language": "ml",
+      "question": "പൂക്കളം",
+      "expected": [
+        "demo-ml-onam"
+      ],
+      "returned": [
+        "demo-ml-onam",
+        "rec-06",
+        "rec-04",
+        "rec-03",
+        "demo-pt-pescadores"
+      ],
+      "rank": 1,
+      "hit_at_5": 1,
+      "latency_ms": 4.0
+    },
+    {
+      "id": "dq05",
+      "corpus": "demo",
+      "category": "exact_term",
+      "language": "bn",
+      "question": "ভাটিয়ালি",
+      "expected": [
+        "demo-bn-bhatiyali"
+      ],
+      "returned": [
+        "demo-bn-bhatiyali",
+        "demo-te-ugadi",
+        "demo-ta-pongal",
+        "demo-hi-lori",
+        "rec-02"
+      ],
+      "rank": 1,
+      "hit_at_5": 1,
+      "latency_ms": 4.0
+    },
+    {
+      "id": "dq06",
+      "corpus": "demo",
+      "category": "exact_term",
+      "language": "fr",
+      "question": "levain",
+      "expected": [
+        "demo-fr-pain"
+      ],
+      "returned": [
+        "demo-fr-pain",
+        "demo-pt-pescadores",
+        "demo-ta-pongal",
+        "demo-en-quilt",
+        "rec-02"
+      ],
+      "rank": 1,
+      "hit_at_5": 1,
+      "latency_ms": 4.6
+    },
+    {
+      "id": "dq07",
+      "corpus": "demo",
+      "category": "exact_term",
+      "language": "es",
+      "question": "vendimia",
+      "expected": [
+        "demo-es-vendimia"
+      ],
+      "returned": [
+        "demo-es-vendimia",
+        "demo-fr-pain",
+        "rec-06",
+        "rec-02",
+        "demo-ml-onam"
+      ],
+      "rank": 1,
+      "hit_at_5": 1,
+      "latency_ms": 3.6
+    },
+    {
+      "id": "dq08",
+      "corpus": "demo",
+      "category": "exact_term",
+      "language": "pt",
+      "question": "pescadores",
+      "expected": [
+        "demo-pt-pescadores"
+      ],
+      "returned": [
+        "demo-pt-pescadores",
+        "demo-bn-bhatiyali",
+        "rec-01",
+        "rec-03",
+        "demo-hi-lori"
+      ],
+      "rank": 1,
+      "hit_at_5": 1,
+      "latency_ms": 2.6
+    },
+    {
+      "id": "dq09",
+      "corpus": "demo",
+      "category": "exact_term",
+      "language": "en",
+      "question": "quilt",
+      "expected": [
+        "demo-en-quilt"
+      ],
+      "returned": [
+        "demo-en-quilt",
+        "rec-01",
+        "demo-es-vendimia",
+        "rec-02",
+        "rec-06"
+      ],
+      "rank": 1,
+      "hit_at_5": 1,
+      "latency_ms": 4.2
+    },
+    {
+      "id": "dq10",
+      "corpus": "demo",
+      "category": "cross_language",
+      "language": "en",
+      "question": "flower carpet in the courtyard",
+      "expected": [
+        "demo-ml-onam"
+      ],
+      "returned": [
+        "demo-ml-onam",
+        "demo-pt-pescadores",
+        "rec-05",
+        "rec-01",
+        "demo-hi-lori"
+      ],
+      "rank": 1,
+      "hit_at_5": 1,
+      "latency_ms": 9.2
+    },
+    {
+      "id": "dq11",
+      "corpus": "demo",
+      "category": "cross_language",
+      "language": "en",
+      "question": "neem flowers and jaggery",
+      "expected": [
+        "demo-te-ugadi"
+      ],
+      "returned": [
+        "demo-te-ugadi",
+        "demo-ml-onam",
+        "demo-hi-lori",
+        "demo-pt-pescadores",
+        "demo-es-vendimia"
+      ],
+      "rank": 1,
+      "hit_at_5": 1,
+      "latency_ms": 7.3
+    },
+    {
+      "id": "dq12",
+      "corpus": "demo",
+      "category": "cross_language",
+      "language": "en",
+      "question": "boatmen singing while rowing",
+      "expected": [
+        "demo-bn-bhatiyali"
+      ],
+      "returned": [
+        "demo-es-vendimia",
+        "rec-01",
+        "demo-bn-bhatiyali",
+        "demo-hi-lori",
+        "rec-05"
+      ],
+      "rank": 3,
+      "hit_at_5": 1,
+      "latency_ms": 8.2
+    },
+    {
+      "id": "dq13",
+      "corpus": "demo",
+      "category": "cross_language",
+      "language": "en",
+      "question": "grape harvest with grandmothers singing",
+      "expected": [
+        "demo-es-vendimia"
+      ],
+      "returned": [
+        "demo-es-vendimia",
+        "rec-05",
+        "demo-pt-pescadores",
+        "rec-02",
+        "rec-03"
+      ],
+      "rank": 1,
+      "hit_at_5": 1,
+      "latency_ms": 6.7
+    },
+    {
+      "id": "dq14",
+      "corpus": "demo",
+      "category": "cross_language",
+      "language": "en",
+      "question": "thanks to the sun and the cattle",
+      "expected": [
+        "demo-ta-pongal"
+      ],
+      "returned": [
+        "rec-03",
+        "demo-ta-pongal",
+        "demo-pt-pescadores",
+        "demo-bn-bhatiyali",
+        "demo-te-ugadi"
+      ],
+      "rank": 2,
+      "hit_at_5": 1,
+      "latency_ms": 8.8
+    },
+    {
+      "id": "dq15",
+      "corpus": "demo",
+      "category": "unsupported",
+      "language": "en",
+      "question": "How do I treat a fever at home?",
+      "expected": [],
+      "returned": [
+        "demo-pt-pescadores",
+        "demo-es-vendimia",
+        "rec-05",
+        "rec-04",
+        "demo-en-quilt"
+      ],
+      "rank": null,
+      "hit_at_5": null,
+      "latency_ms": 7.9
+    },
+    {
+      "id": "dq16",
+      "corpus": "demo",
+      "category": "unsupported",
+      "language": "en",
+      "question": "What did the elders say about the monsoon in Gujarat?",
+      "expected": [],
+      "returned": [
+        "demo-pt-pescadores",
+        "demo-hi-lori",
+        "rec-01",
+        "demo-ml-onam",
+        "demo-bn-bhatiyali"
+      ],
+      "rank": null,
+      "hit_at_5": null,
+      "latency_ms": 9.7
+    }
+  ],
+  "limits": [
+    "Synthetic questions and recordings; native speakers have not reviewed them.",
+    "Most languages have one question, so a per-language score is a single case.",
+    "The fake index matches shared words only: paraphrase questions are expected to miss.",
+    "Answer quality and correct refusals are not measured here."
+  ]
+}
