@@ -39,6 +39,12 @@ fits_this_machine() {
   return 1
 }
 
+# Every deploy leaves an image behind, and the 20 GB root disk fills up ("no space left on
+# device"). Before loading a new one, drop images no container uses, and the build cache. The
+# running release is kept, and an older release is re-fetched from the bucket if it is rolled back to.
+docker image prune --all --force >/dev/null || true
+docker builder prune --all --force >/dev/null || true
+
 HV_VERSION="$(cat RELEASE)"
 export HV_VERSION
 if have_image; then build=(--no-build); else echo "No shipped image; building here"; build=(--build); fi
