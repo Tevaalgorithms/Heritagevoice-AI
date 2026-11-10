@@ -52,6 +52,13 @@ portal then shows *Configured* or *Missing* and saving fails with a clear messag
    Put a model from each provider in a job's chain for fail-over across providers.
 4. For Pinecone: create the index in the Pinecone console first (its dimension must match), then
    save the key and index name and press the test.
+5. For Neo4j: the user name is the database user (usually `neo4j`), not the email you sign in to
+   the Aura website with, and the password is the instance's own, shown once when it was created
+   (not your Aura account password). Save the address, user name and password, press the test,
+   then fill the graph: GitHub, **Actions**, **rebuild-indexes**, **Run workflow** on `main`, target
+   `graph`, and approve the `prod` run. It copies the approved relationships from PostgreSQL into
+   Neo4j. Run it again with target `search` (or `both`) if Pinecone or keyword search looks empty.
+   A free Aura instance pauses itself after a few days without use; resume it in the Aura console.
 
 ## Notes and limits
 
