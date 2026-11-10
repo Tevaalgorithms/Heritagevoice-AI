@@ -27,6 +27,8 @@ POLL_SECONDS = 2.0
 MAX_POLLS = 150
 FOCUS = "focus-recording"  # the recording just uploaded, so its transcript opens for editing
 DONE = {"review", "published", "failed"}
+DISCARDED = "recording-discarded"  # set after a delete, so the next page shows a note
+DISCARDABLE = ("draft", "review")  # not yet approved by an administrator
 
 
 def follow_job(client: ApiClient, job_id: str) -> str | None:
@@ -303,14 +305,57 @@ def _open_recording(client: ApiClient, recording_id: str) -> None:
     render_editor(client, recording)
 
 
+def _discard(client: ApiClient, recording_id: str) -> None:
+    try:
+        client.discard_recording(recording_id)
+    except ApiError as error:
+        st.error(message_for(error))
+        return
+    st.session_state.pop(FOCUS, None)
+    st.session_state[DISCARDED] = True
+    st.rerun()
+
+
+def _discard_control(client: ApiClient, recording: RecordingSummary) -> None:
+    """Throw away a recording made by mistake. Asks once, because it cannot be undone."""
+    key = f"discard-{recording.id}"
+    if not st.session_state.get(key):
+        if st.button("Discard this recording", icon=":material/delete:", key=f"{key}-ask"):
+            st.session_state[key] = True
+            st.rerun()
+        return
+    st.warning(
+        "This deletes the audio, the transcript and the translation for good. It cannot be undone."
+    )
+    yes, no, _ = st.columns([1, 1, 3])
+    if yes.button("Yes, delete it", type="primary", key=f"{key}-yes"):
+        _discard(client, recording.id)
+    if no.button("Keep it", key=f"{key}-no"):
+        st.session_state[key] = False
+        st.rerun()
+
+
+def _announce_discard() -> None:
+    if st.session_state.pop(DISCARDED, False):
+        st.success("The recording was deleted, with its transcript and translation.")
+
+
+def _pick_recording(mine: list[RecordingSummary]) -> RecordingSummary:
+    focus = st.session_state.get(FOCUS)
+    start = next((i for i, r in enumerate(mine) if r.id == focus), 0)
+    return st.selectbox("Recording", mine, index=start, format_func=_recording_label)
+
+
 def _your_recordings(client: ApiClient) -> None:
-    """Recordings you have uploaded: open one to read or correct its transcript."""
+    """Recordings you have uploaded: open one to read or correct its transcript, or discard it
+    while nobody has approved it."""
+    _announce_discard()
     mine = _mine(client)
     if not mine:
         return
     st.divider()
     st.subheader("Your recordings")
-    focus = st.session_state.get(FOCUS)
-    start = next((i for i, r in enumerate(mine) if r.id == focus), 0)
-    chosen = st.selectbox("Recording", mine, index=start, format_func=_recording_label)
+    chosen = _pick_recording(mine)
     _open_recording(client, chosen.id)
+    if chosen.status in DISCARDABLE:
+        _discard_control(client, chosen)

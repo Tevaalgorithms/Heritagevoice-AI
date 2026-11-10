@@ -26,16 +26,19 @@ from starlette.concurrency import run_in_threadpool
 from app.adapters.audio_store import LocalAudioStore, S3AudioStore
 from app.api.admin import AdminContext, context_for
 from app.api.auth import SessionFactory, current_principal, get_session_factory
+from app.api.tracing import current_trace_id
 from app.audio import AudioRules, UploadError
 from app.config import Settings
 from app.credits import credit_for
 from app.db.repositories import (
+    AuditEntry,
     AuditRepository,
     ConsentRepository,
     JobRepository,
     RecordingRepository,
     TranscriptRepository,
 )
+from app.discard import DiscardRefusedError, discard_recording
 from app.models.credit import MAX_NAME, MAX_NOTE, Credit, SourceKind
 from app.models.job import Job
 from app.models.records import HeritageKind, Recording, Visibility
@@ -251,6 +254,32 @@ def revoke_recording_endpoint(
     return RevokeResponse(
         recording_id=recording_id, status="revoked", jobs_stopped=result.jobs_stopped
     )
+
+
+@router.delete("/recordings/{recording_id}", status_code=204)
+def discard_recording_endpoint(
+    recording_id: Annotated[str, PathId],
+    principal: Annotated[Principal, Depends(current_principal)],
+    factory: Annotated[SessionFactory, Depends(get_session_factory)],
+    store: Annotated[AudioStore, Depends(get_audio_store)],
+) -> Response:
+    """Throw away your own recording that nobody has approved yet: the audio, the transcript and
+    the translation are erased. A recording that was shared is withdrawn instead."""
+    with factory() as session:
+        recording = viewable(session, principal, recording_id)
+        resource = Resource(recording.community_id, recording.uploader_id)
+        if not authorize(principal, Action.RECORDING_DISCARD, resource).allowed:
+            raise NOT_FOUND
+        try:
+            discard_recording(session, store, principal, recording_id)
+        except DiscardRefusedError as error:
+            raise HTTPException(status_code=error.status, detail={"code": error.code}) from error
+        # The log says who did it and to which recording, never what was said.
+        entry = AuditEntry(
+            principal.user_id, "recording:discard", f"recording:{recording_id}", current_trace_id()
+        )
+        AuditRepository(session).record(entry)
+    return Response(status_code=204)
 
 
 @router.get("/jobs/{job_id}")

@@ -73,6 +73,11 @@ CODE_MESSAGES = {
         "latest infrastructure update (the infra workflow, stack single-instance)."
     ),
     "aws_error": "An AWS service the server relies on did not answer. Try again in a minute.",
+    "already_shared": (
+        "This recording has been approved, so it cannot be deleted here. Ask an administrator "
+        "to withdraw it."
+    ),
+    "still_processing": "This recording is still being processed. Try again in a minute.",
     "voice_failed": "We could not understand that recording. Try again, or type the correction.",
 }
 
