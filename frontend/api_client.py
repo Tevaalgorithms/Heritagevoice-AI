@@ -204,6 +204,10 @@ class ApiClient:
         response = self._send("GET", f"/v1/recordings/{recording_id}", auth=True)
         return RecordingView.model_validate(response.json())
 
+    def discard_recording(self, recording_id: str) -> None:
+        """Delete a recording nobody has approved yet: its audio, transcript and translation."""
+        self._send("DELETE", f"/v1/recordings/{recording_id}", auth=True)
+
     def list_recordings(self) -> list[RecordingSummary]:
         response = self._send("GET", "/v1/recordings", auth=True)
         return [RecordingSummary.model_validate(item) for item in response.json()]

@@ -24,6 +24,7 @@ class Action(StrEnum):
     VISIBILITY_MANAGE = "visibility:manage"
     INTEGRATION_MANAGE = "integration:manage"
     RECORDING_REVOKE = "recording:revoke"
+    RECORDING_DISCARD = "recording:discard"
     CONSENT_MANAGE = "consent:manage"
     GROUP_MANAGE = "group:manage"
     MODEL_MANAGE = "model:manage"
@@ -51,6 +52,8 @@ ROLE_PERMISSIONS: dict[Action, frozenset[Role]] = {
     Action.VISIBILITY_MANAGE: frozenset({Role.ADMIN}),
     Action.INTEGRATION_MANAGE: frozenset({Role.ADMIN}),
     Action.RECORDING_REVOKE: frozenset({Role.ADMIN}),
+    # Throwing away your own recording that nobody has approved yet; see `app/discard.py`.
+    Action.RECORDING_DISCARD: frozenset({Role.MEMBER, Role.REVIEWER, Role.ADMIN}),
     # Coordinators (the reviewer role) manage groups and consents, only for groups they belong to.
     Action.CONSENT_MANAGE: frozenset({Role.REVIEWER, Role.ADMIN}),
     Action.GROUP_MANAGE: frozenset({Role.REVIEWER, Role.ADMIN}),
@@ -66,14 +69,21 @@ COMMUNITY_SCOPED = frozenset(
         Action.MEDIA_PLAY,
         Action.DRAFT_EDIT,
         Action.REVIEW_APPROVE,
+        Action.RECORDING_DISCARD,
     }
 )
 # Admins review and edit across every community, so these actions need no membership for them.
 ADMIN_ACROSS_COMMUNITIES = frozenset(
-    {Action.RECORDING_VIEW, Action.DRAFT_EDIT, Action.REVIEW_APPROVE, Action.MEDIA_PLAY}
+    {
+        Action.RECORDING_VIEW,
+        Action.DRAFT_EDIT,
+        Action.REVIEW_APPROVE,
+        Action.MEDIA_PLAY,
+        Action.RECORDING_DISCARD,
+    }
 )
 # Members act only on their own items; reviewers act across their communities.
-OWNED_ONLY = frozenset({Action.DRAFT_EDIT, Action.RECORDING_VIEW})
+OWNED_ONLY = frozenset({Action.DRAFT_EDIT, Action.RECORDING_VIEW, Action.RECORDING_DISCARD})
 
 
 def rank(role: Role) -> int:

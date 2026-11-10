@@ -5373,6 +5373,46 @@
       }
     },
     "/v1/recordings/{recording_id}": {
+      "delete": {
+        "description": "Throw away your own recording that nobody has approved yet: the audio, the transcript and\nthe translation are erased. A recording that was shared is withdrawn instead.",
+        "operationId": "discard_recording_endpoint_v1_recordings__recording_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recording_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{1,64}$",
+              "title": "Recording Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Discard Recording Endpoint",
+        "tags": [
+          "recordings"
+        ]
+      },
       "get": {
         "operationId": "get_recording_v1_recordings__recording_id__get",
         "parameters": [

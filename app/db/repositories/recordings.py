@@ -2,11 +2,18 @@
 
 from dataclasses import dataclass
 
-from sqlalchemy import or_, select
+from sqlalchemy import delete, or_, select
 from sqlalchemy.orm import Session
 
 from app.db.tables import (
+    EvidenceChunkRow,
+    GraphAssertionRow,
+    ItemReportRow,
+    JobRow,
     RecordingRow,
+    ReviewDecisionRow,
+    TranscriptVersionRow,
+    TranslationVersionRow,
 )
 from app.models.credit import SourceKind
 from app.models.library import LibraryFilter
@@ -15,6 +22,16 @@ from app.models.records import (
     Recording,
     RecordingStatus,
     Visibility,
+)
+
+ERASED_WITH_RECORDING = (
+    EvidenceChunkRow,
+    GraphAssertionRow,
+    ItemReportRow,
+    ReviewDecisionRow,
+    TranscriptVersionRow,
+    TranslationVersionRow,
+    JobRow,
 )
 
 
@@ -153,3 +170,12 @@ class RecordingRepository:
         if row is None:
             raise KeyError(recording_id)
         row.status = status
+
+    def erase(self, recording_id: str) -> None:
+        """Delete the recording and everything written about it: transcript and translation
+        versions, review decisions, graph proposals, reports, search entries and jobs. For a
+        recording that was never shared; the audit log is kept."""
+        for table in ERASED_WITH_RECORDING:
+            self._session.execute(delete(table).where(table.recording_id == recording_id))
+        self._session.execute(delete(RecordingRow).where(RecordingRow.id == recording_id))
+        self._session.flush()

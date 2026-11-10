@@ -79,6 +79,14 @@ class JobRepository:
         )
         return self._session.scalars(query.limit(1)).first() is not None
 
+    def any_open(self, recording_id: str) -> bool:
+        """Whether any job for this recording is waiting or running."""
+        query = select(JobRow.id).where(
+            JobRow.recording_id == recording_id,
+            JobRow.status.in_([JobStatus.QUEUED, JobStatus.PROCESSING]),
+        )
+        return self._session.scalars(query.limit(1)).first() is not None
+
     def requeue(self, job_id: str) -> None:
         row = self._row(job_id)
         row.status, row.error = JobStatus.QUEUED, None
