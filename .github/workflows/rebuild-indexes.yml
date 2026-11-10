@@ -1,0 +1,66 @@
+# Rebuilds the derived copies from PostgreSQL, the source of truth: the search index and vectors
+# (Pinecone), or the knowledge graph (Neo4j), or both. Use it after connecting Neo4j or Pinecone for
+# the first time, or when either looks empty or out of date. Nothing in PostgreSQL changes and no
+# recording text is printed. Safe to repeat. Runs on the instance in the worker container, with
+# the deploy role, so it waits for approval under the `prod` environment.
+name: rebuild-indexes
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: graph rebuilds Neo4j, search rebuilds keyword search and Pinecone, both does both
+        type: choice
+        options: [graph, search, both]
+        default: graph
+
+concurrency:
+  group: rebuild-indexes
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  rebuild:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: prod
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      INSTANCE_ID: ${{ vars.INSTANCE_ID }}
+      TARGET: ${{ inputs.target }}
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-session-name: heritagevoice-rebuild-indexes
+      - name: Run it on the instance
+        run: |
+          set -euo pipefail
+          case "$TARGET" in
+            graph) steps="rebuild-graph" ;;
+            search) steps="rebuild-index" ;;
+            both) steps="rebuild-index rebuild-graph" ;;
+            *) echo "Unknown target" >&2; exit 1 ;;
+          esac
+          run="cd /opt/heritagevoice && docker compose --env-file /etc/heritagevoice/app.env -f deploy/docker-compose.yml exec -T worker python -m app.worker"
+          script=""
+          for step in $steps; do script="$script$run $step && "; done
+          script="${script% && }"
+          command_id="$(aws ssm send-command --instance-ids "$INSTANCE_ID" \
+            --document-name AWS-RunShellScript --comment "rebuild $TARGET" --timeout-seconds 900 \
+            --parameters "$(jq -cn --arg c "$script" '{commands:[$c]}')" \
+            --query Command.CommandId --output text)"
+          for _ in $(seq 1 225); do
+            status="$(aws ssm get-command-invocation --command-id "$command_id" --instance-id "$INSTANCE_ID" \
+              --query Status --output text 2>/dev/null || echo Pending)"
+            case "$status" in Success|Failed|Cancelled|TimedOut) break ;; esac
+            sleep 4
+          done
+          aws ssm get-command-invocation --command-id "$command_id" --instance-id "$INSTANCE_ID" \
+            --query '[StandardOutputContent,StandardErrorContent]' --output text | tail -n 15
+          [[ "$status" == "Success" ]] || { echo "Rebuild $TARGET: $status" >&2; exit 1; }
