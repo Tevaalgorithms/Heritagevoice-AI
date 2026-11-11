@@ -12,9 +12,7 @@ knowledge, and answers questions with citations that lead back to the original v
 [Documentation](#documentation) · [Contributing](#contributing)
 
 **Status: early stage, live, single operator.** The platform works end to end and runs at
-[heritagevoice.org](https://heritagevoice.org) with a small amount of demonstration content. It is
-not yet ready for large collections of real community recordings: see
-[Status and limitations](#status-and-limitations).
+[heritagevoice.org](https://heritagevoice.org) with a small amount of demonstration content.
 
 | Home: search and the three promises | Library: browse, filter, listen | Connections: a relationship and its words |
 | --- | --- | --- |
@@ -190,8 +188,9 @@ verification can all still be wrong; that is why people review material and read
   translation and search quality have not been checked per language by native speakers.
 - **Small catalogue.** There are only a few approved recordings, so answers and connections are
   limited.
-- **Data removal is partly manual.** Withdrawing consent hides material at once, but deleting the
-  stored audio is a manual step for the operator.
+- **Data removal is partly manual.** Withdrawing consent hides a recording from search, answers and
+  the graph at once, but deleting its stored audio is a manual step for the operator. A recording
+  nobody has approved yet can be discarded by its owner, which erases the audio and the text.
 
 ## Roadmap
 
