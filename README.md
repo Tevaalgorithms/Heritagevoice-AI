@@ -26,6 +26,11 @@ Signing in is needed to ask.
 
 ![Ask page: a question, a cited answer in Tamil and its sources](docs/assets/ask.jpg)
 
+**Follow-up:** "what does this mean" is understood from the chat so far. The answer cites the proverb's
+own recording, and **Listen** plays that moment in the speaker's voice.
+
+![Ask page: a follow-up question, with a source and a Listen button](docs/assets/ask-follow-up.jpg)
+
 Signed-in flow: record or upload → an administrator reviews the transcript and translation → ask a
 question → read the answer with its citation and play the cited moment.
 
