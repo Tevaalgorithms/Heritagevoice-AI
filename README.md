@@ -8,8 +8,8 @@
 **A community-controlled platform that turns consented oral histories into reviewed, searchable
 knowledge, and answers questions with citations that lead back to the original voice.**
 
-[Live site](https://heritagevoice.org) · [Try it](#try-it) · [Documentation](#documentation) ·
-[Contributing](#contributing)
+[Live site](https://heritagevoice.org) · [Slides](docs/presentation/heritagevoice-ai-slides.pdf) · [Try it](#try-it) ·
+[Documentation](#documentation) · [Contributing](#contributing)
 
 **Status: early stage, live, single operator.** The platform works end to end and runs at
 [heritagevoice.org](https://heritagevoice.org) with a small amount of demonstration content. It is
@@ -20,9 +20,19 @@ not yet ready for large collections of real community recordings: see
 | --- | --- | --- |
 | ![Home page with search](docs/assets/home.jpg) | ![Library with filters and a recording card](docs/assets/library.jpg) | ![Connections page](docs/assets/connections.jpg) |
 
-Signed-in flow (not shown above, it needs an account): record or upload → an administrator reviews
-the transcript and translation → ask a question → read the answer with its citation and play the
-cited moment.
+**Ask:** a question in English, answered in Tamil from the community's own recordings. Every claim
+carries a numbered source, and the list below it shows the recording, the moment and who shared it.
+Signing in is needed to ask.
+
+![Ask page: a question, a cited answer in Tamil and its sources](docs/assets/ask.jpg)
+
+**Follow-up:** "what does this mean" is understood from the chat so far. The answer cites the proverb's
+own recording, and **Listen** plays that moment in the speaker's voice.
+
+![Ask page: a follow-up question, with a source and a Listen button](docs/assets/ask-follow-up.jpg)
+
+Signed-in flow: record or upload → an administrator reviews the transcript and translation → ask a
+question → read the answer with its citation and play the cited moment.
 
 ## Try it
 
@@ -193,6 +203,7 @@ shorter sign-in tokens with silent refresh.
 
 | Topic | Where |
 | --- | --- |
+| **Presentation slides** (7 slides: problem, architecture, agents, retrieval, results) | [`heritagevoice-ai-slides.pdf`](docs/presentation/heritagevoice-ai-slides.pdf) |
 | How it works: flows, agents, retrieval | [`docs/how-it-works.md`](docs/how-it-works.md) |
 | **Data stores**: PostgreSQL tables, vector index, graph | [`docs/schema/`](docs/schema/README.md) |
 | **Why it is built this way** (decision records) | [`docs/adr/`](docs/adr/README.md) |
