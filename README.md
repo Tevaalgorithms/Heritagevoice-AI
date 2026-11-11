@@ -20,9 +20,14 @@ not yet ready for large collections of real community recordings: see
 | --- | --- | --- |
 | ![Home page with search](docs/assets/home.jpg) | ![Library with filters and a recording card](docs/assets/library.jpg) | ![Connections page](docs/assets/connections.jpg) |
 
-Signed-in flow (not shown above, it needs an account): record or upload → an administrator reviews
-the transcript and translation → ask a question → read the answer with its citation and play the
-cited moment.
+**Ask:** a question in English, answered in Tamil from the community's own recordings. Every claim
+carries a numbered source, and the list below it shows the recording, the moment and who shared it.
+Signing in is needed to ask.
+
+![Ask page: a question, a cited answer in Tamil and its sources](docs/assets/ask.jpg)
+
+Signed-in flow: record or upload → an administrator reviews the transcript and translation → ask a
+question → read the answer with its citation and play the cited moment.
 
 ## Try it
 
