@@ -8,8 +8,8 @@
 **A community-controlled platform that turns consented oral histories into reviewed, searchable
 knowledge, and answers questions with citations that lead back to the original voice.**
 
-[Live site](https://heritagevoice.org) · [Try it](#try-it) · [Documentation](#documentation) ·
-[Contributing](#contributing)
+[Live site](https://heritagevoice.org) · [Slides](https://claude.ai/artifact/Lht5ZxsiZQod3t4KjESkP8) · [Try it](#try-it) ·
+[Documentation](#documentation) · [Contributing](#contributing)
 
 **Status: early stage, live, single operator.** The platform works end to end and runs at
 [heritagevoice.org](https://heritagevoice.org) with a small amount of demonstration content. It is
@@ -203,6 +203,7 @@ shorter sign-in tokens with silent refresh.
 
 | Topic | Where |
 | --- | --- |
+| **Presentation slides**: the problem, the architecture, the agents and the results | [Slides](https://claude.ai/artifact/Lht5ZxsiZQod3t4KjESkP8) |
 | How it works: flows, agents, retrieval | [`docs/how-it-works.md`](docs/how-it-works.md) |
 | **Data stores**: PostgreSQL tables, vector index, graph | [`docs/schema/`](docs/schema/README.md) |
 | **Why it is built this way** (decision records) | [`docs/adr/`](docs/adr/README.md) |
