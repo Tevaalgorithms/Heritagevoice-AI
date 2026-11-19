@@ -3,7 +3,7 @@ from types import SimpleNamespace
 import pytest
 
 from app.config import Settings
-from frontend.auth import cognito_enabled, dev_token, resolve_token, user_access_token
+from frontend.auth import cognito_enabled, dev_token, main_host, resolve_token, user_access_token
 
 
 def settings(**values):
@@ -56,3 +56,19 @@ def test_streamlit_sign_in_has_the_authlib_it_needs():
     import authlib  # noqa: PLC0415
 
     assert authlib.__version__
+
+
+@pytest.mark.parametrize(
+    ("host", "expected"),
+    [
+        ("www.heritagevoice.org", "heritagevoice.org"),
+        ("WWW.HeritageVoice.org:443", "heritagevoice.org"),
+        ("heritagevoice.org", None),
+        ("login.heritagevoice.org", None),
+        ("", None),
+        ("www.", None),
+        ('www.x.org"</script><script>alert(1)', None),
+    ],
+)
+def test_a_www_visitor_is_sent_to_the_main_address_to_sign_in(host, expected):
+    assert main_host(host) == expected

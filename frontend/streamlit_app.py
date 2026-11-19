@@ -9,7 +9,7 @@ from app.config import Settings
 from frontend import theme
 from frontend.account import AwaitingApprovalError, SessionExpiredError, current_role
 from frontend.api_client import ApiClient, ApiError
-from frontend.auth import COGNITO_PROVIDER, cognito_enabled, resolve_token
+from frontend.auth import COGNITO_PROVIDER, cognito_enabled, main_host, resolve_token
 from frontend.legal import PAGES, LegalPage, OrganisationFacts
 from frontend.messages import message_for
 from frontend.shell import footer, logo, member_account, visitor_account
@@ -48,6 +48,7 @@ def _page(render: Callable[[ApiClient], None], client: ApiClient, **options: obj
 
 
 CONTACT = "contact"
+_SIGN_IN_ON_MAIN = "hv-sign-in-on-main"
 
 
 def _legal_page(page: LegalPage, facts: OrganisationFacts, in_menu: bool) -> object:
@@ -162,12 +163,36 @@ def _member_sections(client: ApiClient, role: str | None) -> dict[str, list[obje
     return sections
 
 
+def _sign_in_action() -> Callable[[], None]:
+    """What the Sign in buttons do.
+
+    Sign-in returns to the main address only. A visitor on www. is sent there to sign in, so the
+    login starts and finishes on one host; `?signin=1` makes the main address open it at once.
+    """
+    main = main_host(st.context.headers.get("Host", ""))
+    if main and st.session_state.pop(_SIGN_IN_ON_MAIN, False):
+        st.html(
+            f'<script>window.location.replace("https://{main}/?signin=1");</script>',
+            unsafe_allow_javascript=True,
+        )
+        st.stop()
+    if not main and st.query_params.get("signin") == "1":
+        del st.query_params["signin"]
+        st.login(COGNITO_PROVIDER)
+
+    def sign_in() -> None:
+        if main:
+            st.session_state[_SIGN_IN_ON_MAIN] = True
+        else:
+            st.login(COGNITO_PROVIDER)
+
+    return sign_in
+
+
 def _run_for_visitors(settings: Settings, facts: OrganisationFacts) -> None:
     """No account: Home, the Library, Connections and Contact, with Sign in at the top right."""
     client = ApiClient(settings.api_url, None)
-
-    def sign_in() -> None:
-        st.login(COGNITO_PROVIDER)
+    sign_in = _sign_in_action()
 
     shelf = st.Page(
         lambda: library.render_public(client),

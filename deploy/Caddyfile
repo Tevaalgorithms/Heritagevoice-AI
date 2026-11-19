@@ -1,12 +1,9 @@
 # HTTPS is automatic for a real domain (Let's Encrypt). The API is reachable only on these
 # paths; everything else goes to the UI. /docs and /openapi.json are not exposed.
-# `www.` goes to the main address, so there is one official address. Caddy gets a certificate for
-# it too, once its DNS record exists (Terraform adds it when the site is at the top of a domain).
-www.{$HV_DOMAIN} {
-	redir https://{$HV_DOMAIN}{uri} permanent
-}
-
-{$HV_DOMAIN} {
+# The site answers on the main address and on `www.` with the same content (no redirect). Caddy
+# gets a certificate for both names once their DNS records exist (Terraform adds the www record
+# when the site is at the top of a domain).
+{$HV_DOMAIN}, www.{$HV_DOMAIN} {
 	encode zstd gzip
 
 	header {

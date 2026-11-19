@@ -41,8 +41,9 @@ env:
   TF_VAR_domain_prefix: ${{ vars.COGNITO_DOMAIN_PREFIX }}
   TF_VAR_login_domain: ${{ vars.LOGIN_DOMAIN }}
   TF_VAR_budget_email: ${{ vars.TF_BUDGET_EMAIL }}
-  TF_VAR_callback_urls: '["https://${{ vars.SITE_DOMAIN }}/oauth2callback"]'
-  TF_VAR_logout_urls: '["https://${{ vars.SITE_DOMAIN }}/"]'
+  # The www. address is allowed too, so signing in and out can return there as well as to the main address.
+  TF_VAR_callback_urls: '["https://${{ vars.SITE_DOMAIN }}/oauth2callback","https://www.${{ vars.SITE_DOMAIN }}/oauth2callback"]'
+  TF_VAR_logout_urls: '["https://${{ vars.SITE_DOMAIN }}/","https://www.${{ vars.SITE_DOMAIN }}/"]'
 
 jobs:
   plan:
