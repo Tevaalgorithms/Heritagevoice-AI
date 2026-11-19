@@ -5,12 +5,28 @@ Local development uses the dev token. Everywhere else the user signs in with Ama
 Streamlit server session: never in URLs, logs or browser-visible widgets.
 """
 
+import re
 from typing import Any
 
 from app.config import Settings
 
 COGNITO_PROVIDER = "cognito"
 LOCAL = "local"
+
+_HOST = re.compile(r"[a-z0-9]([a-z0-9.-]*[a-z0-9])?")
+
+
+def main_host(host: str) -> str | None:
+    """The main address for a `www.` host, or None when the visitor is not on `www.`.
+
+    Streamlit's sign-in always returns to one fixed address (the main one), so a visitor on `www.`
+    is sent there to sign in; the login then starts and ends on the same host.
+    """
+    name = (host or "").split(":")[0].strip().lower()
+    if not name.startswith("www."):
+        return None
+    main = name[len("www.") :]
+    return main if _HOST.fullmatch(main) else None
 
 
 def cognito_enabled(settings: Settings) -> bool:
